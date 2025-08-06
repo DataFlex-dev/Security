@@ -1,0 +1,1038 @@
+// from winerror.h:
+#IFNDEF ERROR_SUCCESS
+Define ERROR_SUCCESS          for 0
+Define NTE_BAD_DATA           for |CI$80090005  // -2146893819
+Define NTE_BAD_SIGNATURE      for |CI$80090006  // -2146893818
+Define NTE_BAD_FLAGS          for |CI$80090009  // -2146893815
+Define NTE_NO_MEMORY          for |CI$8009000E  // -2146893810
+Define NTE_EXISTS             for |CI$8009000F  // -2146893809
+Define NTE_BAD_KEYSET         for |CI$80090016  // -2146893802
+Define NTE_SILENT_CONTEXT     for |CI$80090022  // -2146893790
+Define NTE_INVALID_HANDLE     for |CI$80090026  // -2146893786
+Define NTE_INVALID_PARAMETER  for |CI$80090027  // -2146893785
+Define NTE_NOT_SUPPORTED      for |CI$80090029  // -2146893783
+Define NTE_NO_MORE_ITEMS      for |CI$8009002A  // -2146893782
+Define NTE_INCORRECT_PASSWORD for |CI$80090033  // -2146893773
+#ENDIF
+
+
+#IFNDEF SCARD_S_SUCCESS // smartcard errors
+Define SCARD_S_SUCCESS                  for NO_ERROR
+//Define SCARD_F_INTERNAL_ERROR           for |CI$80100001
+//Define SCARD_E_CANCELLED                for |CI$80100002
+//Define SCARD_E_INVALID_HANDLE           for |CI$80100003
+//Define SCARD_E_INVALID_PARAMETER        for |CI$80100004
+//Define SCARD_E_INVALID_TARGET           for |CI$80100005
+//Define SCARD_E_NO_MEMORY                for |CI$80100006
+//Define SCARD_F_WAITED_TOO_LONG          for |CI$80100007
+//Define SCARD_E_INSUFFICIENT_BUFFER      for |CI$80100008
+//Define SCARD_E_UNKNOWN_READER           for |CI$80100009
+//Define SCARD_E_TIMEOUT                  for |CI$8010000A
+//Define SCARD_E_SHARING_VIOLATION        for |CI$8010000B
+//Define SCARD_E_NO_SMARTCARD             for |CI$8010000C
+//Define SCARD_E_UNKNOWN_CARD             for |CI$8010000D
+//Define SCARD_E_CANT_DISPOSE             for |CI$8010000E
+//Define SCARD_E_PROTO_MISMATCH           for |CI$8010000F
+//Define SCARD_E_NOT_READY                for |CI$80100010
+Define SCARD_E_INVALID_VALUE            for |CI$80100011    // -2146435055
+//Define SCARD_E_SYSTEM_CANCELLED         for |CI$80100012
+//Define SCARD_F_COMM_ERROR               for |CI$80100013
+//Define SCARD_F_UNKNOWN_ERROR            for |CI$80100014
+//Define SCARD_E_INVALID_ATR              for |CI$80100015
+//Define SCARD_E_NOT_TRANSACTED           for |CI$80100016
+//Define SCARD_E_READER_UNAVAILABLE       for |CI$80100017
+//Define SCARD_P_SHUTDOWN                 for |CI$80100018
+//Define SCARD_E_PCI_TOO_SMALL            for |CI$80100019
+//Define SCARD_E_READER_UNSUPPORTED       for |CI$8010001A
+//Define SCARD_E_DUPLICATE_READER         for |CI$8010001B
+//Define SCARD_E_CARD_UNSUPPORTED         for |CI$8010001C
+//Define SCARD_E_NO_SERVICE               for |CI$8010001D
+//Define SCARD_E_SERVICE_STOPPED          for |CI$8010001E
+Define SCARD_E_UNEXPECTED               for |CI$8010001F    // -2146435041
+//Define SCARD_E_ICC_INSTALLATION         for |CI$80100020
+//Define SCARD_E_ICC_CREATEORDER          for |CI$80100021
+Define SCARD_E_UNSUPPORTED_FEATURE      for |CI$80100022    // -2146435038
+//Define SCARD_E_DIR_NOT_FOUND            for |CI$80100023
+//Define SCARD_E_FILE_NOT_FOUND           for |CI$80100024
+//Define SCARD_E_NO_DIR                   for |CI$80100025
+//Define SCARD_E_NO_FILE                  for |CI$80100026
+//Define SCARD_E_NO_ACCESS                for |CI$80100027
+//Define SCARD_E_WRITE_TOO_MANY           for |CI$80100028
+//Define SCARD_E_BAD_SEEK                 for |CI$80100029
+//Define SCARD_E_INVALID_CHV              for |CI$8010002A
+//Define SCARD_E_UNKNOWN_RES_MNG          for |CI$8010002B
+//Define SCARD_E_NO_SUCH_CERTIFICATE      for |CI$8010002C
+//Define SCARD_E_CERTIFICATE_UNAVAILABLE  for |CI$8010002D
+//Define SCARD_E_NO_READERS_AVAILABLE     for |CI$8010002E
+//Define SCARD_E_COMM_DATA_LOST           for |CI$8010002F
+//Define SCARD_E_NO_KEY_CONTAINER         for |CI$80100030
+//Define SCARD_E_SERVER_TOO_BUSY          for |CI$80100031
+//Define SCARD_E_PIN_CACHE_EXPIRED        for |CI$80100032
+//Define SCARD_E_NO_PIN_CACHE             for |CI$80100033
+//Define SCARD_E_READ_ONLY_CARD           for |CI$80100034
+//Define SCARD_W_UNSUPPORTED_CARD         for |CI$80100065
+//Define SCARD_W_UNRESPONSIVE_CARD        for |CI$80100066
+//Define SCARD_W_UNPOWERED_CARD           for |CI$80100067
+//Define SCARD_W_RESET_CARD               for |CI$80100068
+//Define SCARD_W_REMOVED_CARD             for |CI$80100069
+//Define SCARD_W_SECURITY_VIOLATION       for |CI$8010006A
+//Define SCARD_W_WRONG_CHV                for |CI$8010006B
+//Define SCARD_W_CHV_BLOCKED              for |CI$8010006C
+//Define SCARD_W_EOF                      for |CI$8010006D
+//Define SCARD_W_CANCELLED_BY_USER        for |CI$8010006E
+//Define SCARD_W_CARD_NOT_AUTHENTICATED   for |CI$8010006F
+//Define SCARD_W_CACHE_ITEM_NOT_FOUND     for |CI$80100070
+//Define SCARD_W_CACHE_ITEM_STALE         for |CI$80100071
+//Define SCARD_W_CACHE_ITEM_TOO_BIG       for |CI$80100072
+#ENDIF
+
+// from wincrypt.h:
+Enum_List
+    Define AT_KEYEXCHANGE for 1
+    Define AT_SIGNATURE   for 2
+End_Enum_List
+
+//#Include <winapifamily.h>
+//
+//
+//#IF _MSC_VER >= 1200
+//#pragma warning(push)
+//#pragma warning(disable:4820) // padding added after data member
+//#ENDIF
+//
+//#ifndef __SECSTATUS_DEFINED__
+//typedef LONG SECURITY_STATUS ;
+//#define __SECSTATUS_DEFINED__
+//#ENDIF
+//
+//#include <bcrypt.h>
+//
+//#ifndef HCRYPTPROV_DEFINED
+//#define HCRYPTPROV_DEFINED
+//typedef ULONG_PTR HCRYPTPROV ;
+//typedef ULONG_PTR HCRYPTKEY ;
+//typedef ULONG_PTR HCRYPTHASH ;
+//#ENDIF
+//
+////
+//// Maximum length of Key name, in characters
+////
+//#define NCRYPT_MAX_KEY_NAME_LENGTH      512
+//
+//
+////
+//// Maximum length of Algorithm name, in characters
+////
+//#define NCRYPT_MAX_ALG_ID_LENGTH        512
+//
+///****************************************************************************
+//
+//  NCRYPT memory management routines for functions that require
+//  the caller to allocate memory
+//
+//****************************************************************************/
+//typedef LPVOID (WINAPI *PFN_NCRYPT_ALLOC)(
+//    _In_ SIZE_T cbSize
+//    ) ;
+//
+//typedef VOID (WINAPI *PFN_NCRYPT_FREE)(
+//    _In_ LPVOID pv
+//    ) ;
+//
+//typedef struct NCRYPT_ALLOC_PARA {
+//    DWord                   cbSize;     // size of this structure
+//    PFN_NCRYPT_ALLOC        pfnAlloc;           
+//    PFN_NCRYPT_FREE         pfnFree ;
+//} NCRYPT_ALLOC_PARA ;
+
+//
+// Microsoft built-in providers.
+//
+
+Define MS_KEY_STORAGE_PROVIDER            for "Microsoft Software Key Storage Provider"
+Define MS_SMART_CARD_KEY_STORAGE_PROVIDER for "Microsoft Smart Card Key Storage Provider"
+Define MS_PLATFORM_KEY_STORAGE_PROVIDER   for "Microsoft Platform Crypto Provider"
+Define MS_NGC_KEY_STORAGE_PROVIDER        for "Microsoft Passport Key Storage Provider"
+
+//
+// Common algorithm identifiers.
+//
+
+Define NCRYPT_RSA_ALGORITHM               for BCRYPT_RSA_ALGORITHM
+Define NCRYPT_RSA_SIGN_ALGORITHM          for BCRYPT_RSA_SIGN_ALGORITHM
+Define NCRYPT_DH_ALGORITHM                for BCRYPT_DH_ALGORITHM
+Define NCRYPT_DSA_ALGORITHM               for BCRYPT_DSA_ALGORITHM
+Define NCRYPT_MD2_ALGORITHM               for BCRYPT_MD2_ALGORITHM
+Define NCRYPT_MD4_ALGORITHM               for BCRYPT_MD4_ALGORITHM
+Define NCRYPT_MD5_ALGORITHM               for BCRYPT_MD5_ALGORITHM
+Define NCRYPT_SHA1_ALGORITHM              for BCRYPT_SHA1_ALGORITHM
+Define NCRYPT_SHA256_ALGORITHM            for BCRYPT_SHA256_ALGORITHM
+Define NCRYPT_SHA384_ALGORITHM            for BCRYPT_SHA384_ALGORITHM
+Define NCRYPT_SHA512_ALGORITHM            for BCRYPT_SHA512_ALGORITHM
+Define NCRYPT_ECDSA_P256_ALGORITHM        for BCRYPT_ECDSA_P256_ALGORITHM
+Define NCRYPT_ECDSA_P384_ALGORITHM        for BCRYPT_ECDSA_P384_ALGORITHM
+Define NCRYPT_ECDSA_P521_ALGORITHM        for BCRYPT_ECDSA_P521_ALGORITHM
+Define NCRYPT_ECDH_P256_ALGORITHM         for BCRYPT_ECDH_P256_ALGORITHM
+Define NCRYPT_ECDH_P384_ALGORITHM         for BCRYPT_ECDH_P384_ALGORITHM
+Define NCRYPT_ECDH_P521_ALGORITHM         for BCRYPT_ECDH_P521_ALGORITHM
+
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+Define NCRYPT_AES_ALGORITHM               for BCRYPT_AES_ALGORITHM
+Define NCRYPT_RC2_ALGORITHM               for BCRYPT_RC2_ALGORITHM
+Define NCRYPT_3DES_ALGORITHM              for BCRYPT_3DES_ALGORITHM
+Define NCRYPT_DES_ALGORITHM               for BCRYPT_DES_ALGORITHM
+Define NCRYPT_DESX_ALGORITHM              for BCRYPT_DESX_ALGORITHM
+Define NCRYPT_3DES_112_ALGORITHM          for BCRYPT_3DES_112_ALGORITHM
+
+Define NCRYPT_SP800108_CTR_HMAC_ALGORITHM for BCRYPT_SP800108_CTR_HMAC_ALGORITHM
+Define NCRYPT_SP80056A_CONCAT_ALGORITHM   for BCRYPT_SP80056A_CONCAT_ALGORITHM
+Define NCRYPT_PBKDF2_ALGORITHM            for BCRYPT_PBKDF2_ALGORITHM
+Define NCRYPT_CAPI_KDF_ALGORITHM          for BCRYPT_CAPI_KDF_ALGORITHM
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN8)
+
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+Define NCRYPT_ECDSA_ALGORITHM             for BCRYPT_ECDSA_ALGORITHM
+Define NCRYPT_ECDH_ALGORITHM              for BCRYPT_ECDH_ALGORITHM
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+
+//Define NCRYPT_KEY_STORAGE_ALGORITHM       for "KEY_STORAGE"
+
+//
+// Interfaces
+//
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+Define NCRYPT_CIPHER_INTERFACE                 for BCRYPT_CIPHER_INTERFACE
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN8)
+Define NCRYPT_HASH_INTERFACE                   for BCRYPT_HASH_INTERFACE
+Define NCRYPT_ASYMMETRIC_ENCRYPTION_INTERFACE  for BCRYPT_ASYMMETRIC_ENCRYPTION_INTERFACE
+Define NCRYPT_SECRET_AGREEMENT_INTERFACE       for BCRYPT_SECRET_AGREEMENT_INTERFACE
+Define NCRYPT_SIGNATURE_INTERFACE              for BCRYPT_SIGNATURE_INTERFACE
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+Define NCRYPT_KEY_DERIVATION_INTERFACE         for BCRYPT_KEY_DERIVATION_INTERFACE
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN8)
+
+Define NCRYPT_KEY_STORAGE_INTERFACE for |CI$00010001
+//#define NCRYPT_SCHANNEL_INTERFACE               0x00010002
+//#IF (NTDDI_VERSION >= NTDDI_WIN7)
+//#define NCRYPT_SCHANNEL_SIGNATURE_INTERFACE     0x00010003
+//#ENDIF
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+//#define NCRYPT_KEY_PROTECTION_INTERFACE         0x00010004
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN8)
+//
+////
+//// algorithm groups.
+////
+//
+//#define NCRYPT_RSA_ALGORITHM_GROUP              NCRYPT_RSA_ALGORITHM
+//#define NCRYPT_DH_ALGORITHM_GROUP               NCRYPT_DH_ALGORITHM
+//#define NCRYPT_DSA_ALGORITHM_GROUP              NCRYPT_DSA_ALGORITHM
+//#define NCRYPT_ECDSA_ALGORITHM_GROUP            L"ECDSA"
+//#define NCRYPT_ECDH_ALGORITHM_GROUP             L"ECDH"
+//
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+//#define NCRYPT_AES_ALGORITHM_GROUP              NCRYPT_AES_ALGORITHM
+//#define NCRYPT_RC2_ALGORITHM_GROUP              NCRYPT_RC2_ALGORITHM
+//#define NCRYPT_DES_ALGORITHM_GROUP              L"DES"
+//#define NCRYPT_KEY_DERIVATION_GROUP             L"KEY_DERIVATION"
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN8)
+//
+////
+//// NCrypt generic memory descriptors
+////
+//
+//#define NCRYPTBUFFER_VERSION                                0
+//
+//#define NCRYPTBUFFER_EMPTY                          0
+//#define NCRYPTBUFFER_DATA                           1
+//
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+//#define NCRYPTBUFFER_PROTECTION_DESCRIPTOR_STRING   3   // The buffer contains a null-terminated Unicode string that contains the Protection Descriptor. 
+//#define NCRYPTBUFFER_PROTECTION_FLAGS               4   // DWORD flags to be passed to NCryptCreateProtectionDescriptor function.
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN8)
+//
+//
+//#define NCRYPTBUFFER_SSL_CLIENT_RANDOM                      20
+//#define NCRYPTBUFFER_SSL_SERVER_RANDOM                      21
+//#define NCRYPTBUFFER_SSL_HIGHEST_VERSION                    22
+//#define NCRYPTBUFFER_SSL_CLEAR_KEY                          23
+//#define NCRYPTBUFFER_SSL_KEY_ARG_DATA                       24
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//#define NCRYPTBUFFER_SSL_SESSION_HASH                       25
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+//#define NCRYPTBUFFER_PKCS_OID                               40
+//#define NCRYPTBUFFER_PKCS_ALG_OID                           41
+//#define NCRYPTBUFFER_PKCS_ALG_PARAM                         42
+//#define NCRYPTBUFFER_PKCS_ALG_ID                            43
+//#define NCRYPTBUFFER_PKCS_ATTRS                             44
+//#define NCRYPTBUFFER_PKCS_KEY_NAME                          45
+//#define NCRYPTBUFFER_PKCS_SECRET                            46
+//
+//#define NCRYPTBUFFER_CERT_BLOB                              47
+//
+////for threshold key attestation
+//#define NCRYPTBUFFER_CLAIM_IDBINDING_NONCE                  48
+//#define NCRYPTBUFFER_CLAIM_KEYATTESTATION_NONCE             49
+//#define NCRYPTBUFFER_KEY_PROPERTY_FLAGS                     50
+//#define NCRYPTBUFFER_ATTESTATIONSTATEMENT_BLOB              51
+//#define NCRYPTBUFFER_ATTESTATION_CLAIM_TYPE                 52
+//#define NCRYPTBUFFER_ATTESTATION_CLAIM_CHALLENGE_REQUIRED   53
+//
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+////for generic ecc
+//#define NCRYPTBUFFER_ECC_CURVE_NAME                         60
+//#define NCRYPTBUFFER_ECC_PARAMETERS                         61
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+//
+//// NCRYPT shares the same BCRYPT definitions
+//typedef BCryptBuffer     NCryptBuffer ;
+//typedef BCryptBuffer*    PNCryptBuffer ;
+//typedef BCryptBufferDesc NCryptBufferDesc ;
+//typedef BCryptBufferDesc* PNCryptBufferDesc ;
+//
+////
+//// NCrypt handles
+////
+//
+//typedef ULONG_PTR NCRYPT_HANDLE ;
+//typedef ULONG_PTR NCRYPT_PROV_HANDLE ;
+//typedef ULONG_PTR NCRYPT_KEY_HANDLE ;
+//typedef ULONG_PTR NCRYPT_HASH_HANDLE ;
+//typedef ULONG_PTR NCRYPT_SECRET_HANDLE ;
+//
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+//
+//typedef _Struct_size_bytes_(cbSize + cbIV + cbOtherInfo) 
+//Struct _NCRYPT_CIPHER_PADDING_INFO
+//{
+//    // size of this struct
+//    ULONG       cbSize ;
+//
+//    // See NCRYPT_CIPHER_ flag values
+//    DWord       dwFlags ;
+//
+//    // [in, out, optional] 
+//    // The address of a buffer that contains the initialization vector (IV) to use during encryption. 
+//    // The cbIV parameter contains the size of this buffer. This function will modify the contents of this buffer. 
+//    // If you need to reuse the IV later, make sure you make a copy of this buffer before calling this function.
+//    _Field_size_bytes_(cbIV)
+//    PUCHAR      pbIV ;
+//    ULONG       cbIV ;
+//
+//    // [in, out, optional] 
+//    // The address of a buffer that contains the algorithm specific info to use during encryption. 
+//    // The cbOtherInfo parameter contains the size of this buffer. This function will modify the contents of this buffer. 
+//    // If you need to reuse the buffer later, make sure you make a copy of this buffer before calling this function.
+//    //
+//    // For Microsoft providers, when an authenticated encryption mode is used, 
+//    // this parameter must point to a serialized BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO structure.
+//    //
+//    // NOTE: All pointers inside a structure must be to a data allocated within pbOtherInfo buffer.
+//    //
+//    _Field_size_bytes_(cbOtherInfo)
+//    PUCHAR      pbOtherInfo;            
+//    ULONG       cbOtherInfo ;
+//
+//} NCRYPT_CIPHER_PADDING_INFO, *PNCRYPT_CIPHER_PADDING_INFO ;
+//
+////
+//// The following flags are used with NCRYPT_CIPHER_PADDING_INFO
+////
+//#define NCRYPT_CIPHER_NO_PADDING_FLAG           0x00000000
+//#define NCRYPT_CIPHER_BLOCK_PADDING_FLAG        0x00000001
+//#define NCRYPT_CIPHER_OTHER_PADDING_FLAG        0x00000002
+//
+//#ENDIF  // (NTDDI_VERSION >= NTDDI_WIN8)
+//
+//#IF (NTDDI_VERSION >= NTDDI_WINBLUE)
+//
+//#define NCRYPT_PLATFORM_ATTEST_MAGIC 0x44504150  // 'PAPD'
+//
+//typedef Struct _NCRYPT_PLATFORM_ATTEST_PADDING_INFO {
+//    ULONG  magic;  // 'PAPD'
+//    ULONG  pcrMask ;
+//} NCRYPT_PLATFORM_ATTEST_PADDING_INFO ;
+//
+//#define NCRYPT_KEY_ATTEST_MAGIC 0x4450414b  // 'KAPD'
+//
+//typedef Struct _NCRYPT_KEY_ATTEST_PADDING_INFO {
+//    ULONG   magic;  // 'KAPD'
+//    PUCHAR  pbKeyBlob ;
+//    ULONG   cbKeyBlob ;
+//    PUCHAR  pbKeyAuth ;
+//    ULONG   cbKeyAuth ;
+//} NCRYPT_KEY_ATTEST_PADDING_INFO ;
+//
+//#ENDIF  // (NTDDI_VERSION >= NTDDI_WINBLUE)
+//
+////
+//// key attestation claim type
+////
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+//#define NCRYPT_CLAIM_AUTHORITY_ONLY          0x00000001
+//#define NCRYPT_CLAIM_SUBJECT_ONLY            0x00000002
+//#define NCRYPT_CLAIM_AUTHORITY_AND_SUBJECT   0x00000003
+//#define NCRYPT_CLAIM_UNKNOWN                 0x00001000
+//
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+
+// NCrypt API Flags
+//
+
+Define NCRYPT_NO_PADDING_FLAG                  for |CI$00000001  // NCryptEncrypt/Decrypt
+Define NCRYPT_PAD_PKCS1_FLAG                   for |CI$00000002  // NCryptEncrypt/Decrypt NCryptSignHash/VerifySignature
+Define NCRYPT_PAD_OAEP_FLAG                    for |CI$00000004  // BCryptEncrypt/Decrypt
+Define NCRYPT_PAD_PSS_FLAG                     for |CI$00000008  // BCryptSignHash/VerifySignature
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+//#Define NCRYPT_PAD_CIPHER_FLAG                  0x00000010  // NCryptEncrypt/Decrypt
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN8)
+//
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//#define NCRYPT_ATTESTATION_FLAG                 0x00000020 // NCryptDecrypt for key attestation
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+//#define NCRYPT_REGISTER_NOTIFY_FLAG             0x00000001  // NCryptNotifyChangeKey
+//#define NCRYPT_UNREGISTER_NOTIFY_FLAG           0x00000002  // NCryptNotifyChangeKey
+//#define NCRYPT_NO_KEY_VALIDATION                BCRYPT_NO_KEY_VALIDATION
+//#define NCRYPT_MACHINE_KEY_FLAG                 0x00000020  // same as CAPI CRYPT_MACHINE_KEYSET
+//#define NCRYPT_SILENT_FLAG                      0x00000040  // same as CAPI CRYPT_SILENT
+//#define NCRYPT_OVERWRITE_KEY_FLAG               0x00000080
+//#define NCRYPT_WRITE_KEY_TO_LEGACY_STORE_FLAG   0x00000200
+//#define NCRYPT_DO_NOT_FINALIZE_FLAG             0x00000400
+//#define NCRYPT_EXPORT_LEGACY_FLAG               0x00000800
+//#IF (NTDDI_VERSION >= NTDDI_WINBLUE)
+//#define NCRYPT_IGNORE_DEVICE_STATE_FLAG         0x00001000  // NCryptOpenStorageProvider
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINBLUE)
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//#define NCRYPT_TREAT_NIST_AS_GENERIC_ECC_FLAG   0x00002000
+//#define NCRYPT_NO_CACHED_PASSWORD				0x00004000
+//#define	NCRYPT_PROTECT_TO_LOCAL_SYSTEM			0x00008000
+//#define NCRYPT_ECC_NO_COFACTOR_MULTIPLICATION_FLAG BCRYPT_ECC_NO_COFACTOR_MULTIPLICATION
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//#define NCRYPT_PERSIST_ONLY_FLAG                0x40000000
+//#define NCRYPT_PERSIST_FLAG                     0x80000000
+
+//
+// Functions used to manage persisted keys.
+//
+
+// NCryptOpenStorageProvider flags
+Define NCRYPT_SILENT_FLAG              for |CI$00000040 // same as CAPI CRYPT_SILENT
+Define NCRYPT_IGNORE_DEVICE_STATE_FLAG for |CI$00001000 // NCryptOpenStorageProvider
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptOpenStorageProvider "NCryptOpenStorageProvider" ncrypt.dll ;
+    Pointer  phProvider ;
+    Pointer  pszProviderName ;
+    UInteger dwFlags ;
+    Returns  Integer
+
+// AlgOperations flags for use with NCryptEnumAlgorithms()
+Define NCRYPT_CIPHER_OPERATION                for BCRYPT_CIPHER_OPERATION
+Define NCRYPT_HASH_OPERATION                  for BCRYPT_HASH_OPERATION
+Define NCRYPT_ASYMMETRIC_ENCRYPTION_OPERATION for BCRYPT_ASYMMETRIC_ENCRYPTION_OPERATION
+Define NCRYPT_SECRET_AGREEMENT_OPERATION      for BCRYPT_SECRET_AGREEMENT_OPERATION
+Define NCRYPT_SIGNATURE_OPERATION             for BCRYPT_SIGNATURE_OPERATION
+Define NCRYPT_RNG_OPERATION                   for BCRYPT_RNG_OPERATION
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+Define NCRYPT_KEY_DERIVATION_OPERATION        for BCRYPT_KEY_DERIVATION_OPERATION
+//#ENDIF  // (NTDDI_VERSION >= NTDDI_WIN8)
+
+Struct NCryptAlgorithmName
+    Pointer  pszName
+    UInteger dwClass            // the CNG interface that supports this algorithm
+    UInteger dwAlgOperations    // the types of operations supported by this algorithm
+    UInteger dwFlags
+#IFDEF IS$WIN64
+    Integer  iMissingAligment1
+#ENDIF
+End_Struct
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptEnumAlgorithms "NCryptEnumAlgorithms" ncrypt.dll ;
+    Handle   hProvider ;
+    UInteger dwAlgOperations ;
+    Pointer  pdwAlgCount ;
+    Pointer  ppAlgList ;
+    UInteger dwFlags ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptIsAlgSupported "NCryptIsAlgSupported" ncrypt.dll ;
+    Handle   hProvider ;
+    Pointer  pszAlgId ;
+    UInteger dwFlags ;
+    Returns Integer
+
+// NCryptEnumKeys flags
+Define NCRYPT_MACHINE_KEY_FLAG for |CI$00000020
+
+Struct NCryptKeyName
+    Pointer  pszName
+    Pointer  pszAlgid
+    UInteger dwLegacyKeySpec
+    UInteger dwFlags
+End_Struct
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptEnumKeys "NCryptEnumKeys" ncrypt.dll ;
+    Handle   hProvider ;
+    Pointer  pszScope ;
+    Pointer  ppKeyName ;
+    Pointer  ppEnumState ;
+    UInteger dwFlags ;
+    Returns  Integer
+
+Struct NCryptProviderName
+    Pointer pszName
+    Pointer pszComment
+End_Struct
+
+//#pragma region Desktop Family or OneCore Family
+//#IF WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptEnumStorageProviders "NCryptEnumStorageProviders" ncrypt.dll ;
+    Pointer  pdwProviderCount ;
+    Pointer  ppProviderList ;
+    UInteger dwFlags ;
+    Returns  Integer
+
+//#ENDIF /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM) */
+//#pragma endregion
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptFreeBuffer "NCryptFreeBuffer" ncrypt.dll ;
+    Pointer pvInput ;
+    Returns Integer
+
+// NCryptOpenKey flags
+Define NCRYPT_MACHINE_KEY_FLAG         for |CI$00000020
+Define NCRYPT_SILENT_FLAG              for |CI$00000040
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+Define NCRYPT_AUTHORITY_KEY_FLAG       for |CI$00000100
+//#ENDIF
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptOpenKey "NCryptOpenKey" ncrypt.dll ;
+    Handle   hProvider ;
+    Pointer  phKey ;
+    Pointer  pszKeyName ;
+    UInteger dwLegacyKeySpec ;
+    UInteger dwFlags ;
+    Returns Integer
+
+// NCryptCreatePersistedKey flags
+Define NCRYPT_MACHINE_KEY_FLAG   for |CI$00000020
+Define NCRYPT_OVERWRITE_KEY_FLAG for |CI$00000080
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptCreatePersistedKey "NCryptCreatePersistedKey" ncrypt.dll ;
+    Handle   hProvider ;
+    Pointer  phKey ;
+    Pointer  pszAlgId ;
+    Pointer  pszKeyName ;
+    UInteger dwLegacyKeySpec ;
+    UInteger dwFlags ;
+    Returns Integer
+
+// Standard property names.
+Define NCRYPT_NAME_PROPERTY                    for "Name"
+Define NCRYPT_UNIQUE_NAME_PROPERTY             for "Unique Name"
+Define NCRYPT_ALGORITHM_PROPERTY               for "Algorithm Name"
+Define NCRYPT_LENGTH_PROPERTY                  for "Length"
+Define NCRYPT_LENGTHS_PROPERTY                 for "Lengths"
+Define NCRYPT_BLOCK_LENGTH_PROPERTY            for "Block Length"
+
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+Define NCRYPT_PUBLIC_LENGTH_PROPERTY           for BCRYPT_PUBLIC_KEY_LENGTH
+Define NCRYPT_SIGNATURE_LENGTH_PROPERTY        for BCRYPT_SIGNATURE_LENGTH
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+Define NCRYPT_CHAINING_MODE_PROPERTY           for "Chaining Mode"
+Define NCRYPT_AUTH_TAG_LENGTH                  for "AuthTagLength"
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN8)
+
+Define NCRYPT_UI_POLICY_PROPERTY               for "UI Policy"
+Define NCRYPT_EXPORT_POLICY_PROPERTY           for "Export Policy"
+Define NCRYPT_WINDOW_HANDLE_PROPERTY           for "HWND Handle"
+Define NCRYPT_USE_CONTEXT_PROPERTY             for "Use Context"
+Define NCRYPT_IMPL_TYPE_PROPERTY               for "Impl Type"
+Define NCRYPT_KEY_USAGE_PROPERTY               for "Key Usage"
+Define NCRYPT_KEY_TYPE_PROPERTY                for "Key Type"
+Define NCRYPT_VERSION_PROPERTY                 for "Version"
+Define NCRYPT_SECURITY_DESCR_SUPPORT_PROPERTY  for "Security Descr Support"
+Define NCRYPT_SECURITY_DESCR_PROPERTY          for "Security Descr"
+Define NCRYPT_USE_COUNT_ENABLED_PROPERTY       for "Enabled Use Count"
+Define NCRYPT_USE_COUNT_PROPERTY               for "Use Count"
+Define NCRYPT_LAST_MODIFIED_PROPERTY           for "Modified"
+Define NCRYPT_MAX_NAME_LENGTH_PROPERTY         for "Max Name Length"
+Define NCRYPT_ALGORITHM_GROUP_PROPERTY         for "Algorithm Group"
+Define NCRYPT_DH_PARAMETERS_PROPERTY           for BCRYPT_DH_PARAMETERS
+
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+Define NCRYPT_ECC_PARAMETERS_PROPERTY          for BCRYPT_ECC_PARAMETERS
+Define NCRYPT_ECC_CURVE_NAME_PROPERTY          for BCRYPT_ECC_CURVE_NAME
+Define NCRYPT_ECC_CURVE_NAME_LIST_PROPERTY     for BCRYPT_ECC_CURVE_NAME_LIST
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+
+Define NCRYPT_PROVIDER_HANDLE_PROPERTY         for "Provider Handle"
+Define NCRYPT_PIN_PROPERTY                     for "SmartCardPin"
+Define NCRYPT_READER_PROPERTY                  for "SmartCardReader"
+Define NCRYPT_SMARTCARD_GUID_PROPERTY          for "SmartCardGuid"
+Define NCRYPT_CERTIFICATE_PROPERTY             for "SmartCardKeyCertificate"
+Define NCRYPT_PIN_PROMPT_PROPERTY              for "SmartCardPinPrompt"
+Define NCRYPT_USER_CERTSTORE_PROPERTY          for "SmartCardUserCertStore"
+Define NCRYPT_ROOT_CERTSTORE_PROPERTY          for "SmartcardRootCertStore"
+Define NCRYPT_SECURE_PIN_PROPERTY              for "SmartCardSecurePin"
+//#IF (NTDDI_VERSION >= NTDDI_WIN7)
+Define NCRYPT_ASSOCIATED_ECDH_KEY              for "SmartCardAssociatedECDHKey"
+Define NCRYPT_SCARD_PIN_ID                     for "SmartCardPinId"
+Define NCRYPT_SCARD_PIN_INFO                   for "SmartCardPinInfo"
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN7)
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+Define NCRYPT_READER_ICON_PROPERTY             for "SmartCardReaderIcon"
+Define NCRYPT_KDF_SECRET_VALUE                 for "KDFKeySecret" 
+
+//
+// Additional property strings specific for the Platform Crypto Provider
+//
+Define NCRYPT_PCP_PLATFORM_TYPE_PROPERTY                  for "PCP_PLATFORM_TYPE"
+Define NCRYPT_PCP_PROVIDER_VERSION_PROPERTY               for "PCP_PROVIDER_VERSION"
+Define NCRYPT_PCP_EKPUB_PROPERTY                          for "PCP_EKPUB"
+Define NCRYPT_PCP_EKCERT_PROPERTY                         for "PCP_EKCERT"
+Define NCRYPT_PCP_EKNVCERT_PROPERTY                       for "PCP_EKNVCERT"
+Define NCRYPT_PCP_RSA_EKPUB_PROPERTY                      for "PCP_RSA_EKPUB"
+Define NCRYPT_PCP_RSA_EKCERT_PROPERTY                     for "PCP_RSA_EKCERT"
+Define NCRYPT_PCP_RSA_EKNVCERT_PROPERTY                   for "PCP_RSA_EKNVCERT"
+Define NCRYPT_PCP_ECC_EKPUB_PROPERTY                      for "PCP_ECC_EKPUB"
+Define NCRYPT_PCP_ECC_EKCERT_PROPERTY                     for "PCP_ECC_EKCERT"
+Define NCRYPT_PCP_ECC_EKNVCERT_PROPERTY                   for "PCP_ECC_EKNVCERT"
+Define NCRYPT_PCP_SRKPUB_PROPERTY                         for "PCP_SRKPUB"
+Define NCRYPT_PCP_PCRTABLE_PROPERTY                       for "PCP_PCRTABLE"
+Define NCRYPT_PCP_CHANGEPASSWORD_PROPERTY                 for "PCP_CHANGEPASSWORD"
+Define NCRYPT_PCP_PASSWORD_REQUIRED_PROPERTY              for "PCP_PASSWORD_REQUIRED"
+Define NCRYPT_PCP_USAGEAUTH_PROPERTY                      for "PCP_USAGEAUTH"
+Define NCRYPT_PCP_MIGRATIONPASSWORD_PROPERTY              for "PCP_MIGRATIONPASSWORD"
+Define NCRYPT_PCP_EXPORT_ALLOWED_PROPERTY                 for "PCP_EXPORT_ALLOWED"
+Define NCRYPT_PCP_STORAGEPARENT_PROPERTY                  for "PCP_STORAGEPARENT"
+Define NCRYPT_PCP_PROVIDERHANDLE_PROPERTY                 for "PCP_PROVIDERMHANDLE"
+Define NCRYPT_PCP_PLATFORMHANDLE_PROPERTY                 for "PCP_PLATFORMHANDLE"
+Define NCRYPT_PCP_PLATFORM_BINDING_PCRMASK_PROPERTY       for "PCP_PLATFORM_BINDING_PCRMASK"
+Define NCRYPT_PCP_PLATFORM_BINDING_PCRDIGESTLIST_PROPERTY for "PCP_PLATFORM_BINDING_PCRDIGESTLIST"
+Define NCRYPT_PCP_PLATFORM_BINDING_PCRDIGEST_PROPERTY     for "PCP_PLATFORM_BINDING_PCRDIGEST"
+Define NCRYPT_PCP_KEY_USAGE_POLICY_PROPERTY               for "PCP_KEY_USAGE_POLICY"
+Define NCRYPT_PCP_TPM12_IDBINDING_PROPERTY                for "PCP_TPM12_IDBINDING"
+Define NCRYPT_PCP_TPM12_IDBINDING_DYNAMIC_PROPERTY        for "PCP_TPM12_IDBINDING_DYNAMIC"
+Define NCRYPT_PCP_TPM12_IDACTIVATION_PROPERTY             for "PCP_TPM12_IDACTIVATION"
+Define NCRYPT_PCP_KEYATTESTATION_PROPERTY                 for "PCP_TPM12_KEYATTESTATION"
+Define NCRYPT_PCP_ALTERNATE_KEY_STORAGE_LOCATION_PROPERTY for "PCP_ALTERNATE_KEY_STORAGE_LOCATION"
+
+//
+// BCRYPT_PCP_KEY_USAGE_POLICY values
+//
+//#define NCRYPT_TPM12_PROVIDER                  (0x00010000)
+//#define NCRYPT_PCP_SIGNATURE_KEY               (0x00000001)
+//#define NCRYPT_PCP_ENCRYPTION_KEY              (0x00000002)
+//#define NCRYPT_PCP_GENERIC_KEY                 (NCRYPT_PCP_SIGNATURE_KEY | NCRYPT_PCP_ENCRYPTION_KEY)
+//#define NCRYPT_PCP_STORAGE_KEY                 (0x00000004)
+//#define NCRYPT_PCP_IDENTITY_KEY                (0x00000008)
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN8)
+//
+////
+//// Additional property strings specific for the Smart Card Key Storage Provider
+////
+//#IF (NTDDI_VERSION >= NTDDI_WIN10)
+//#define NCRYPT_SCARD_NGC_KEY_NAME       L"SmartCardNgcKeyName"
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN10)
+//
+//#IF (NTDDI_VERSION >= NTDDI_WIN10)
+//#define NCRYPT_PCP_PLATFORM_BINDING_PCRALGID_PROPERTY      L"PCP_PLATFORM_BINDING_PCRALGID"
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN10)
+//
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+////
+//// Used to set IV for block ciphers, before calling NCryptEncrypt/NCryptDecrypt
+////
+//#define NCRYPT_INITIALIZATION_VECTOR            BCRYPT_INITIALIZATION_VECTOR
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WIN8)
+//
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//#define NCRYPT_CHANGEPASSWORD_PROPERTY	NCRYPT_PCP_CHANGEPASSWORD_PROPERTY 
+//#define NCRYPT_ALTERNATE_KEY_STORAGE_LOCATION_PROPERTY  NCRYPT_PCP_ALTERNATE_KEY_STORAGE_LOCATION_PROPERTY
+//#define NCRYPT_KEY_ACCESS_POLICY_PROPERTY   L"Key Access Policy"
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+//// Maximum length of property name (in characters)
+//#define NCRYPT_MAX_PROPERTY_NAME        64
+//
+//// Maximum length of property data (in bytes)
+//#define NCRYPT_MAX_PROPERTY_DATA        0x100000
+//
+//// NCRYPT_EXPORT_POLICY_PROPERTY property flags.
+//#define NCRYPT_ALLOW_EXPORT_FLAG                0x00000001
+//#define NCRYPT_ALLOW_PLAINTEXT_EXPORT_FLAG      0x00000002
+//#define NCRYPT_ALLOW_ARCHIVING_FLAG             0x00000004
+//#define NCRYPT_ALLOW_PLAINTEXT_ARCHIVING_FLAG   0x00000008
+//
+//// NCRYPT_IMPL_TYPE_PROPERTY property flags.
+//#define NCRYPT_IMPL_HARDWARE_FLAG               0x00000001
+//#define NCRYPT_IMPL_SOFTWARE_FLAG               0x00000002
+//#define NCRYPT_IMPL_REMOVABLE_FLAG              0x00000008
+//#define NCRYPT_IMPL_HARDWARE_RNG_FLAG           0x00000010
+//
+//// NCRYPT_KEY_USAGE_PROPERTY property flags.
+//#define NCRYPT_ALLOW_DECRYPT_FLAG               0x00000001
+//#define NCRYPT_ALLOW_SIGNING_FLAG               0x00000002
+//#define NCRYPT_ALLOW_KEY_AGREEMENT_FLAG         0x00000004
+//#define NCRYPT_ALLOW_ALL_USAGES                 0x00ffffff
+
+// NCRYPT_UI_POLICY_PROPERTY property flags and structure
+Define NCRYPT_UI_PROTECT_KEY_FLAG                for |CI$00000001
+Define NCRYPT_UI_FORCE_HIGH_PROTECTION_FLAG      for |CI$00000002
+//#IF (NTDDI_VERSION >= NTDDI_WINBLUE)
+Define NCRYPT_UI_FINGERPRINT_PROTECTION_FLAG     for |CI$00000004
+Define NCRYPT_UI_APPCONTAINER_ACCESS_MEDIUM_FLAG for |CI$00000008
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINBLUE)
+
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+////
+//// Pin Cache Provider Properties
+////
+//
+//#define NCRYPT_PIN_CACHE_FREE_APPLICATION_TICKET_PROPERTY   L"PinCacheFreeApplicationTicket"
+//
+////
+//// Pin Cache Key Properties
+////
+//
+//#define NCRYPT_PIN_CACHE_APPLICATION_TICKET_PROPERTY        L"PinCacheApplicationTicket"
+//#define NCRYPT_PIN_CACHE_APPLICATION_IMAGE_PROPERTY         L"PinCacheApplicationImage"
+//#define NCRYPT_PIN_CACHE_APPLICATION_STATUS_PROPERTY        L"PinCacheApplicationStatus"
+//#define NCRYPT_PIN_CACHE_PIN_PROPERTY                       L"PinCachePin"
+//#define NCRYPT_PIN_CACHE_IS_GESTURE_REQUIRED_PROPERTY       L"PinCacheIsGestureRequired"
+//
+//#define NCRYPT_PIN_CACHE_REQUIRE_GESTURE_FLAG               0x00000001
+//
+//// The NCRYPT_PIN_CACHE_PIN_PROPERTY and NCRYPT_PIN_CACHE_APPLICATION_TICKET_PROPERTY properties
+//// return a 32 byte random unique ID encoded as a null terminated base64 Unicode string. The string length
+//// is 32 * 4/3 + 1 characters = 45 characters, 90 bytes
+//#define NCRYPT_PIN_CACHE_PIN_BYTE_LENGTH                    90
+//#define NCRYPT_PIN_CACHE_APPLICATION_TICKET_BYTE_LENGTH     90
+//
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+
+Struct NCRYPT_UI_POLICY
+    UInteger dwVersion
+    UInteger dwFlags
+    Pointer  pszCreationTitle
+    Pointer  pszFriendlyName
+    Pointer  pszDescription
+End_Struct
+
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//#define NCRYPT_KEY_ACCESS_POLICY_VERSION 1
+//#define NCRYPT_ALLOW_SILENT_KEY_ACCESS	 0x00000001
+//typedef Struct __NCRYPT_KEY_ACCESS_POLICY_BLOB
+//{
+//	DWord   dwVersion ;
+//	DWORD   dwPolicyFlags ;
+//	DWord	cbUserSid ;
+//    DWORD	cbApplicationSid ;
+//	//  User Sid 
+//    //  Application Sid 
+//}NCRYPT_KEY_ACCESS_POLICY_BLOB ;
+//#ENDIF // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+//// NCRYPT_LENGTHS_PROPERTY property structure.
+//typedef Struct __NCRYPT_SUPPORTED_LENGTHS
+//{
+//    DWord   dwMinLength ;
+//    DWORD   dwMaxLength ;
+//    DWord   dwIncrement ;
+//    DWORD   dwDefaultLength ;
+//} NCRYPT_SUPPORTED_LENGTHS ;
+
+// NCryptGetProperty flags
+Define NCRYPT_PERSIST_ONLY_FLAG for |CI$40000000
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptGetProperty "NCryptGetProperty" ncrypt.dll ;
+    Handle   hObject ;
+    Pointer  pszProperty ;
+    Pointer  pbOutput ;
+    UInteger cbOutput ;
+    Pointer  pcbResult ;
+    UInteger dwFlags ;
+    Returns  Integer
+
+// NCryptSetProperty flags
+Define NCRYPT_PERSIST_FLAG      for |CI$80000000
+Define NCRYPT_PERSIST_ONLY_FLAG for |CI$40000000
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptSetProperty "NCryptSetProperty" ncrypt.dll ;
+    Handle   hObject ;
+    Pointer  pszProperty ;
+    Pointer  pbInput ;
+    UInteger cbInput ;
+    UInteger dwFlags ;
+    Returns  Integer
+
+// NCryptFinalizeKey flags
+Define NCRYPT_WRITE_KEY_TO_LEGACY_STORE_FLAG for |CI$00000200
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptFinalizeKey "NCryptFinalizeKey" ncrypt.dll ;
+    Handle   hKey ;
+    UInteger dwFlags ;
+    Returns  Integer
+
+//_Check_return_
+//SECURITY_STATUS
+//WINAPI
+//NCryptEncrypt(
+//    _In_    NCRYPT_KEY_HANDLE hKey,
+//    _In_reads_bytes_opt_(cbInput) PBYTE pbInput,
+//    _In_    DWord   cbInput,
+//    _In_opt_    VOID *pPaddingInfo,
+//    _Out_writes_bytes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+//    _In_    DWord   cbOutput,
+//    _Out_   DWord * pcbResult,
+//    _In_    DWord   dwFlags) ;
+//
+//
+//
+//_Check_return_
+//SECURITY_STATUS
+//WINAPI
+//NCryptDecrypt(
+//    _In_    NCRYPT_KEY_HANDLE hKey,
+//    _In_reads_bytes_opt_(cbInput) PBYTE pbInput,
+//    _In_    DWord   cbInput,
+//    _In_opt_    VOID *pPaddingInfo,
+//    _Out_writes_bytes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+//    _In_    DWord   cbOutput,
+//    _Out_   DWord * pcbResult,
+//    _In_    DWord   dwFlags) ;
+//
+//
+//
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+//
+//typedef Struct _NCRYPT_KEY_BLOB_HEADER 
+//{  
+//    ULONG   cbSize;             // size of this structure
+//    ULONG   dwMagic;  
+//    ULONG   cbAlgName;          // size of the algorithm, in bytes, including terminating 0
+//    ULONG   cbKeyData ;
+//} NCRYPT_KEY_BLOB_HEADER, *PNCRYPT_KEY_BLOB_HEADER ;
+//
+//#define NCRYPT_CIPHER_KEY_BLOB_MAGIC    0x52485043      // CPHR
+//#define NCRYPT_PROTECTED_KEY_BLOB_MAGIC 0x4B545250      // PRTK
+//
+//#define NCRYPT_CIPHER_KEY_BLOB          L"CipherKeyBlob"
+//#define NCRYPT_PROTECTED_KEY_BLOB       L"ProtectedKeyBlob"
+//
+//#ENDIF  // (NTDDI_VERSION >= NTDDI_WIN8)
+//
+//#define NCRYPT_PKCS7_ENVELOPE_BLOB      L"PKCS7_ENVELOPE"
+//#define NCRYPT_PKCS8_PRIVATE_KEY_BLOB   L"PKCS8_PRIVATEKEY"
+//#define NCRYPT_OPAQUETRANSPORT_BLOB     L"OpaqueTransport"
+//
+//
+//// NCryptImportKey flags
+//#define NCRYPT_MACHINE_KEY_FLAG         0x00000020
+//#define NCRYPT_DO_NOT_FINALIZE_FLAG     0x00000400
+//#define NCRYPT_EXPORT_LEGACY_FLAG       0x00000800
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptImportKey "NCryptImportKey" ncrypt.dll ;
+    Handle   hProvider ;
+    Handle   hImportKey ;
+    Pointer  pszBlobType ;
+    Pointer  pParameterList ;    // NCryptBufferDesc *
+    Pointer  phKey ;
+    Pointer  pbData ;
+    UInteger cbData ;
+    UInteger dwFlags ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptExportKey "NCryptExportKey" ncrypt.dll ;
+    Handle   hKey ;
+    Handle   hExportKey ;
+    Pointer  pszBlobType ;
+    Pointer  pParameterList;    // NCryptBufferDesc*
+    Pointer  pbOutput ;
+    UInteger cbOutput ;
+    Pointer  pcbResult ;
+    UInteger dwFlags ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptSignHash "NCryptSignHash" ncrypt.dll ;
+    Handle   hKey ;
+    Pointer  pPaddingInfo ;
+    Pointer  pbHashValue ;
+    UInteger cbHashValue ;
+    Pointer  pbSignature ;
+    UInteger cbSignature ;
+    Pointer  pcbResult ;
+    UInteger dwFlags ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptVerifySignature "NCryptVerifySignature" ncrypt.dll ;
+    Handle   hKey ;
+    Pointer  pPaddingInfo ;
+    Pointer  pbHashValue ;
+    UInteger cbHashValue ;
+    Pointer  pbSignature ;
+    UInteger cbSignature ;
+    UInteger dwFlags ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptDeleteKey "NCryptDeleteKey" ncrypt.dll ;
+    Handle hKey ;
+    UInteger dwFlags ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function WinAPI_NCryptFreeObject "NCryptFreeObject" ncrypt.dll ;
+    Handle  hObject ;
+    Returns Integer
+
+//#pragma region Desktop Family or OneCore Family
+//#IF WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
+//BOOL
+//WINAPI
+//NCryptIsKeyHandle(
+//    _In_    NCRYPT_KEY_HANDLE hKey) ;
+//
+//_Check_return_
+//SECURITY_STATUS
+//WINAPI
+//NCryptTranslateHandle(
+//    _Out_opt_ NCRYPT_PROV_HANDLE *phProvider,
+//    _Out_   NCRYPT_KEY_HANDLE *phKey,
+//    _In_    HCRYPTPROV hLegacyProv,
+//    _In_opt_ HCRYPTKEY hLegacyKey,
+//    _In_opt_ DWord  dwLegacyKeySpec,
+//    _In_    DWord   dwFlags) ;
+//
+//#ENDIF /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM) */
+//#pragma endregion
+//
+//
+//// NCryptNotifyChangeKey flags
+//#define NCRYPT_REGISTER_NOTIFY_FLAG     0x00000001
+//#define NCRYPT_UNREGISTER_NOTIFY_FLAG   0x00000002
+//#define NCRYPT_MACHINE_KEY_FLAG         0x00000020
+//
+//#pragma region Desktop Family or OneCore Family
+//#IF WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
+//
+//_Check_return_
+//SECURITY_STATUS
+//WINAPI
+//NCryptNotifyChangeKey(
+//    _In_    NCRYPT_PROV_HANDLE hProvider,
+//    _Inout_ Handle *phEvent,
+//    _In_    DWord   dwFlags) ;
+//
+//
+//
+//#ENDIF /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM) */
+//#pragma endregion
+//
+//_Check_return_
+//SECURITY_STATUS
+//WINAPI
+//NCryptSecretAgreement(
+//    _In_    NCRYPT_KEY_HANDLE hPrivKey,
+//    _In_    NCRYPT_KEY_HANDLE hPubKey,
+//    _Out_   NCRYPT_SECRET_HANDLE *phAgreedSecret,
+//    _In_    DWord   dwFlags) ;
+//
+//
+//
+//_Check_return_
+//SECURITY_STATUS
+//WINAPI
+//NCryptDeriveKey(
+//    _In_        NCRYPT_SECRET_HANDLE hSharedSecret,
+//    _In_        LPCWSTR              pwszKDF,
+//    _In_opt_    NCryptBufferDesc     *pParameterList,
+//    _Out_writes_bytes_to_opt_(cbDerivedKey, *pcbResult) PBYTE pbDerivedKey,
+//    _In_        DWord                cbDerivedKey,
+//    _Out_       DWord                *pcbResult,
+//    _In_        ULONG                dwFlags) ;
+//
+//
+//
+//#IF (NTDDI_VERSION >= NTDDI_WIN8)
+//
+//_Check_return_
+//SECURITY_STATUS
+//WINAPI
+//NCryptKeyDerivation(
+//    _In_        NCRYPT_KEY_HANDLE   hKey,
+//    _In_opt_    NCryptBufferDesc    *pParameterList,
+//    _Out_writes_bytes_to_(cbDerivedKey, *pcbResult) PUCHAR pbDerivedKey,
+//    _In_        DWord               cbDerivedKey,
+//    _Out_       DWord               *pcbResult,
+//    _In_        ULONG               dwFlags) ;
+//
+//#ENDIF  // (NTDDI_VERSION >= NTDDI_WIN8)
+//
+//
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+//_Check_return_
+//SECURITY_STATUS
+//WINAPI
+//NCryptCreateClaim(
+//    _In_        NCRYPT_KEY_HANDLE   hSubjectKey,
+//    _In_opt_    NCRYPT_KEY_HANDLE   hAuthorityKey,
+//    _In_        DWord               dwClaimType,
+//    _In_opt_    NCryptBufferDesc    *pParameterList,
+//    _Out_writes_bytes_to_opt_(cbClaimBlob, *pcbResult) PBYTE pbClaimBlob,
+//    _In_        DWord               cbClaimBlob,
+//    _Out_       DWord               *pcbResult,
+//    _In_        DWord               dwFlags) ;
+//   
+//#ENDIF  // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+//
+//#IF (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+//_Check_return_
+//SECURITY_STATUS
+//WINAPI
+//NCryptVerifyClaim(
+//    _In_        NCRYPT_KEY_HANDLE   hSubjectKey,
+//    _In_opt_    NCRYPT_KEY_HANDLE   hAuthorityKey,
+//    _In_        DWord               dwClaimType,
+//    _In_opt_    NCryptBufferDesc    *pParameterList,
+//    _In_reads_bytes_(cbClaimBlob) PBYTE pbClaimBlob,
+//    _In_        DWord               cbClaimBlob,
+//    _Out_       NCryptBufferDesc    *pOutput,
+//    _In_        DWord               dwFlags) ;
+//   
+//#ENDIF  // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+//
+//
+//#define NCRYPT_KEY_STORAGE_INTERFACE_VERSION BCRYPT_MAKE_INTERFACE_VERSION(1,0)
+//#define NCRYPT_KEY_STORAGE_INTERFACE_VERSION_2 BCRYPT_MAKE_INTERFACE_VERSION(2,0)
+//#define NCRYPT_KEY_STORAGE_INTERFACE_VERSION_3 BCRYPT_MAKE_INTERFACE_VERSION(3,0)
+//
+//#IF _MSC_VER >= 1200
+//#pragma warning(pop)
+//#ENDIF

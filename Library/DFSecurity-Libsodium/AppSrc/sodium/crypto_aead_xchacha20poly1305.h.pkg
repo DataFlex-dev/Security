@@ -1,0 +1,111 @@
+Define crypto_aead_xchacha20poly1305_ietf_KEYBYTES for 32
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_xchacha20poly1305_ietf_keybytes "crypto_aead_xchacha20poly1305_ietf_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_aead_xchacha20poly1305_ietf_NSECBYTES for 0
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_xchacha20poly1305_ietf_nsecbytes "crypto_aead_xchacha20poly1305_ietf_nsecbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_aead_xchacha20poly1305_ietf_NPUBBYTES for 24
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_xchacha20poly1305_ietf_npubbytes "crypto_aead_xchacha20poly1305_ietf_npubbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_aead_xchacha20poly1305_ietf_ABYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_xchacha20poly1305_ietf_abytes "crypto_aead_xchacha20poly1305_ietf_abytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_xchacha20poly1305_ietf_encrypt "crypto_aead_xchacha20poly1305_ietf_encrypt" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  clen_p ;
+    Pointer  m ;
+;// UBigInt  mlen ;
+    UInteger mlen1 ;
+    UInteger mlen2 ;
+    Pointer  ad ;
+;// UBigInt  adlen ;
+    UInteger adlen1 ;
+    UInteger adlen2 ;
+    Pointer  nsec ;
+    Pointer  npub ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_xchacha20poly1305_ietf_decrypt "crypto_aead_xchacha20poly1305_ietf_decrypt" sLibsodiumDllName ;
+    Pointer  m ;
+    Pointer  mlen_p ;
+    Pointer  nsec ;
+    Pointer  c ;
+;// UBigInt  clen ;
+    UInteger clen1 ;
+    UInteger clen2 ;
+    Pointer  ad ;
+;// UBigInt  adlen ;
+    UInteger adlen1 ;
+    UInteger adlen2 ;
+    Pointer  npub ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_xchacha20poly1305_ietf_encrypt_detached "crypto_aead_xchacha20poly1305_ietf_encrypt_detached" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  mac ;
+    Pointer  maclen_p ;
+    Pointer  m ;
+;// UBigInt  mlen ;
+    UInteger mlen1 ;
+    UInteger mlen2 ;
+    Pointer  ad ;
+;// UBigInt  adlen ;
+    UInteger adlen1 ;
+    UInteger adlen2 ;
+    Pointer  nsec ;
+    Pointer  npub ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_xchacha20poly1305_ietf_decrypt_detached "crypto_aead_xchacha20poly1305_ietf_decrypt_detached" sLibsodiumDllName ;
+    Pointer  m ;
+    Pointer  nsec ;
+    Pointer  c ;
+;// UBigInt  clen ;
+    UInteger clen1 ;
+    UInteger clen2 ;
+    Pointer  mac ;
+    Pointer  ad ;
+;// UBigInt  adlen ;
+    UInteger adlen1 ;
+    UInteger adlen2 ;
+    Pointer  npub ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_xchacha20poly1305_ietf_keygen "crypto_aead_xchacha20poly1305_ietf_keygen" sLibsodiumDllName ;
+    Pointer k;      // length: crypto_aead_xchacha20poly1305_ietf_KEYBYTES
+    Returns Void_Type
+
+//* Aliases */
+
+Define crypto_aead_xchacha20poly1305_IETF_KEYBYTES  for crypto_aead_xchacha20poly1305_ietf_KEYBYTES
+Define crypto_aead_xchacha20poly1305_IETF_NSECBYTES for crypto_aead_xchacha20poly1305_ietf_NSECBYTES
+Define crypto_aead_xchacha20poly1305_IETF_NPUBBYTES for crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
+Define crypto_aead_xchacha20poly1305_IETF_ABYTES    for crypto_aead_xchacha20poly1305_ietf_ABYTES

@@ -1,0 +1,192 @@
+Use DFSecurity.pkg
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cSecureHash_Impl_Base is a cSecurityObject
+
+    Function Init Integer iOutlen Returns Boolean
+        Error DFERR_PROGRAM "This hash implementation does not support unkeyed hashing."
+        Function_Return False
+    End_Function
+
+    Function InitWithKey UChar[] ByRef ucaKey Integer iOutlen Returns Boolean
+        Error DFERR_PROGRAM "This hash implementation does not support keyed hashing."
+        Function_Return False
+    End_Function
+
+    Procedure Reinitialize
+        Error DFERR_PROGRAM "This method must be overridden!"
+    End_Procedure
+
+    Function Update UChar[] ucaData Returns Boolean
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return False
+    End_Function
+
+    Function Final Returns UChar[]
+        UChar[] ucaEmpty
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaEmpty
+    End_Function
+
+    // Keyed hash algorithms and encryption algorithms needs a key to work, and the length of this
+    // key differs per algorithm or it may even be flexible. This method returns the maximum key
+    // length for this algorithm implementation.
+    //
+    // @return the maximum length of the key in bytes, or 0 if an error occurred.
+    Function MaximumKeyBytes Returns UInteger
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return 0
+    End_Function
+
+    // Keyed hash algorithms and encryption algorithms needs a key to work, and the length of this
+    // key differs per algorithm or it may even be flexible. This method returns the minimum key
+    // length for this algorithm implementation.
+    //
+    // @return the minimum length of the key in bytes, or 0 if an error occurred.
+    Function MinimumKeyBytes Returns UInteger
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return 0
+    End_Function
+
+End_Class
+
+// This class offers the public interface for interacting with concrete hash implementations.
+//
+// Properties can only be set until Initialize() is called - after that setting property values
+// will result in errors being generated.
+Class cSecureHash is a cSecurityObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        // *** properties needed for Initialize()
+
+        { Visibility=Private }
+        Property Integer Private_piHashImpl 0
+        { Visibility=Private }
+        Property Integer Private_piOutputBytes C_SEC_DEFAULT
+
+        // ***
+
+        { Visibility=Private }
+        Property Boolean Private_pbFinalized False
+        { Visibility=Private }
+        Property Handle Private_phoHashImpl 0
+    End_Procedure
+
+    { MethodType=Property }
+    Procedure Set piHashImplementation Integer iHashImplementation
+        If (Private_phoHashImpl(Self) <> 0) Begin
+            Error DFERR_PROGRAM "Cannot set piHashImplementation after Initialize()."
+            Procedure_Return
+        End
+
+        Set Private_piHashImpl to iHashImplementation
+    End_Procedure
+
+    Function piHashImplementation Returns Integer
+        Function_Return (Private_phoHashImpl(Self))
+    End_Function
+
+    { MethodType=Property }
+    { InitialValue=C_SEC_DEFAULT }
+    Procedure Set piOutputBytes Integer iValue
+        If (Private_phoHashImpl(Self) <> 0) Begin
+            Error DFERR_PROGRAM "Cannot set piOutputBytes after Initialize()."
+            Procedure_Return
+        End
+
+        Set Private_piOutputBytes to iValue
+    End_Procedure
+
+    Function piOutputBytes Returns Integer
+        Function_Return (Private_piOutputBytes(Self))
+    End_Function
+
+    { Visibility=Public }
+    // @param ucaKey [optional] The secret key to use. Only needed for keyed hash algorithms, such
+    //               as HMACs. The key will be overwritten with zeroes before returning from this
+    //               method.
+    Procedure Initialize UChar[] ByRef ucaKey
+        Boolean bSuccess
+        Handle  hoHashImpl
+        Integer iImplClass
+        Integer iOutlen
+
+        If (Private_phoHashImpl(Self) <> 0) Begin
+            If (num_arguments > 0) Send SecureUCharArrayOverwrite (&ucaKey)
+            Error DFERR_PROGRAM "Cannot call Initialize() multiple times."
+            Procedure_Return
+        End
+
+        Get Private_piOutputBytes to iOutlen
+
+        Get Private_piHashImpl to iImplClass
+        If (iImplClass <> 0) Begin
+			Get Create iImplClass to hoHashImpl
+		End
+        If (hoHashImpl <> 0) Begin
+			If (num_arguments = 0) Get Init of hoHashImpl iOutlen to bSuccess
+			Else Get InitWithKey of hoHashImpl (&ucaKey) iOutlen to bSuccess
+			If not bSuccess Begin
+				Send Destroy of hoHashImpl
+				Move 0 to hoHashImpl
+			End
+		End
+
+        If (num_arguments > 0) Send SecureUCharArrayOverwrite (&ucaKey)
+
+        If (hoHashImpl = 0) Begin
+            Error DFERR_PROGRAM "Hash Initialize() failed."
+            Procedure_Return
+        End
+
+        Set Private_phoHashImpl to hoHashImpl
+    End_Procedure
+
+    { Visibility=Public }
+    Procedure Update UChar[] ucaData
+        Boolean bSuccess
+        Handle  hoHashImpl
+
+        Get Private_phoHashImpl to hoHashImpl
+        If (hoHashImpl = 0) Begin
+            Error DFERR_PROGRAM "Cannot Update() a hash before Initialize()."
+            Procedure_Return
+        End
+
+        If (Private_pbFinalized(Self)) Begin
+            Send Reinitialize of hoHashImpl
+            Set Private_pbFinalized to False
+        End
+
+        Get Update of hoHashImpl ucaData to bSuccess
+        If not bSuccess Begin
+            Error DFERR_PROGRAM "Hash Update() failed."
+            Procedure_Return
+        End
+    End_Procedure
+
+    { Visibility=Public }
+    Function Finalize Returns UChar[]
+        Handle  hoHashImpl
+        UChar[] ucaHash
+
+        If (Private_pbFinalized(Self)) Begin
+            Error DFERR_PROGRAM "Cannot call Finalize() multiple times."
+        End
+
+        Get Private_phoHashImpl to hoHashImpl
+        If (hoHashImpl = 0) Begin
+            Error DFERR_PROGRAM "Cannot Finalize() a hash before Initialize()."
+            Procedure_Return
+        End
+
+        Get Final of hoHashImpl to ucaHash
+        Set Private_pbFinalized to True
+
+        Function_Return ucaHash
+    End_Function
+
+End_Class

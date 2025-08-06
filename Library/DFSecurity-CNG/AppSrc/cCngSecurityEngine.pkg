@@ -1,0 +1,63 @@
+Use cSecurityEngine.pkg
+Use cCngPasscodeStorage_Impl.pkg
+Use GlobalFunctionsProcedures.pkg
+
+Class cCngSecurityEngine is a cSecurityEngine
+
+    Function CanHandleEngineId String sCryptoEngineId Returns Boolean
+        Function_Return (Lowercase(sCryptoEngineId) = 'cng')
+    End_Function
+
+    Function Private_VerifyPasscodeStorageString UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bMatch
+        Boolean bSuccess
+        Handle  hoImpl
+        Integer iImplClass
+
+        Get StripEngineIdFromStorageString sStorageString to sStorageString
+        Get StorageMethodImplFromStorageString (&sStorageString) to iImplClass
+        If (iImplClass = 0) Function_Return False
+
+        Get Create iImplClass to hoImpl
+        If (hoImpl = 0) Function_Return False
+
+        Get Init of hoImpl to bSuccess
+        If bSuccess Begin
+            Get Verify of hoImpl (&ucaPasscode) sStorageString to bMatch
+        End
+
+        Send Destroy of hoImpl
+
+        Function_Return bMatch
+    End_Function
+
+    Function StorageMethodImplFromStorageString String ByRef sStorageString Returns Integer
+        String sTest
+
+        Move (SFormat("$%1$%2$", BCRYPT_PBKDF2_ALGORITHM, BCRYPT_SHA1_ALGORITHM)) to sTest
+        If (Uppercase(Left(sStorageString, Length(sTest))) = Uppercase(sTest)) Begin
+            Function_Return C_SEC_PWHASH_CNG_PBKDF2_SHA1
+        End
+
+        Move (SFormat("$%1$%2$", BCRYPT_PBKDF2_ALGORITHM, BCRYPT_SHA256_ALGORITHM)) to sTest
+        If (Uppercase(Left(sStorageString, Length(sTest))) = Uppercase(sTest)) Begin
+            Function_Return C_SEC_PWHASH_CNG_PBKDF2_SHA256
+        End
+
+        Function_Return 0
+    End_Function
+
+    Function RandomData UInteger iLen Returns UChar[]
+        Integer iStatus
+        UChar[] ucaResult
+
+        Move (ResizeArray(ucaResult, iLen)) to ucaResult
+        Move (WinAPI_BCryptGenRandom(0, AddressOf(ucaResult), iLen, BCRYPT_USE_SYSTEM_PREFERRED_RNG)) to iStatus
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaResult, 0)) to ucaResult
+        End
+
+        Function_Return ucaResult
+    End_Function
+
+End_Class

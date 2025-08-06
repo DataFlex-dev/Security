@@ -1,0 +1,40 @@
+
+Define crypto_core_hchacha20_OUTPUTBYTES for 32
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_hchacha20_outputbytes "crypto_core_hchacha20_outputbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_core_hchacha20_INPUTBYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_hchacha20_inputbytes "crypto_core_hchacha20_inputbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_core_hchacha20_KEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_hchacha20_keybytes "crypto_core_hchacha20_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_core_hchacha20_CONSTBYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_hchacha20_constbytes "crypto_core_hchacha20_constbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_hchacha20 "crypto_core_hchacha20" sLibsodiumDllName ;
+    Pointer out ;
+    Pointer in ;
+    Pointer k ;
+    Pointer c ;
+    Returns Integer

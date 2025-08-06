@@ -1,0 +1,216 @@
+Use cSecureEncryptionMethod.pkg
+
+{ ClassType=Abstract }
+Class cSecureAuthenticatedEncryptor_Impl_Base is a cSecurityObject
+
+    { MethodType=Property }
+    { InitialValue="" }
+    Procedure Set pucaAAD UChar[] ucaAAD
+        Error DFERR_PROGRAM "This method must be overridden!"
+    End_Procedure
+
+    Function pucaAAD Returns UChar[]
+        UChar[] ucaAAD
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaAAD
+    End_Function
+
+    { MethodType=Property }
+    { InitialValue="Some cryptographically securely generated random data" }
+    Procedure Set pucaNonce UChar[] ucaNonce
+        Error DFERR_PROGRAM "This method must be overridden!"
+    End_Procedure
+
+    Function pucaNonce Returns UChar[]
+        UChar[] ucaNonce
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaNonce
+    End_Function
+
+    Function EncryptChunk UChar[] ucaData Returns UChar[]
+        UChar[] ucaResult
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaResult
+    End_Function
+
+    // Some engines need to know which chunk of data is the last one in oder to properly calculate
+    // the authentication tag.
+    // @param ucaData the last (or only) chunk of data to encrypt. This must not be an empty array.
+    Function EncryptLastChunk UChar[] ucaData Returns UChar[]
+        UChar[] ucaResult
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaResult
+    End_Function
+
+    Function AuthenticationTag Returns UChar[]
+        UChar[] ucaAuthTag
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaAuthTag
+    End_Function
+
+End_Class
+
+{ ClassType=Abstract }
+Class cSecureAuthenticatedDecryptor_Impl_Base is a cSecurityObject
+
+    Function DecryptChunk UChar[] ucaData Returns UChar[]
+        UChar[] ucaResult
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaResult
+    End_Function
+
+    Function DecryptLastChunk UChar[] ucaData Returns UChar[]
+        UChar[] ucaResult
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaResult
+    End_Function
+
+    Function IsAuthentic Returns Boolean
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return False
+    End_Function
+
+End_Class
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cSecureAuthenticatedEncryptionMethod_Impl_Base is a cSecurityObject
+
+    Function InitWithKey UChar[] ByRef ucaKey Returns Boolean
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return False
+    End_Function
+
+    // @return the maximum length of the key in bytes, or 0 if an error occurred.
+    Function MaximumKeyBytes Returns UInteger
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return 0
+    End_Function
+
+    // @return the minimum length of the key in bytes, or 0 if an error occurred.
+    Function MinimumKeyBytes Returns UInteger
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return 0
+    End_Function
+
+    Function NewEncryptor Returns Handle
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return 0
+    End_Function
+
+    Function NewDecryptor UChar[] ucaNonce UChar[] ucaAuthTag UChar[] ucaAAD Returns Handle
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return 0
+    End_Function
+
+End_Class
+
+Class cSecureAuthenticatedEncryptionMethod is a cSecureEncryptionMethod
+
+    { Visibility=Public }
+    // @param ucaKey The secret key to use. ucaKey will be overwritten with zeroes before returning
+    //              from this method.
+    Procedure Initialize UChar[] ByRef ucaKey
+        Boolean bSuccess
+        Handle  hoEncImpl
+        Integer iEncClass
+
+        If (Private_phoEncImpl(Self) <> 0) Begin
+            Send SecureUCharArrayOverwrite (&ucaKey)
+            Error DFERR_PROGRAM "Cannot call Initialize() multiple times."
+            Procedure_Return
+        End
+
+        Get Private_piEncImpl to iEncClass
+        If (iEncClass = 0) Begin
+            Send SecureUCharArrayOverwrite (&ucaKey)
+            Error DFERR_PROGRAM "No authenticated encryption implementation set."
+            Procedure_Return
+        End
+
+        Get Create iEncClass to hoEncImpl
+        If (hoEncImpl <> 0) Begin
+			If (num_arguments = 0) Get Init of hoEncImpl to bSuccess
+			Else Get InitWithKey of hoEncImpl (&ucaKey) to bSuccess
+			If not bSuccess Begin
+				Send Destroy of hoEncImpl
+				Move 0 to hoEncImpl
+			End
+            Set Private_phoEncImpl to hoEncImpl
+		End
+
+        Send SecureUCharArrayOverwrite (&ucaKey)
+
+        If not bSuccess Begin
+            Error DFERR_PROGRAM "AuthenticatedEncryptionMethod Initialize() failed."
+            Procedure_Return
+        End
+    End_Procedure
+
+    // New encryptors use a new nonce.
+    Function NewEncryptor Returns Handle
+        Handle  hoEncImpl
+        Handle  hoEncryptor
+
+        Get Private_phoEncImpl to hoEncImpl
+        If (hoEncImpl = 0) Begin
+            Error DFERR_PROGRAM "NewEncryptor()cannot be called before Initialize()."
+            Procedure_Return
+        End
+
+        Get NewEncryptor of hoEncImpl to hoEncryptor
+        If (hoEncryptor = 0) Begin
+            Error DFERR_PROGRAM "NewEncryptor() failed."
+            Procedure_Return
+        End
+
+        Function_Return hoEncryptor
+    End_Function
+
+    // @param ucaAAD is optional. This provides additional authentication data needed for verifying
+    //                  the authentication token. It is not part of the encrypted message.
+    Function NewDecryptor UChar[] ucaNonce UChar[] ucaAuthTag UChar[] ucaAAD Returns Handle
+        Handle hoEncImpl
+        Handle hoDecryptor
+
+        Get Private_phoEncImpl to hoEncImpl
+        If (hoEncImpl = 0) Begin
+            Error DFERR_PROGRAM "NewDecryptor()cannot be called before Initialize()."
+            Procedure_Return
+        End
+
+        If (num_arguments = 3) Get NewDecryptor of hoEncImpl ucaNonce ucaAuthTag ucaAAD to hoDecryptor
+        Else Get NewDecryptor of hoEncImpl ucaNonce ucaAuthTag to hoDecryptor
+        If (hoDecryptor = 0) Begin
+            Error DFERR_PROGRAM "NewDecryptor() failed."
+            Procedure_Return
+        End
+
+        Function_Return hoDecryptor
+    End_Function
+
+//    // @returns the minimal length of a nonce in bytes.
+//    Function piMinimumNonceLength Returns Integer
+//    End_Function
+
+//    // @returns the maximum length of a nonce in bytes.
+//    Function piMaximumNonceLength Returns Integer
+//    End_Function
+
+//    // @returns the default length of a nonce in bytes - should be the generally recommended size.
+//    Function piDefaultNonceLength Returns Integer
+//    End_Function
+
+//    // @returns the minimal length of an authentication tag in bytes.
+//    Function piMinimumAuthTagLength Returns Integer
+//    End_Function
+
+//    // @returns the maximum length of an authentication tag in bytes.
+//    Function piMaximumAuthTagLength Returns Integer
+//    End_Function
+
+//    // @returns the default length of an authentication tag in bytes - should be the generally recommended size.
+//    Function piDefaultAuthTagLength Returns Integer
+//    End_Function
+
+End_Class

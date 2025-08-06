@@ -1,0 +1,47 @@
+Use cSecurityEngine.pkg
+
+Class cLibsodiumSecurityEngine is a cSecurityEngine
+
+    Function CanHandleEngineId String sCryptoEngineId Returns Boolean
+        Function_Return (Lowercase(sCryptoEngineId) = 'libsodium')
+    End_Function
+
+    Function Private_VerifyPasscodeStorageString UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bMatch
+        Boolean bSuccess
+        Handle  hoImpl
+        Integer iImplClass
+
+        Get StripEngineIdFromStorageString sStorageString to sStorageString
+        Get StorageMethodImplFromStorageString sStorageString to iImplClass
+        If (iImplClass = 0) Function_Return False
+
+        Get Create iImplClass to hoImpl
+        If (hoImpl = 0) Function_Return False
+
+        Get Init of hoImpl to bSuccess
+        If bSuccess Begin
+            Get Verify of hoImpl ucaPasscode sStorageString to bMatch
+        End
+
+        Send Destroy of hoImpl
+
+        Function_Return bMatch
+    End_Function
+
+    Function StorageMethodImplFromStorageString String sStorageString Returns Integer
+        If (Lowercase(Left(sStorageString, 9)) = '$argon2i$') Function_Return C_SEC_PWHASH_LIBSODIUM_ARGON2I
+        Else If (Lowercase(Left(sStorageString, 10)) = '$argon2id$') Function_Return C_SEC_PWHASH_LIBSODIUM_ARGON2ID
+        Else Function_Return C_SEC_PWHASH_LIBSODIUM_SCRYPT
+    End_Function
+
+    Function RandomData UInteger iLen Returns UChar[]
+        UChar[] ucaResult
+
+        Move (ResizeArray(ucaResult, iLen)) to ucaResult
+        Move (libsodium_randombytes_buf(AddressOf(ucaResult), iLen)) to gVoid
+
+        Function_Return ucaResult
+    End_Function
+
+End_Class

@@ -1,0 +1,67 @@
+Object
+    // ToDo: make sure you include the required javascript files in your index.html:
+    //
+    // <script src="Custom/u2f-api.js"></script>
+    // <script src="Custom/2FAWebGroup.js"></script>
+
+//***** Set up one-time password (e.g. oATH HOTP or TOTP)
+// If OTP support is not needed this entire section can be removed.
+
+    Object oMyOtp is a cSecureTimeBasedOneTimePassword
+         Set piHashImplementation to C_SEC_HASH_CNG_HMAC_SHA1
+    End_Object
+    Set phoSecureOneTimePassword to oMyOtp
+
+    // Return registered OTP secrets for the user. Make sure you verify password first!
+    // For security reasons, each user should have only one OTP key.
+    Function RegisteredOtpSecrets Returns UChar[][]
+        UChar[][] ucaSecrets
+
+        // ToDo: override this method.
+
+        Function_Return ucaSecrets
+    End_Function
+
+    Procedure OnOTPAuthenticationFailure
+        // ToDO: implement this event.
+    End_Procedure
+
+    Procedure OnOTPAuthenticationSuccess
+        // ToDO: implement this event.
+    End_Procedure
+
+//***** Set up FIDO U2F
+// If FIDO U2F support is not needed this entire section can be removed.
+
+    // ToDo: Set the application ID to the secure URL of your WebApp, e.g. "https://dataaccessid.dataaccess.eu"
+    Set psAppId to 
+
+    // ToDo: Set the following properties to the engine/algorithm of your choosing. The properties
+    // page shows the available options.
+    Set piHashImplementation_Sha256 to 
+    
+    Function RegisteredU2FKeys Returns tU2FKey[]
+        tU2FKey[] keys
+
+        // ToDo: override this method. Return registered FIDO U2F keys for the _authenticated_ user.
+
+        Function_Return keys
+    End_Function
+
+    Procedure OnU2FRegistrationFailure
+        // ToDO: implement this event.
+    End_Procedure
+
+    Procedure OnU2FRegistrationSuccess tU2F_RegistrationResponseData data
+        // ToDO: implement this event.
+    End_Procedure
+
+    Procedure OnU2FAuthenticationFailure
+        // ToDO: implement this event.
+    End_Procedure
+
+    Procedure OnU2FAuthenticationSuccess
+        // ToDO: implement this event.
+    End_Procedure
+
+End_Object

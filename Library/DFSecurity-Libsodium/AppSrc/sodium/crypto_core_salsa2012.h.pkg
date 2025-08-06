@@ -1,0 +1,40 @@
+
+Define crypto_core_salsa2012_OUTPUTBYTES for 64
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_salsa2012_outputbytes "crypto_core_salsa2012_outputbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_core_salsa2012_INPUTBYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_salsa2012_inputbytes "crypto_core_salsa2012_inputbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_core_salsa2012_KEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_salsa2012_keybytes "crypto_core_salsa2012_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_core_salsa2012_CONSTBYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_salsa2012_constbytes "crypto_core_salsa2012_constbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_salsa2012 "crypto_core_salsa2012" sLibsodiumDllName ;
+    Pointer out ;
+    Pointer in ;
+    Pointer k ;
+    Pointer c ;
+    Returns Integer

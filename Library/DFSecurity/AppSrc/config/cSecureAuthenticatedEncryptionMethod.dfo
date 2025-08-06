@@ -1,0 +1,14 @@
+Object
+    // ToDo: Set the authenticated encryption implementation.
+    Set piEncryptImplementation to C_SEC_AUTHENC_
+
+    Procedure Initialize
+        UChar[] ucaKey
+
+        // ToDo: load the key into ucaKey here
+
+        Forward Send Initialize (&ucaKey)
+    End_Procedure
+
+    Send Initialize
+End_Object

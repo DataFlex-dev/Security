@@ -1,0 +1,36 @@
+Define crypto_scalarmult_curve25519_BYTES for 32
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_scalarmult_curve25519_bytes "crypto_scalarmult_curve25519_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_scalarmult_curve25519_SCALARBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_scalarmult_curve25519_scalarbytes "crypto_scalarmult_curve25519_scalarbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_scalarmult_curve25519 "crypto_scalarmult_curve25519" sLibsodiumDllName ;
+    Pointer q ;
+    Pointer n ;
+    Pointer p ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_scalarmult_curve25519_base "crypto_scalarmult_curve25519_base" sLibsodiumDllName ;
+    Pointer q ;
+    Pointer n ;
+    Returns Integer
+
+//* ------------------------------------------------------------------------- */
+
+//int _crypto_scalarmult_curve25519_pick_best_implementation(void) ;

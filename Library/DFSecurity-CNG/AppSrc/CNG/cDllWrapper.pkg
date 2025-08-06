@@ -1,0 +1,102 @@
+﻿//**************************************************************************************************
+//* This package provides a template class and helper structs/functions to wrap external libraries.
+//*
+//* The cDllWrapper class is meant to be used as the main point of entry for a wrapper. It provides
+//* basic functionality for binding to a specific DLL version, and a uniform approach for defining
+//* the library's error code.
+//*
+//* DataFlex unfortunately does not handle UBigInt parameters for external functions correctly. The
+//* UnpackUBigInt function and UIntegerUInteger struct can be used to split them up into two
+//* separate UInteger variables so they can be passed correctly.
+//*
+//* DataFlex also generates errors when a DLL uses the CDECL calling convention instead of STDCALL.
+//* The IgnoreCdeclError and TrapCdeclError methods can be called just before and after calling such
+//* a function to prevent this error from being presented to the user. Keep in mind that this also
+//* blocks legitimate "wrong number of arguments" errors from popping up.
+//*
+//* Some external functions doe not return anything - a void. Instead of defining a local Void_Type
+//* variable every time this package defines a global gVoid variable that can be used. Be sure never
+//* to read from it - only write!
+//**************************************************************************************************
+Use cVersionInfo.pkg
+#IFNDEF Is$WebApp
+Use Dferror.pkg
+#ENDIF
+
+#IFNDEF gVoid
+Global_Variable Void_Type gVoid
+#ENDIF
+
+#IFNDEF _struct_UIntegerUInteger
+Struct UIntegerUInteger
+    UInteger ui1
+    UInteger ui2
+End_Struct
+#ENDIF
+
+#IFNDEF Get_UnpackUBigInt
+Function UnpackUBigInt Global UBigInt ubiValue Returns UIntegerUInteger
+    Boolean bOk
+    UIntegerUInteger tResult
+
+    Move (MemCopy(AddressOf(tResult), AddressOf(ubiValue), SizeOfType(UBigInt))) to bOk
+
+    Function_Return tResult
+End_Function
+#ENDIF
+
+#IFNDEF U_cDLLWrapper
+// This class is the main entry point for DAE DLL wrapper libraries.
+// It includes DLL version checking.
+Class cDllWrapper is a cObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Property Integer piErrorCode   DFERR_PROGRAM
+        Property String  psDllFileName ''
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure CheckDllVersion String sVersionExpected
+        Handle  hoVersion
+        Integer iErrCode
+        String  sFile
+        String  sLibVersion
+        String  sVersion
+
+        Get psDllFileName to sFile
+
+        Get CreateNamed (refclass(cVersionInfo)) "oVersionInfo" to hoVersion
+        Send DoCreate of hoVersion sFile
+        Move (SFormat("%1.%2.%3.%4", piVersionMajor(hoVersion), piVersionMinor(hoVersion) ;
+            , piVersionRelease(hoVersion), piVersionBuild(hoVersion))) to sVersion
+        Send Destroy of hoVersion
+
+        If (sVersion <> sVersionExpected) Begin
+            Get piErrorCode to iErrCode
+            Error iErrCode (SFormat("DataFlex library version expects %1, not %2", sVersionExpected ;
+                , sVersion))
+        End
+    End_Procedure
+
+	{ Visibility=Private }
+    Procedure IgnoreCdeclError
+        #IFDEF IS$WEBAPP
+        Send IgnoreError of ghoWebErrorHandler DFERR_WRONG_NUMBER_OF_ARGUMENTS
+        #ELSE
+        Send Ignore_Error of Error_Object_Id DFERR_WRONG_NUMBER_OF_ARGUMENTS
+        #ENDIF
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure TrapCdeclError
+        #IFDEF IS$WEBAPP
+        Send TrapError of ghoWebErrorHandler DFERR_WRONG_NUMBER_OF_ARGUMENTS
+        #ELSE
+        Send Trap_Error of Error_Object_Id DFERR_WRONG_NUMBER_OF_ARGUMENTS
+        #ENDIF
+    End_Procedure
+
+End_Class
+#ENDIF

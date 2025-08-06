@@ -1,0 +1,475 @@
+﻿Use DFSecurity.pkg
+Use GlobalFunctionsProcedures.pkg
+
+Class cSecurity_BinaryConversion_Mixin is a Mixin
+
+    { Visibility=Private }
+    Function HexDigitIntToString UChar ucDigit Returns String
+        Add (If(ucDigit >= 10, 87, 48)) to ucDigit
+        Function_Return (Character(ucDigit))
+    End_Function
+
+    Function Bin2Hex UChar[] ucaData Returns String
+        Integer iLastPos iPos
+        String  sResult
+
+        Move (SizeOfArray(ucaData) - 1) to iLastPos
+        For iPos from 0 to iLastPos
+            Move (sResult + ;
+                    HexDigitIntToString(Self, Cast(ucaData[iPos], UShort) / 16) + ;
+                    HexDigitIntToString(Self, Mod(ucaData[iPos],16))) to sResult
+        Loop
+
+        Function_Return sResult
+    End_Function
+
+    Function Hex2Bin String sHexData Returns UChar[]
+        Integer iItem iLastItem
+        UChar[] ucaCalc
+        UChar[] ucaResult
+        
+        Move (StringToUCharArray(Uppercase(sHexData))) to ucaCalc
+        Move (SizeOfArray(ucaCalc) - 1) to iLastItem
+        For iItem from 0 to iLastItem
+            Case Begin
+                Case (ucaCalc[iItem] > 47 and ucaCalc[iItem] < 58)
+                    Subtract 48 from ucaCalc[iItem]
+                    Case Break
+                Case (ucaCalc[iItem] > 64 and ucaCalc[iItem] < 71)
+                    Subtract 55 from ucaCalc[iItem]
+                    Case Break
+                Case Else
+                    Error DFERR_PROGRAM (SFormat("Not a hex digit: %1", ucaCalc[iItem]))
+            Case End
+        Loop
+
+        If (iLastItem >= 0) Move (iLastItem / 2) to iLastItem
+        For iItem from 0 to iLastItem
+            Move (ucaCalc[iItem * 2] * 16 + ucaCalc[iItem * 2 + 1]) to ucaResult[iItem]
+        Loop
+
+        Function_Return ucaResult
+    End_Function
+
+    // RFC4648 Base32 encoding conversions
+    // Ref: https://tools.ietf.org/html/rfc4648
+
+    // The algorithm uses a temporary 64-bit UBigInt to simplify bit manipulation.
+    // Base32 encoding is performed on 5 bytes at a time, resulting in 8 bytes encoded.
+    Function Bin2Base32 UChar[] ucaData Returns String
+        Integer iCount
+        Integer iCountBlock // current block
+        Integer iLastCount
+        Integer iLen
+        Integer iLenBlock   // no of blocks
+        Integer iLenPad // no of padding '=' characters
+        Integer iPosOut // current position in ucaResult
+        UBigInt ubiTemp
+        UChar[] ucaResult
+
+        Move (SizeOfArray(ucaData)) to iLen
+        Move (iLen / 5) to iLenBlock
+        If (Mod(iLen, 5) > 0) Begin
+            Increment iLenBlock
+            If (Mod(iLen, 5) = 1) Move 6 to iLenPad
+            If (Mod(iLen, 5) = 2) Move 4 to iLenPad
+            If (Mod(iLen, 5) = 3) Move 3 to iLenPad
+            If (Mod(iLen, 5) = 4) Move 1 to iLenPad
+        End
+        // grow input data to a multiple of 5 bytes, and output to a multiple of 8 bytes
+        Move (ResizeArray(ucaData, iLenBlock * 5, 0)) to ucaData
+        Move (ResizeArray(ucaResult, iLenBlock * 8, 0)) to ucaResult
+
+        // *** split up the input into separate 5-bits values ***
+
+        Move 8 to iPosOut
+        Move (iLenBlock-1) to iLastCount
+        Move 0 to ubiTemp
+        For iCountBlock from 0 to iLastCount
+            // copy 5 bytes to ubiTemp - take Endianness into account...
+            Move (MemCopy(AddressOf(ubiTemp)+4, AddressOf(ucaData) + (iCountBlock*5)+0, 1)) to gVoid
+            Move (MemCopy(AddressOf(ubiTemp)+3, AddressOf(ucaData) + (iCountBlock*5)+1, 1)) to gVoid
+            Move (MemCopy(AddressOf(ubiTemp)+2, AddressOf(ucaData) + (iCountBlock*5)+2, 1)) to gVoid
+            Move (MemCopy(AddressOf(ubiTemp)+1, AddressOf(ucaData) + (iCountBlock*5)+3, 1)) to gVoid
+            Move (MemCopy(AddressOf(ubiTemp)+0, AddressOf(ucaData) + (iCountBlock*5)+4, 1)) to gVoid
+            For iCount from 0 to 7
+                Decrement iPosOut
+                Move (ubiTemp iand 31) to ucaResult[iPosOut]
+                Move (ubiTemp / 32) to ubiTemp
+            Loop
+            Add 16 to iPosOut
+        Loop
+
+        // *** make printable characters ***
+
+        Move (SizeOfArray(ucaResult)-1) to iLastCount
+        For iCount from 0 to iLastCount
+            If (iCount > (iLastCount-iLenPad)) Begin
+                // padding '='
+                Move 61 to ucaResult[iCount]
+            End
+            Else Begin
+                // 0->A, 1->B, .., 25->Z, 26->[, ...
+                Add 65 to ucaResult[iCount]
+                // 26->2, 27->3, .., 31->7
+                If (ucaResult[iCount] > 90) Subtract 41 from ucaResult[iCount]
+            End
+        Loop
+
+        Function_Return (UCharArrayToString(ucaResult))
+    End_Function
+
+    // The algorithm uses a temporary 64-bit UBigInt to simplify bit manipulation.
+    // Base32 encoding is performed on 5 bytes at a time, resulting in 8 bytes encoded.
+    Function Base322Bin String sHexData Returns UChar[]
+        Integer iCount
+        Integer iCountBlock // current block
+        Integer iLastCount
+        Integer iLen
+        Integer iLenBlock   // no of blocks
+        Integer iLenPad // no of padding '=' characters
+        Integer iPosIn  // current position in ucaInput
+        BigInt  iTemp   // <- should be UBigInt, but this gives unexplicable "Data out of range"
+        UChar[] ucaInput
+        UChar[] ucaResult
+
+        // *** determine padding length ***
+
+        Move (Length(sHexData) / 8) to iLenBlock
+        Move (iLenBlock * 5) to iLen
+
+        If (Pos("======", sHexData) > 0) Move 4 to iLenPad
+        Else If (Pos("====", sHexData) > 0) Move 3 to iLenPad
+        Else If (Pos("===", sHexData) > 0) Move 2 to iLenPad
+        Else If (Pos("=", sHexData) > 0) Move 1 to iLenPad
+        Else Move 0 to iLenPad
+
+        Move (StringToUCharArray(sHexData)) to ucaInput
+
+        Move (ResizeArray(ucaResult, ilen)) to ucaResult
+
+        // *** unmake printable characters - make 0-31 ***
+
+        Move (SizeOfArray(ucaInput)-1) to iLastCount
+        For iCount from 0 to iLastCount
+            // 26->2, 27->3, .., 31->7
+            If (ucaInput[iCount] < 65) Add 41 to ucaInput[iCount]
+            // 0->A, 1->B, .., 25->Z, 26->[, ...
+            Subtract 65 from ucaInput[iCount]
+        Loop
+
+        // *** process blocks ***
+
+        Move 0 to iPosIn
+        Move (iLenBlock-1) to iLastCount
+        For iCountBlock from 0 to iLastCount
+            // pack 8 base32 chars into a UBigInt
+            Move 0 to iTemp
+            For iCount from 0 to 7
+                Move (iTemp * 32) to iTemp
+                Add ucaInput[iPosIn] to iTemp
+                Increment iPosIn
+            Loop
+            // copy 5 bytes from ubiTemp - take Endianness into account...
+            Move (MemCopy(AddressOf(ucaResult) + (iCountBlock*5)+0, AddressOf(iTemp)+4, 1)) to gVoid
+            Move (MemCopy(AddressOf(ucaResult) + (iCountBlock*5)+1, AddressOf(iTemp)+3, 1)) to gVoid
+            Move (MemCopy(AddressOf(ucaResult) + (iCountBlock*5)+2, AddressOf(iTemp)+2, 1)) to gVoid
+            Move (MemCopy(AddressOf(ucaResult) + (iCountBlock*5)+3, AddressOf(iTemp)+1, 1)) to gVoid
+            Move (MemCopy(AddressOf(ucaResult) + (iCountBlock*5)+4, AddressOf(iTemp)+0, 1)) to gVoid
+        Loop
+
+        // trim padding
+        Move (ResizeArray(ucaResult, ilen-iLenPad)) to ucaResult
+
+        Function_Return ucaResult
+    End_Function
+
+//    Procedure TestBase32
+//        If ("" <> StringToBase32String("")) Error DFERR_ERROR ""
+//        If ("MY======" <> StringToBase32String("f")) Error DFERR_ERROR ""
+//        If ("MZXQ====" <> StringToBase32String("fo")) Error DFERR_ERROR ""
+//        If ("MZXW6===" <> StringToBase32String("foo")) Error DFERR_ERROR ""
+//        If ("MZXW6YQ=" <> StringToBase32String("foob")) Error DFERR_ERROR ""
+//        If ("MZXW6YTB" <> StringToBase32String("fooba")) Error DFERR_ERROR ""
+//        If ("MZXW6YTBOI======" <> StringToBase32String("foobar")) Error DFERR_ERROR ""
+//
+//        If (""      <> UCharArrayToString(UCharArrayFromBase32String(""))) Error DFERR_ERROR ""
+//        If ("f"     <> UCharArrayToString(UCharArrayFromBase32String("MY======"))) Error DFERR_ERROR ""
+//        If ("fo"    <> UCharArrayToString(UCharArrayFromBase32String("MZXQ===="))) Error DFERR_ERROR ""
+//        If ("foo"   <> UCharArrayToString(UCharArrayFromBase32String("MZXW6==="))) Error DFERR_ERROR ""
+//        If ("foob"  <> UCharArrayToString(UCharArrayFromBase32String("MZXW6YQ="))) Error DFERR_ERROR ""
+//        If ("fooba" <> UCharArrayToString(UCharArrayFromBase32String("MZXW6YTB"))) Error DFERR_ERROR ""
+//        If ("foobar" <> UCharArrayToString(UCharArrayFromBase32String("MZXW6YTBOI======"))) Error DFERR_ERROR ""
+//    End_Procedure
+//    Send TestBase32
+
+    // @param bPadding [optional] True to add padding characters ('='), or False to omit padding.
+    //          Default is True.
+    Function Bin2Base64 UChar[] ucaData Boolean bPadding Returns String
+        Address aResult
+        Integer iLen
+        String  sHexData
+
+        Move (Base64Encode(AddressOf(ucaData), SizeOfArray(ucaData))) to aResult
+        Move (CStringLength(aResult)) to iLen
+#IF (!@ > 190)
+        Move (ZeroString(iLen)) to sHexData
+#ELSE
+        ZeroString iLen to sHexData
+#ENDIF
+        Move (MemCopy(AddressOf(sHexData), aResult, iLen)) to gVoid
+        Move (Free(aResult)) to gVoid
+
+        If (num_arguments > 1 and bPadding = False) Begin
+            // remove padding
+            Move (Replaces('=', sHexData, '')) to sHexData
+        End
+
+        Function_Return sHexData
+    End_Function
+
+    Function Base642Bin String sHexData Returns UChar[]
+        Address aResult
+        Integer iLen
+        UChar[] ucaData
+
+        Move 0 to iLen
+        Move (Base64Decode(AddressOf(sHexData), &iLen)) to aResult
+        Move (ResizeArray(ucaData, iLen)) to ucaData
+        Move (MemCopy(AddressOf(ucaData), aResult, iLen)) to gVoid
+        Move (Free(aResult)) to gVoid
+
+        Function_Return ucaData
+    End_Function
+
+    // RFC 4648 "URL and Filename safe" Base 64 Alphabet without padding.
+    //
+    // Same as Bin2Base64, but uses '-' and '_' instead of '+' and '/', and padding is omitted by
+    // default.
+    //
+    // @param bPadding [optional] True to add padding characters ('='), or False to omit padding.
+    //          Default is False.
+    Function Bin2Base64_UrlSafe UChar[] ucaData Boolean bPadding Returns String
+        String sHexData
+
+        If (num_arguments > 1) Get Bin2Base64 ucaData bPadding to sHexData
+        Else Get Bin2Base64 ucaData False to sHexData
+
+        Move (Replaces('+', sHexData, '-')) to sHexData
+        Move (Replaces('/', sHexData, '_')) to sHexData
+
+        Function_Return sHexData
+    End_Function
+
+    // RFC 4648 "URL and Filename safe" Base 64 Alphabet without padding.
+    Function Base642Bin_UrlSafe String sHexData Returns UChar[]
+        UChar[] ucaData
+
+        Move (Replaces('_', sHexData, '/')) to sHexData
+        Move (Replaces('-', sHexData, '+')) to sHexData
+        Get Base642Bin sHexData to ucaData
+
+        Function_Return ucaData
+    End_Function
+
+End_Class
+
+// The single instance of this class is ghoSecurity, which is used for password verification upon
+// login (WebApp) and some other utility functions. It also contains a collection of available
+// security engine objects.
+Class cSecurity is a cSecurityObject
+    Import_Class_Protocol cSecurity_BinaryConversion_Mixin
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        // If a passcode storage string cannot be handled by any available engine, try a simple
+        // plaintext passcode comparison. Mainly useful during development.
+        // ADVISE: do not fallback, but write a conversion routine to update all passcodes in the DB.
+        { Category=Security }
+        Property Boolean pbFallbackToPlaintext False
+
+        { Visibility=Private }
+        Property Handle[] phoaEngineInstances
+    End_Procedure
+
+    // Find the EngineId in the storage string and return it.
+    //
+    // @param sStorageString    a valid storage string containing the CryptoEngineId to extract.
+    // @returns an EngineId if succesful, or an empty string otherwise.
+    { Visibility=Private }
+    Function EngineIdFromStorageString String sStorageString Returns String
+        Integer iPos
+        String  sEngineId
+
+        // The storagestring is formatted: $engineid$engine_specific_string
+        // where engineid has a length of at least 1 character.
+        Move (Pos('$', sStorageString)) to iPos
+        If (iPos = 1) Begin
+            Move (Pos('$', sStorageString, 2)) to iPos
+            If (iPos > 2) Begin
+                Move (Mid(sStorageString, ipos-2, 2)) to sEngineId
+            End
+        End
+
+        Function_Return sEngineId
+    End_Function
+
+    // Finds the cSecurityEngine instance that belongs to the EngineId.
+    //
+    // @param sEngineId a valid EngineId.
+    // @returns the handle of the cSecurityEngine instance that uses the specified ID, or 0 otherwise.
+    { Visibility=Private }
+    Function EngineInstanceFromId String sEngineId Returns Handle
+        Boolean  bMatch
+        Handle   hoEngine
+        Handle[] hoaEngines
+        Integer  iEngine iLastEngine
+
+        Get phoaEngineInstances to hoaEngines
+        Move (SizeOfArray(hoaEngines)-1) to iLastEngine
+        For iEngine from 0 to iLastEngine
+            Move hoaEngines[iEngine] to hoEngine
+            Get CanHandleEngineId of hoEngine sEngineId to bMatch
+            If bMatch Break
+        Loop
+
+        Function_Return (If(bMatch, hoEngine, 0))
+    End_Function
+
+    // Adds the cSecurityEngine instance to the collection.
+    // This method must only be called by cSecurityEngine instances.
+    { Visibility=Private }
+    Procedure RegisterSecurityEngine Handle hoEngine
+        Handle[] hoaEngines
+        Integer  iEngine iLastEngine
+
+        Get phoaEngineInstances to hoaEngines
+
+        Move (SizeOfArray(hoaEngines)-1) to iLastEngine
+        For iEngine from 0 to iLastEngine
+            If (hoaEngines[iEngine] = hoEngine) Procedure_Return
+        Loop
+
+        Move hoEngine to hoaEngines[iLastEngine+1]
+        Set phoaEngineInstances to hoaEngines
+    End_Procedure
+
+    // Verify whether the entered passcode matches the previously generated valid storage string.
+    //
+    // This verifies against all available storage methods and cryptographic engines. All the info
+    // it requires is in the storage string, or the storage string is corrupt.
+    //
+    // @param ucaPasscode [ByRef] the plaintext passcode or passphrase to verify. This parameter must
+    //                            be supplied ByRef and will be securely erased before returning.
+    // @param sStorageString the storage string to verify against. This string was generated from
+    //                       the valid passcode earlier.
+    // @returns True if ucaPasscode is correct, or False otherwise.
+    { Visibility=Public }
+    Function VerifyPasscode UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bMatch
+        Handle  hoEngine
+        String  sEngineId
+        String  sPasscode
+
+        // Each engine is free to define the storagestring after the initial engineID,
+        // so all we can do here is pass the string to the appropriate engine for verification.
+
+        Get EngineIdFromStorageString sStorageString to sEngineId
+        If (sEngineId <> '') Begin
+            Get EngineInstanceFromId sEngineId to hoEngine
+        End
+
+        If (hoEngine <> 0) Begin
+            Get VerifyPasscode of hoEngine (&ucaPasscode) sStorageString to bMatch
+        End
+        Else If (pbFallbackToPlaintext(Self)) Begin
+            Move (UCharArrayToString(ucaPasscode)) to sPasscode
+            Move (sStorageString = sPasscode) to bMatch
+            Send SecureStringOverwrite (&sPasscode)
+        End
+        Else Begin
+            Move False to bMatch
+        End
+
+        Send SecureUCharArrayOverwrite (&ucaPasscode)
+
+        Function_Return bMatch
+    End_Function
+
+    // Keyed hash algorithms and encryption algorithms needs a key to work, and the length of this
+    // key differs per algorithm or it may even be flexible. This method returns the maximum key
+    // length for the specified engine/algorithm implementation. Note that this may be much higher
+    // than you expect, and you are encouraged to define a personal threshold as well.
+    //
+    // @param iImplementation a keyed hash or encryption algorithm implementation constant.
+    // @return the maximum length of the key in bytes, or 0 if an error occurred.
+    { Visibility=Public }
+    Function MaximumKeyBytes Integer iHashImplementation Returns UInteger
+        Handle   hoHash
+        UInteger iLen
+
+        Get Create iHashImplementation to hoHash
+        If hoHash Get MaximumKeyBytes of hoHash to iLen
+        Send Destroy_Object of hoHash
+
+        Function_Return iLen
+    End_Function
+
+    // Keyed hash algorithms and encryption algorithms needs a key to work, and the length of this
+    // key differs per algorithm or it may even be flexible. This method returns the minimum key
+    // length for the specified engine/algorithm implementation. Note that this may be higher than
+    // the official minimum when the official minimum is considered insecure.
+    //
+    // @param iImplementation a keyed hash or encryption algorithm implementation constant.
+    // @return the minimum length of the key in bytes, or 0 if an error occurred.
+    { Visibility=Public }
+    Function MinimumKeyBytes Integer iImplementation Returns UInteger
+        Handle   hoHash
+        UInteger iLen
+
+        Get Create iImplementation to hoHash
+        If hoHash Get MinimumKeyBytes of hoHash to iLen
+        Send Destroy_Object of hoHash
+
+        Function_Return iLen
+    End_Function
+
+    // Generate an array of random data, using the first available security engine. If you want
+    // more control over the engine used, or even the CSRNG (Cryptographically Secure Random Number
+    // Generator) do not use this method.
+    // Note that this generates pure binary data which is usually not printable without conversion
+    // to, for example, base64.
+    //
+    // @param iLen the number of random bytes (UChar elements) to generate.
+    // @return an array of UChar elements containing random data, or an empty array if an error
+    //         occurred.
+    { Visibility=Public }
+    Function RandomData UInteger iLen Returns UChar[]
+        Handle[] hoaEngines
+        UChar[]  ucaResult
+
+        Get phoaEngineInstances to hoaEngines
+        If (SizeOfArray(hoaEngines) > 0) Begin
+            Get RandomData of hoaEngines[0] iLen to ucaResult
+        End
+
+        Function_Return ucaResult
+    End_Function
+	
+	{ Visibility=Public }
+    Function RandomStringBase64 UInteger iLen Returns String
+        Address pBase64
+        String  sResult
+        UChar[] ucaRandom
+
+        Get RandomData iLen to ucaRandom
+
+        Move (Base64Encode(AddressOf(ucaRandom), iLen)) to pBase64
+        Move (PointerToString (pBase64)) to sResult
+        Move (Free(pBase64)) to gVoid
+
+        Function_Return (Left(sResult, iLen))
+    End_Function    	
+
+End_Class

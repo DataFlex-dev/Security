@@ -1,0 +1,7 @@
+Object
+    // ToDo: Set the hash implementation, and optionally other properties.
+//    Set piPasscodeHashImplementation to C_SEC_PWHASH_
+//    Set piMemLimit to C_SEC_DEFAULT
+//    Set piOpsLimit to C_SEC_DEFAULT
+    Send Initialize
+End_Object

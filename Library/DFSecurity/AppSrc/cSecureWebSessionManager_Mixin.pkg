@@ -1,0 +1,16 @@
+Use cWebSessionManagerStandard.pkg
+Use DFSecurity.pkg
+
+Class cSecureWebSessionManager_Mixin is a Mixin
+
+    Function ComparePasswords String sStorageString String sEnteredPasscode Returns Boolean
+        Boolean bMatch
+        UChar[] ucaPasscode
+
+        Move (StringToUCharArray(sEnteredPasscode)) to ucaPasscode
+        Get VerifyPasscode of ghoSecurity (&ucaPasscode) sStorageString to bMatch
+
+        Function_Return bMatch
+    End_Function
+
+End_Class

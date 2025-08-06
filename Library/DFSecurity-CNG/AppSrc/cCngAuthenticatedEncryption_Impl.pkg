@@ -1,0 +1,452 @@
+Use cSecureAuthenticatedEncryptionMethod.pkg
+Use CNG\cCngAlgorithmProvider.pkg
+
+{ Visibility=Private }
+Class cCngAuthenticatedEncryptor_Impl is a cSecureAuthenticatedEncryptor_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Handle Private_phoKey
+
+        {Visibility=Private }
+        Property Boolean Private_pbFinished False
+        {Visibility=Private }
+        Property Boolean Private_pbStarted False
+
+        Object oAuthInfo is a cCryptoApiNextGen_AuthenticatedCipherModeInfo
+        End_Object
+    End_Procedure
+
+    Procedure Destroy_Object
+        Handle hoKey
+
+        Get Private_phoKey to hoKey
+        If (hoKey <> 0) Send Destroy of hoKey
+
+        Forward Send Destroy_Object
+    End_Procedure
+
+    { MethodType=Property }
+    Procedure Set pucaAAD UChar[] ucaAAD
+        Set pucaAuthData of oAuthInfo to ucaAAD
+    End_Procedure
+
+    Function pucaAAD Returns UChar[]
+        Function_Return (pucaAuthData(oAuthInfo))
+    End_Function
+
+    { Visibility=Private }
+    Procedure Initialize Handle hoKey
+        UChar[]  ucaNonce
+        UInteger iLen
+
+        Set Private_phoKey to hoKey
+        Set pbChain of oAuthInfo to True
+        // ToDo: dynamically determine the correct nonce length
+        Move 12 to iLen
+        Get RandomData of ghoSecurity iLen to ucaNonce
+        Set pucaNonce of oAuthInfo to ucaNonce
+    End_Procedure
+
+    Procedure Set pucaNonce UChar[] ucaNonce
+        Set pucaNonce of oAuthInfo to ucaNonce
+    End_Procedure
+
+    Function pucaNonce Returns UChar[]
+        Function_Return (pucaNonce(oAuthInfo))
+    End_Function
+
+    { Visibility=Private }
+    Function Private_EncryptChunk UChar[] ucaData Returns UChar[]
+        Boolean bStarted
+        Handle  hoKey
+        UChar[] ucaIV
+        UChar[] ucaResult
+
+        Get Private_pbStarted to bStarted
+        If not bStarted Begin
+            Set Private_pbStarted to True
+        End
+
+        Get Private_phoKey to hoKey
+        Get Encrypt of hoKey ucaData 0 (&ucaIV) (ppBlob(oAuthInfo)) to ucaResult
+
+        Function_Return ucaResult
+    End_Function
+
+    Function EncryptChunk UChar[] ucaData Returns UChar[]
+        Boolean bFinished
+        Boolean bStarted
+        UChar[] ucaResult
+
+        Get Private_pbFinished to bFinished
+        If bFinished Begin
+            Error DFERR_PROGRAM  "Cannot EncryptChunk() after EncryptLastChunk()"
+            Function_Return ucaResult
+        End
+
+        If (SizeOfArray(ucaData) = 0) Function_Return ucaResult
+
+        Get Private_EncryptChunk ucaData to ucaResult
+
+        Function_Return ucaResult
+    End_Function
+
+    Function EncryptLastChunk UChar[] ucaData Returns UChar[]
+        Boolean bFinished
+        Boolean bStarted
+        Handle  hoKey
+        UChar[] ucaResult
+
+        Get Private_pbFinished to bFinished
+        If bFinished Begin
+            Error DFERR_PROGRAM  "Cannot EncryptLastChunk() twice"
+            Function_Return ucaResult
+        End
+
+        Set Private_pbFinished to True
+        Set pbChain of oAuthInfo to False
+
+        Get Private_EncryptChunk ucaData to ucaResult
+
+        Function_Return ucaResult
+    End_Function
+
+    Function AuthenticationTag Returns UChar[]
+        Boolean bFinished
+        UChar[] ucaAuthTag
+
+        Get Private_pbFinished to bFinished
+        If not bFinished Begin
+            Error DFERR_PROGRAM  "Must EncryptLastChunk() before AuthenticationTag()"
+            Function_Return ucaAuthTag
+        End
+
+        Get pucaAuthTag of oAuthInfo to ucaAuthTag
+
+        Function_Return ucaAuthTag
+    End_Function
+
+End_Class
+
+{ Visibility=Private }
+Class cCngAuthenticatedDecryptor_Impl is a cSecureAuthenticatedDecryptor_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Handle Private_phoKey
+
+        {Visibility=Private }
+        Property Boolean Private_pbFinished False
+        {Visibility=Private }
+        Property Boolean Private_pbIsAuthentic False
+        {Visibility=Private }
+        Property Boolean Private_pbStarted False
+
+        Object oAuthInfo is a cCryptoApiNextGen_AuthenticatedCipherModeInfo
+        End_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure Initialize Handle hoKey UChar[] ucaNonce UChar[] ucaAuthTag UChar[] ucaAAD
+        Set Private_phoKey to hoKey
+        Set pbChain of oAuthInfo to True
+        Set pucaNonce   of oAuthInfo to ucaNonce
+        Set pucaAuthTag of oAuthInfo to ucaAuthTag
+        If (num_arguments > 3) Set pucaAuthData of oAuthInfo to ucaAAD
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_DecryptChunk UChar[] ucaData Returns UChar[]
+        Boolean bStarted
+        Handle  hoKey
+        UChar[] ucaIV
+        UChar[] ucaResult
+
+        Get Private_pbStarted to bStarted
+        If not bStarted Begin
+            Get pucaNonce of oAuthInfo to ucaIV
+            Set Private_pbStarted to True
+        End
+
+        Get Private_phoKey to hoKey
+
+        Get Decrypt of hoKey ucaData 0 (&ucaIV) (ppBlob(oAuthInfo)) to ucaResult
+
+        Function_Return ucaResult
+    End_Function
+
+    Function DecryptChunk UChar[] ucaData Returns UChar[]
+        Boolean bFinished
+        Boolean bStarted
+        Handle  hoKey
+        UChar[] ucaAAD
+        UChar[] ucaIV
+        UChar[] ucaResult
+
+        Get Private_pbFinished to bFinished
+        If bFinished Begin
+            Error DFERR_PROGRAM  "Cannot DecryptChunk() after IsAuthentic()"
+            Function_Return ucaResult
+        End
+
+        If (SizeOfArray(ucaData) = 0) Function_Return ucaResult
+
+        Get Private_DecryptChunk ucaData to ucaResult
+
+        Function_Return ucaResult
+    End_Function
+
+    Function DecryptLastChunk UChar[] ucaData Returns UChar[]
+        Boolean bFinished
+        Boolean bMismatch
+        Boolean bStarted
+        Handle  hoKey
+        UChar[] ucaAAD
+        UChar[] ucaIV
+        UChar[] ucaResult
+
+        Get Private_pbFinished to bFinished
+        If bFinished Begin
+            Error DFERR_PROGRAM  "Cannot DecryptLastChunk() twice"
+            Function_Return ucaResult
+        End
+
+        Set Private_pbFinished to True
+        Set pbChain of oAuthInfo to False
+
+        Get Private_DecryptChunk ucaData to ucaResult
+
+        Get Private_phoKey to hoKey
+        Get Private_pbAuthTagMismatch of hoKey to bMismatch
+        Set Private_pbIsAuthentic to (not(bMismatch))
+
+        Function_Return ucaResult
+    End_Function
+
+    Function IsAuthentic Returns Boolean
+        Boolean bFinished
+
+        Get Private_pbFinished to bFinished
+        If not bFinished Begin
+            Error DFERR_PROGRAM  "Must DecryptLastChunk() before IsAuthentic()"
+            Function_Return False
+        End
+
+        Function_Return (Private_pbIsAuthentic(Self))
+    End_Function
+
+    Procedure Destroy_Object
+        Handle hoKey
+
+        Get Private_phoKey to hoKey
+        If (hoKey <> 0) Send Destroy of hoKey
+
+        Forward Send Destroy_Object
+    End_Procedure
+
+End_Class
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cCngAuthenticatedEncryption_Impl_Base is a cSecureAuthenticatedEncryptionMethod_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Handle Private_phoKey
+        { Visibility=Private }
+        Property Integer Private_piBlockLength
+        { Visibility=Private }
+        Property String Private_psAlgorithm
+        { Visibility=Private }
+        Property String Private_psChainingMode
+
+        Object oAlgProv is a cCngAlgorithmProvider
+        End_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Init UChar[] ByRef ucaKey Returns Boolean
+        Boolean  bOpened
+        Boolean  bSuccess
+        Handle   hoKey
+        Integer  iKeyLen
+        String   sAlgId
+        String   sChainMode
+        UInteger iBlockLen
+
+        Get Private_psAlgorithm   to sAlgId
+        Get Private_piBlockLength to iKeyLen
+
+        If (SizeOfArray(ucaKey) <> iKeyLen) Begin
+            Error DFERR_PROGRAM (SFormat("Key length must be %1 bytes, not %2.", iKeyLen, SizeOfArray(ucaKey)))
+            Function_Return False
+        End
+
+        // already open?
+        If (phExternalHandle(oAlgProv) = 0) Begin
+            Get Open of oAlgProv sAlgId to bOpened
+            If not bOpened Begin
+                Error DFERR_PROGRAM "Could not open algorithm provider"
+                Function_Return False
+            End
+        End
+
+        Get Private_psChainingMode to sChainMode
+        Set peChainingMode of oAlgProv to sChainMode
+
+
+//        Get NamedPropertyValue of oCryptoApiNextGen hAlgorithm BCRYPT_AUTH_TAG_LENGTH to ucaAuthTagLengths
+//        If (SizeOfArray(ucaAuthTagLengths) = SizeOfType(BCRYPT_AUTH_TAG_LENGTHS_STRUCT)) Begin
+//            Move (MemCopy(AddressOf(AuthTagLengths), AddressOf(ucaAuthTagLengths), SizeOfType(BCRYPT_AUTH_TAG_LENGTHS_STRUCT))) to void
+//        End
+//
+//        Set puiMaxTagLength of oAuthInfo to AuthTagLengths.dwMaxLength
+
+        Get ImportPlaintextKey of oAlgProv ucaKey to hoKey
+        Move (hoKey <> 0) to bSuccess
+        If bSuccess Set Private_phoKey to hoKey
+
+        // ToDo: secure overwrite key
+
+        Function_Return bSuccess
+    End_Function
+
+    Function InitWithKey UChar[] ByRef ucaKey Returns Boolean
+        Boolean  bSuccess
+        Get Private_Init (&ucaKey) to bSuccess
+        Function_Return bSuccess
+    End_Function
+
+    Function NewEncryptor Returns Handle
+        Handle hoEnc
+        Handle hoEncKey
+        Handle hoKey
+
+        Get Private_phoKey to hoKey
+        If (hoKey = 0) Function_Return 0
+
+        Get Duplicate of hoKey to hoEncKey
+        Get Create (RefClass(cCngAuthenticatedEncryptor_Impl)) to hoEnc
+        Send Initialize of hoEnc hoEncKey
+
+        Function_Return hoEnc
+    End_Function
+
+    Function NewDecryptor UChar[] ucaNonce UChar[] ucaAuthTag UChar[] ucaAAD Returns Handle
+        Handle hoDec
+        Handle hoDecKey
+        Handle hoKey
+
+        Get Private_phoKey to hoKey
+        If (hoKey = 0) Function_Return 0
+
+        Get Duplicate of hoKey to hoDecKey
+        Get Create (RefClass(cCngAuthenticatedDecryptor_Impl)) to hoDec
+        If (num_arguments = 3) Send Initialize of hoDec hoDecKey ucaNonce ucaAuthTag ucaAAD
+        Else Send Initialize of hoDec hoDecKey ucaNonce ucaAuthTag
+
+        Function_Return hoDec
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return (Private_piBlockLength(Self))
+    End_Function
+
+    Function MinimumKeyBytes Integer iImplementation Returns UInteger
+        Function_Return (Private_piBlockLength(Self))
+    End_Function
+
+End_Class
+
+//{ Visibility=Private }
+//Class cCngAuthenticatedEncryption_Impl_Aes128_Ccm is a cCngAuthenticatedEncryption_Impl_Base
+//
+//    Procedure Construct_Object
+//        Forward Send Construct_Object
+//
+//        Set Private_piBlockLength  to 16
+//        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+//        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_CCM
+//    End_Procedure
+//
+//End_Class
+
+//{ Visibility=Private }
+//Class cCngAuthenticatedEncryption_Impl_Aes192_Ccm is a cCngAuthenticatedEncryption_Impl_Base
+//
+//    Procedure Construct_Object
+//        Forward Send Construct_Object
+//
+//        Set Private_piBlockLength  to 24
+//        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+//        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_CCM
+//    End_Procedure
+//
+//End_Class
+
+//{ Visibility=Private }
+//Class cCngAuthenticatedEncryption_Impl_Aes256_Ccm is a cCngAuthenticatedEncryption_Impl_Base
+//
+//    Procedure Construct_Object
+//        Forward Send Construct_Object
+//
+//        Set Private_piBlockLength  to 32
+//        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+//        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_CCM
+//    End_Procedure
+//
+//End_Class
+
+{ Visibility=Private }
+Class cCngAuthenticatedEncryption_Impl_Aes128_Gcm is a cCngAuthenticatedEncryption_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piBlockLength  to 16
+        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_GCM
+    End_Procedure
+
+End_Class
+
+{ Visibility=Private }
+Class cCngAuthenticatedEncryption_Impl_Aes192_Gcm is a cCngAuthenticatedEncryption_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piBlockLength  to 24
+        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_GCM
+    End_Procedure
+
+End_Class
+
+{ Visibility=Private }
+Class cCngAuthenticatedEncryption_Impl_Aes256_Gcm is a cCngAuthenticatedEncryption_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piBlockLength  to 32
+        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_GCM
+    End_Procedure
+
+End_Class
+
+//Define C_SEC_AUTHENC_CNG_AES128_CCM for (RefClass(cCngAuthenticatedEncryption_Impl_Aes128_Ccm))
+//Define C_SEC_AUTHENC_CNG_AES192_CCM for (RefClass(cCngAuthenticatedEncryption_Impl_Aes192_Ccm))
+//Define C_SEC_AUTHENC_CNG_AES256_CCM for (RefClass(cCngAuthenticatedEncryption_Impl_Aes256_Ccm))
+
+Define C_SEC_AUTHENC_CNG_AES128_GCM for (RefClass(cCngAuthenticatedEncryption_Impl_Aes128_Gcm))
+Define C_SEC_AUTHENC_CNG_AES192_GCM for (RefClass(cCngAuthenticatedEncryption_Impl_Aes192_Gcm))
+Define C_SEC_AUTHENC_CNG_AES256_GCM for (RefClass(cCngAuthenticatedEncryption_Impl_Aes256_Gcm))

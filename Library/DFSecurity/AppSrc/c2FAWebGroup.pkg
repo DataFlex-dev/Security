@@ -1,0 +1,319 @@
+Use cWebGroup.pkg
+Use cSecureOneTimePassword.pkg
+Use cU2F.pkg
+
+{ DesignerJSClass=df.WebGroup }
+Class c2FAWebGroup is a cWebGroup
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        // Set this to the secure URL of your WebApp, e.g. "https://dataaccessid.dataaccess.eu"
+        Property String psAppId ""
+
+        // timeouts are in seconds
+        Property UInteger piRegistrationTimeout 120
+        Property UInteger piAuthenticateTimeout 120
+
+        { WebProperty=Server }
+        // the request sent to the client - needed for checks during registration
+        Property tU2F_U2FRegisterRequest ptRegRequest
+
+        { WebProperty=Server }
+        // the request sent to the client - needed for checks during authentication
+        Property tU2F_U2FAuthenticateRequest ptAuthRequest
+
+        Set psJSClass to "dfsecurity.TwoFAWebGroup"
+
+        // engine choice for the SHA256 hash object is "flexible"
+        { EnumList="C_SEC_HASH_CNG_SHA256,C_SEC_HASH_LIBSODIUM_SHA256" }
+        Property Integer piHashImplementation_Sha256 0
+        { Visibility=Private }
+        Property Handle Private_phoSha256 0
+
+        // Set this to your own personal choice of cSecureOneTimePassword subclass and settings.
+        Property Handle phoSecureOneTimePassword 0
+
+        Object oU2F is a cU2F
+        End_Object
+    End_Procedure
+
+    Procedure End_Construct_Object
+        Handle  hoHash
+        Integer iClass
+
+        WebPublishProcedure DoRegister
+        WebPublishProcedure OnU2FRegistrationFailure
+
+        WebPublishProcedure DoAuthenticate
+        WebPublishProcedure OnU2FAuthenticationFailure
+
+        Get piHashImplementation_Sha256 to iClass
+        If (iClass <> 0) Begin
+            Get CreateNamed (RefClass(cSecureHash)) "Private_phoSha256" to hoHash
+            Set piHashImplementation of hoHash to iClass
+            Send Initialize of hoHash
+            Set Private_phoSha256 to hoHash
+        End
+
+        Forward Send End_Construct_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure _____OTP_Verification_____
+    End_Procedure
+
+    { Visibility=Public }
+    Procedure DoVerifyOtp String[] asCodes
+        Boolean   bSave
+        Boolean   bValid
+        Handle    hoOtp hoTemp
+        Integer   iItem iLastItem
+        String    sOtpSpec
+
+        Get phoSecureOneTimePassword to hoOtp
+        If (hoOtp <> 0) Begin
+            Get RegisteredOtp to sOtpSpec
+
+            Get UnpackFromStorage of hoOtp sOtpSpec to hoTemp
+            If (hoTemp = 0) Break
+
+            Get RequiredNumberOfCodes of hoTemp to iLastItem
+            Decrement iLastItem
+
+            Get IsValid of hoTemp asCodes to bValid
+            Get Should_Save of hoTemp to bSave
+
+            Send Destroy of hoTemp
+
+            If bSave Send OnOTPSave sOtpSpec
+        End
+
+        If bValid Begin
+            Send OnOTPAuthenticationSuccess
+        End
+        Else Begin
+            Send OnOTPAuthenticationFailure
+        End
+    End_Procedure
+
+    // Return the specification of the registered OTP for the _authenticated_ user.
+    // There MUST be zero or one.
+    Function RegisteredOtp Returns String
+        Function_Return ""
+    End_Function
+
+    { MethodType=Event }
+    Procedure OnOTPSave String sOtpSpec
+    End_Procedure
+
+    { MethodType=Event }
+    Procedure OnOTPAuthenticationSuccess
+    End_Procedure
+
+    { MethodType=Event }
+    Procedure OnOTPAuthenticationFailure
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure _____U2F_Registration_____
+    End_Procedure
+
+    { Visibility=Public }
+    Procedure StartRegister
+        String sAppId
+        String[] aParams
+        tWebValueTree tVT
+        tU2F_U2FRegisterRequest tData
+        tU2FKey[] keys
+
+        Get psAppId to sAppId
+        Get RegisteredU2FKeys to keys
+        Get NewRegisterRequest of oU2F sAppId keys to tData
+        WebSet ptRegRequest to tData
+
+        ValueTreeSerializeParameter tData to tVT
+        Get piRegistrationTimeout to aParams[0]
+        Send ClientAction "doRegister" aParams tVT
+    End_Procedure
+
+    // Called to verify and unpack a Registration message.
+    //
+    // @param RegisterRequest $request this is a reply to
+    // @param Object $response response from a user
+    // @param bool $includeCert Set to True If the attestation certificate should be included in the
+    //                          returned Registration Object
+    // @return Registration
+    Procedure DoRegister String sClientData String sRegistrationData
+        Boolean bValid
+        UChar[] ucaClientData
+        UChar[] ucaSignData
+        UChar[] ucaTemp
+        tU2F_ClientData tClientData
+        tU2F_RegistrationResponseData tResponseData
+        tU2F_U2FRegisterRequest tRegReg
+
+        WebGet ptRegRequest to tRegReg
+
+        Get ParseRegistrationResponseData of oU2F sRegistrationData to tResponseData
+        If (SizeOfArray(tResponseData.ucaKeyHandle) = 0) Begin
+            Send OnU2FRegistrationFailure
+            Procedure_Return
+        End
+
+        Get Base642Bin_UrlSafe of ghoSecurity sClientData to ucaClientData
+        Get ParseClientData of oU2F ucaClientData to tClientData
+
+        // clientdata checks
+        If ((tClientData.typ <> 'navigator.id.finishEnrollment') ;
+                or (tClientData.origin <> psAppId(Self)) ;
+                or (tClientData.challenge <> tRegReg.registerRequests[0].challenge)) Begin
+            Send OnU2FRegistrationFailure
+            Procedure_Return
+        End
+
+// ToDo: use key from certificate to verify signature, but do we trust the certificate...?
+
+//        // build the signature blob for verification of the signature
+//        Move 0 to ucaSignData[0]
+//        Send Update of oSha256Hash (StringToUCharArray(psAppId(Self)))
+//        Get Finalize of oSha256Hash to ucaTemp
+//        Move (AppendArray(ucaSignData, ucaTemp)) to ucaSignData
+//        Send Update of oSha256Hash ucaClientData
+//        Get Finalize of oSha256Hash to ucaTemp
+//        Move (AppendArray(ucaSignData, ucaTemp)) to ucaSignData
+//        Move (AppendArray(ucaSignData, tResponseData.ucaKeyHandle)) to ucaSignData
+//        Move (AppendArray(ucaSignData, tResponseData.ucaPublicKey)) to ucaSignData
+//        Get VerifySignature of oU2F tResponseData.ucaPublicKey ucaSignData tResponseData.ucaSignature to bValid
+//        If not bValid Send OnU2FRegistrationFailure
+
+        Send OnU2FRegistrationSuccess tResponseData
+    End_Procedure
+
+    { MethodType=Event }
+    Procedure OnU2FRegistrationSuccess tU2F_RegistrationResponseData data
+    End_Procedure
+
+    { MethodType=Event }
+    Procedure OnU2FRegistrationFailure
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure _____U2F_Authentication_____
+    End_Procedure
+
+    Function RegisteredU2FKeys Returns tU2FKey[]
+        tU2FKey[] keys
+
+        // ToDo: override this method. Return registered FIDO U2F keys for the _authenticated_ user.
+
+        Function_Return keys
+    End_Function
+
+    { Visibility=Public }
+    Procedure StartAuthenticate
+        String sAppId
+        String[] aParams
+        tWebValueTree tVT
+        tU2F_U2FAuthenticateRequest tAuthReq
+        tU2FKey[] keys
+
+        Get psAppId to sAppId
+        Get RegisteredU2FKeys to keys
+        Get NewAuthenticateRequest of oU2F sAppId keys to tAuthReq
+        WebSet ptAuthRequest to tAuthReq
+
+        ValueTreeSerializeParameter tAuthReq to tVT
+        Get piAuthenticateTimeout to aParams[0]
+        Send ClientAction "doAuthenticate" aParams tVT
+    End_Procedure
+
+    Procedure DoAuthenticate String sKeyHandle String sSignatureData String sClientData
+        Boolean bValid
+        Handle  hoSha256
+        Integer iItem iLastItem
+        String  sResultChallenge
+        UChar[] ucaClientData
+        UChar[] ucaPublicKey
+        UChar[] ucaRawSig
+        UChar[] ucaSignatureData
+        UChar[] ucaSignData
+        UChar[] ucaTemp
+        tU2F_U2FAuthenticateRequest tRequestData
+        tU2F_ClientData tClientData
+
+        Get Private_phoSha256 to hoSha256
+        If (hoSha256 = 0) Begin
+            Send OnU2fAuthenticationFailure
+            Procedure_Return
+        End
+
+        WebGet ptAuthRequest to tRequestData
+
+        Get Base642Bin_UrlSafe of ghoSecurity sSignatureData to ucaSignatureData
+
+        Get Base642Bin_UrlSafe of ghoSecurity sClientData to ucaClientData
+        Get ParseClientData of oU2F ucaClientData to tClientData
+
+        // clientdata checks
+        If (tClientData.typ <> 'navigator.id.getAssertion') Procedure_Return
+        If (tClientData.origin <> psAppId(Self)) Procedure_Return
+        If (tClientData.challenge <> tRequestData.challenge) Begin
+            Send OnU2fAuthenticationFailure
+            Procedure_Return
+        End
+
+        // keyhandle check
+        Move (SizeOfArray(tRequestData.registeredKeys) - 1) to iLastItem
+        For iItem from 0 to iLastItem
+            If (sKeyHandle = tRequestData.registeredKeys[iItem].keyHandle ;
+                and tClientData.challenge = tRequestData.challenge) Move True to bValid
+            If bValid Break
+        Loop
+        If not bValid Begin
+            Send OnU2fAuthenticationFailure
+            Procedure_Return
+        End
+
+        // build the signature blob for verification of the signature
+        Send Update of hoSha256 (StringToUCharArray(psAppId(Self)))
+        Get Finalize of hoSha256 to ucaTemp
+        Move (AppendArray(ucaSignData, ucaTemp)) to ucaSignData
+        Move (AppendArray(ucaSignData, CopyArray(ucaSignatureData, 0, 4))) to ucaSignData   // user presence byte + counter
+        Send Update of hoSha256 ucaClientData
+        Get Finalize of hoSha256 to ucaTemp
+        Move (AppendArray(ucaSignData, ucaTemp)) to ucaSignData
+
+        Get PublicKeyForHandle sKeyHandle to ucaPublicKey
+        Get DecodeSignatureFromDerFormat of oU2F (CopyArray(ucaSignatureData, 5, SizeOfArray(ucaSignatureData)-1)) to ucaRawSig
+        Get VerifySignature of oU2F ucaPublicKey ucaSignData ucaRawSig to bValid
+
+        If bValid Send OnU2fAuthenticationSuccess
+        Else Send OnU2fAuthenticationFailure
+    End_Procedure
+
+    Function PublicKeyForHandle String sKeyHandle Returns UChar[]
+        Integer   iItem iLastItem
+        UChar[]   ucaEmpty
+        UChar[]   ucaKeyHandle
+        tU2FKey[] keys
+
+        Get Base642Bin_UrlSafe of ghoSecurity sKeyHandle to ucaKeyHandle
+        Get RegisteredU2FKeys to keys
+        Move (SizeOfArray(keys)-1) to iLastItem
+        For iItem from 0 to iLastItem
+            If (IsSameArray(ucaKeyHandle, keys[iItem].ucaKeyHandle)) Function_Return keys[iItem].ucaPublicKey
+        Loop
+
+        Function_Return ucaEmpty
+    End_Function
+
+    { MethodType=Event }
+    Procedure OnU2FAuthenticationSuccess
+    End_Procedure
+
+    { MethodType=Event }
+    Procedure OnU2FAuthenticationFailure
+    End_Procedure
+
+End_Class

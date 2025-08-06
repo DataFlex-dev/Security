@@ -1,0 +1,47 @@
+<classList xmlns="http://www.dataaccess.com/VisualDataFlex/2006/classlist/">
+	<VDFLibraryTimeStamp>2017-01-19T07:15:12</VDFLibraryTimeStamp><libraries></libraries>
+	<classes>
+		<class>
+			<className>cSecureHash</className>
+			<image>ControlObject.ico</image>
+			<package>DFSecurity.pkg</package>
+			<groupName>DataFlex Security</groupName><libraryID></libraryID>
+		</class>
+		<class>
+			<className>cSecurePasscodeStorageMethod</className>
+			<image>ControlObject.ico</image>
+			<package>DFSecurity.pkg</package>
+			<groupName>DataFlex Security</groupName><libraryID></libraryID>
+		</class>
+		<class>
+			<className>cSecureSymmetricKeyEncryptionMethod</className>
+			<image>ControlObject.ico</image>
+			<package>DFSecurity.pkg</package>
+			<groupName>DataFlex Security</groupName><libraryID></libraryID>
+		</class>
+		<class>
+			<className>cSecureAuthenticatedEncryptionMethod</className>
+			<image>ControlObject.ico</image>
+			<package>DFSecurity.pkg</package>
+			<groupName>DataFlex Security</groupName><libraryID></libraryID>
+		</class>
+		<class>
+			<className>cSecureSignature</className>
+			<image>ControlObject.ico</image>
+			<package>DFSecurity.pkg</package>
+			<groupName>DataFlex Security</groupName><libraryID></libraryID>
+		</class>
+		<class>
+			<className>c2FAWebGroup</className>
+			<image>ControlObject.ico</image>
+			<package>c2FAWebGroup.pkg</package>
+			<groupName>DataFlex Security</groupName><libraryID></libraryID>
+		</class>
+		<class>
+			<className>cWebQrCode</className>
+			<image>ControlObject.ico</image>
+			<package>cWebQrCode.pkg</package>
+			<groupName>DataFlex Security</groupName><libraryID></libraryID>
+		</class>
+	</classes>
+</classList>

@@ -1,0 +1,29 @@
+
+#IFNDEF gVoid
+// This global variable is used throughout the DataFlex Security Library when dealing with void
+// parameters or return values. It keeps the code cleaner compared to declaring local variables
+// all the time.
+Global_Variable Void_Type gVoid
+#ENDIF
+
+Define C_SEC_DEFAULT for -1
+
+Use cSecurityObject.pkg
+Use cSecurity.pkg
+
+// create the global security object
+Global_Variable Handle ghoSecurity
+Get CreateNamed of Desktop (RefClass(cSecurity)) "ghoSecurity" to ghoSecurity
+
+Use cSecureSymmetricKeyEncryptionMethod.pkg
+Use cSecureAuthenticatedEncryptionMethod.pkg
+Use cSecureHash.pkg
+Use cSecurePasscodeStorageMethod.pkg
+Use cSecureSignature.pkg
+Use cSecurityEngine.pkg
+
+// higher level classes
+//Use cSecureOneTimePassword.pkg
+
+// mixin classes for standard WebApp framework
+Use cSecurePasscodeStorageMethod_DD_Mixin.pkg

@@ -1,0 +1,52 @@
+﻿//* -- 64-bit output -- */
+
+Define crypto_shorthash_siphash24_BYTES for 8
+
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_shorthash_siphash24_bytes "crypto_shorthash_siphash24_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_shorthash_siphash24_KEYBYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_shorthash_siphash24_keybytes "crypto_shorthash_siphash24_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_shorthash_siphash24 "crypto_shorthash_siphash24" sLibsodiumDllName ;
+    Pointer  out ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Pointer  k ;
+    Returns  Integer
+
+#IFNDEF SODIUM_LIBRARY_MINIMAL
+//* -- 128-bit output -- */
+
+Define crypto_shorthash_siphashx24_BYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_shorthash_siphashx24_bytes "crypto_shorthash_siphashx24_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_shorthash_siphashx24_KEYBYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_shorthash_siphashx24_keybytes "crypto_shorthash_siphashx24_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_shorthash_siphashx24 "crypto_shorthash_siphashx24" sLibsodiumDllName ;
+    Pointer  out ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Pointer  k ;
+    Returns  Integer
+#ENDIF
+

@@ -1,0 +1,141 @@
+﻿// #include "crypto_hash_sha512.h"
+
+//typedef struct crypto_sign_ed25519ph_state {
+//    crypto_hash_sha512_state hs ;
+//} crypto_sign_ed25519ph_state ;
+
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519ph_statebytes "crypto_sign_ed25519ph_statebytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_sign_ed25519ph_STATEBYTES for (libsodium_crypto_sign_ed25519ph_statebytes())
+
+Define crypto_sign_ed25519_BYTES for 64
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_bytes "crypto_sign_ed25519_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_sign_ed25519_SEEDBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_seedbytes "crypto_sign_ed25519_seedbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_sign_ed25519_PUBLICKEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_publickeybytes "crypto_sign_ed25519_publickeybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_sign_ed25519_SECRETKEYBYTES for (32 + 32)
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_secretkeybytes "crypto_sign_ed25519_secretkeybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519 "crypto_sign_ed25519" sLibsodiumDllName ;
+    Pointer  sm ;
+    Pointer  smlen_p ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Pointer  sk ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_open "crypto_sign_ed25519_open" sLibsodiumDllName ;
+    Pointer  m ;
+    Pointer  mlen_p ;
+    Pointer  sm ;
+    BigInt   smlen ;
+    Pointer  pk ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_detached "crypto_sign_ed25519_detached" sLibsodiumDllName ;
+    Pointer  sig ;
+    Pointer  siglen_p ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Pointer  sk ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_verify_detached "crypto_sign_ed25519_verify_detached" sLibsodiumDllName ;
+    Pointer  sig ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Pointer  pk ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_keypair "crypto_sign_ed25519_keypair" sLibsodiumDllName ;
+    Pointer pk ;
+    Pointer sk ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_seed_keypair "crypto_sign_ed25519_seed_keypair" sLibsodiumDllName ;
+    Pointer pk ;
+    Pointer sk ;
+    Pointer seed ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_pk_to_curve25519 "crypto_sign_ed25519_pk_to_curve25519" sLibsodiumDllName ;
+    Pointer curve25519_pk ;
+    Pointer ed25519_pk ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_sk_to_curve25519 "crypto_sign_ed25519_sk_to_curve25519" sLibsodiumDllName ;
+    Pointer curve25519_sk ;
+    Pointer ed25519_sk ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_sk_to_seed "crypto_sign_ed25519_sk_to_seed" sLibsodiumDllName ;
+    Pointer seed ;
+    Pointer sk ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519_sk_to_pk "crypto_sign_ed25519_sk_to_pk" sLibsodiumDllName ;
+    Pointer pk ;
+    Pointer sk ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519ph_init "crypto_sign_ed25519ph_init" sLibsodiumDllName ;
+    Pointer state ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519ph_update "crypto_sign_ed25519ph_update" sLibsodiumDllName ;
+    Pointer  state ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519ph_final_create "crypto_sign_ed25519ph_final_create" sLibsodiumDllName ;
+    Pointer state ;
+    Pointer sig ;
+    Pointer siglen_p ;
+    Pointer sk ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_sign_ed25519ph_final_verify "crypto_sign_ed25519ph_final_verify" sLibsodiumDllName ;
+    Pointer state ;
+    Pointer sig ;
+    Pointer pk ;
+    Returns Integer
+

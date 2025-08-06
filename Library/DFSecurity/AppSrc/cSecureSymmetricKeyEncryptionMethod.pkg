@@ -1,0 +1,142 @@
+Use cSecureEncryptionMethod.pkg
+
+{ ClassType=Abstract }
+Class cSecureSymmetricKeyEncryptor_Impl_Base is a cSecurityObject
+
+    { MethodType=Property }
+    Procedure Set pucaIV UChar[] ucaIV
+        Error DFERR_PROGRAM "This method must be overridden!"
+    End_Procedure
+
+    Function pucaIV Returns UChar[]
+        UChar[] ucaEmpty
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaEmpty
+    End_Function
+
+    Function EncryptChunk UChar[] ucaData Returns UChar[]
+        UChar[] ucaEmpty
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaEmpty
+    End_Function
+
+End_Class
+
+{ ClassType=Abstract }
+Class cSecureSymmetricKeyDecryptor_Impl_Base is a cSecurityObject
+
+    Function DecryptChunk UChar[] ucaData Returns UChar[]
+        UChar[] ucaEmpty
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaEmpty
+    End_Function
+
+End_Class
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cSecureSymmetricKeyEncryptionMethod_Impl_Base is a cSecurityObject
+
+    Function InitWithKey UChar[] ByRef ucaKey Returns Boolean
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return False
+    End_Function
+
+    // @return the maximum length of the key in bytes, or 0 if an error occurred.
+    Function MaximumKeyBytes Returns UInteger
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return 0
+    End_Function
+
+    // @return the minimum length of the key in bytes, or 0 if an error occurred.
+    Function MinimumKeyBytes Returns UInteger
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return 0
+    End_Function
+
+    Function NewEncryptor Returns Handle
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return 0
+    End_Function
+
+    Function NewDecryptor UChar[] ucaIV Returns Handle
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return 0
+    End_Function
+
+End_Class
+
+Class cSecureSymmetricKeyEncryptionMethod is a cSecureEncryptionMethod
+
+    { Visibility=Public }
+    // @param ucaKey The secret key to use. ucaKey will be overwritten with zeroes before returning
+    //                  from this method.
+    Procedure Initialize UChar[] ByRef ucaKey
+        Boolean bSuccess
+        Handle  hoEncImpl
+        Integer iEncClass
+
+        If (Private_phoEncImpl(Self) <> 0) Begin
+            Send SecureUCharArrayOverwrite (&ucaKey)
+            Error DFERR_PROGRAM "Cannot call Initialize() multiple times."
+            Procedure_Return
+        End
+
+        Get Private_piEncImpl to iEncClass
+        If (iEncClass = 0) Begin
+            Send SecureUCharArrayOverwrite (&ucaKey)
+            Error DFERR_PROGRAM "No encryption implementation chosen."
+            Procedure_Return
+        End
+
+        Get Create iEncClass to hoEncImpl
+        If (hoEncImpl <> 0) Begin
+			Get InitWithKey of hoEncImpl (&ucaKey) to bSuccess
+			If not bSuccess Begin
+				Send Destroy of hoEncImpl
+				Move 0 to hoEncImpl
+			End
+            Set Private_phoEncImpl to hoEncImpl
+		End
+
+        Send SecureUCharArrayOverwrite (&ucaKey)
+
+        If not bSuccess Begin
+            Error DFERR_PROGRAM "SymmetricKeyEncryptionMethod Initialize() failed."
+            Procedure_Return
+        End
+    End_Procedure
+
+    // New encryptors create a new IV. If a specific IV is needed, set the property in the encryptor
+    // object.
+    Function NewEncryptor Returns Handle
+        Handle  hoEncImpl
+        Handle  hoEncryptor
+
+        Get Private_phoEncImpl to hoEncImpl
+        If (hoEncImpl = 0) Begin
+            Error DFERR_PROGRAM "NewEncryptor()cannot be called before Initialize()."
+            Procedure_Return
+        End
+
+        Get NewEncryptor of hoEncImpl to hoEncryptor
+
+        Function_Return hoEncryptor
+    End_Function
+
+    Function NewDecryptor UChar[] ucaIV Returns Handle
+        Handle  hoEncImpl
+        Handle  hoDecryptor
+
+        Get Private_phoEncImpl to hoEncImpl
+        If (hoEncImpl = 0) Begin
+            Error DFERR_PROGRAM "NewDecryptor()cannot be called before Initialize()."
+            Procedure_Return
+        End
+
+        Get NewDecryptor of hoEncImpl ucaIV to hoDecryptor
+
+        Function_Return hoDecryptor
+    End_Function
+
+End_Class

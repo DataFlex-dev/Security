@@ -1,0 +1,72 @@
+Use DFSecurity.pkg
+
+{ ClassType=Abstract }
+Class cSecurityEngine is a cSecurityObject
+
+    Procedure End_Construct_Object
+        Forward Send End_Construct_Object
+
+        Send RegisterSecurityEngine of ghoSecurity (Self)
+    End_Procedure
+
+    // @return True if this engine can handle the specified EngineId, or False otherwise.
+    Function CanHandleEngineId String sEngineId Returns Boolean
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return False
+    End_Function
+
+    { Visibility=Private }
+    Function Private_VerifyPasscodeStorageString UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bMatch
+
+        Error DFERR_PROGRAM "This method must be overridden!"
+
+        Function_Return bMatch
+    End_Function
+
+    Function StripEngineIdFromStorageString String sStorageString Returns String
+        String sEngineId
+
+        Get EngineIdFromStorageString of ghoSecurity sStorageString to sEngineId
+        Move (Replace('$'+sEngineId, sStorageString, '')) to sStorageString
+
+        Function_Return sStorageString
+    End_Function
+
+    // Verify whether the entered passcode matches the previously generated valid storage string.
+    //
+    // This method is able to verify against all available storage methods that this crypto engine
+    // provides. All the info it requires is in the storage string, or the storage string is corrupt.
+    //
+    // @param ucaPasscode       the plaintext password or passphrase to verify. This parameter must
+    //                          be supplied ByRef and will be securely erased before returning.
+    // @param sStorageString    the storage string to verify against. This string was generated from
+    //                          the valid passcode earlier.
+    // @returns True if sPasscode matches sStorageString, or False otherwise.
+    Function VerifyPasscode UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bMatch
+
+        Get Private_VerifyPasscodeStorageString (&ucaPasscode) sStorageString to bMatch
+        Send SecureUCharArrayOverwrite (&ucaPasscode)
+
+        Function_Return bMatch
+    End_Function
+
+    // Generate an array of random data, using a default CSRNG (Cryptographically Secure Random
+    // Number Generator).
+    // Note that this generates pure binary data which is usually not printable without conversion
+    // to, for example, base64.
+    //
+    // @param iLen the number of random bytes (UChar elements) to generate.
+    // @return an array of UChar elements containing random data, or an empty array if an error
+    //         occurred.
+    { Visibility=Public }
+    Function RandomData UInteger iLen Returns UChar[]
+        UChar[] ucaResult
+
+        Error DFERR_PROGRAM "This method must be overridden!"
+
+        Function_Return ucaResult
+    End_Function
+
+End_Class

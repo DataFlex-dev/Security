@@ -1,0 +1,314 @@
+Use DFSecurity_CNG.pkg
+
+Define C_U2F_VERSION                  for "U2F_V2"
+Define C_U2F_MSGTYPE_REGISTER_REQUEST for "u2f_register_request"
+Define C_U2F_MSGTYPE_SIGN_REQUEST     for "u2f_sign_request"
+
+Define tU2F_Transport for String
+Define C_U2F_TRANSPORT_BT     for "bt"              // Bluetooth Classic (Bluetooth BR/EDR)
+Define C_U2F_TRANSPORT_BLE    for "ble"             // Bluetooth Low Energy (Bluetooth Smart)
+Define C_U2F_TRANSPORT_NFC    for "nfc"             // Near-Field Communications
+Define C_U2F_TRANSPORT_USB    for "usb"             // USB HID
+Define C_U2F_TRANSPORT_USBINT for "usb-internal"    // Non-removable USB HID
+
+Struct tU2F_ClientData
+    String typ
+    String challenge
+    String origin
+//    String cid_pubkey   // or JwkKey {String kty, String crv, String x, String y}
+End_Struct
+
+Struct tU2F_RegisteredKey
+    String version
+    String keyHandle
+    tU2F_Transport[] transports // optional, for FIDO standard
+    String appId
+    String challenge            // for u2f-api.js (Chrome/Opera)
+End_Struct
+
+Struct tU2F_RegisterRequest
+    String version
+    String challenge
+    String appId
+End_Struct
+
+Struct tU2F_U2FRegisterRequest
+    String type
+    tU2F_RegisterRequest[] registerRequests
+    tU2F_RegisteredKey[]   registeredKeys
+End_Struct
+
+Struct tU2F_RegistrationResponseData
+    UChar[] ucaPublicKey
+    UChar[] ucaKeyHandle
+    UChar[] ucaAttestationCertificate
+    UChar[] ucaSignature
+End_Struct
+
+Struct tU2F_U2FAuthenticateRequest
+    String type
+    String challenge
+    tU2F_RegisteredKey[] registeredKeys
+End_Struct
+
+Struct tU2FKey
+    UChar[] ucaKeyHandle
+    UChar[] ucaPublicKey
+End_Struct
+
+Class cU2F is a cObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Object oSha256Hash is a cSecureHash
+            Set piHashImplementation to C_SEC_HASH_CNG_SHA256
+            Send Initialize
+        End_Object
+    End_Procedure
+
+    Function NewChallenge Returns String
+        String  sChallenge
+        UChar[] ucaChallenge
+
+        Get RandomData of ghoSecurity 32 to ucaChallenge
+        Get Bin2Base64_UrlSafe of ghoSecurity ucaChallenge to sChallenge
+
+        Function_Return sChallenge
+    End_Function
+
+    Function NewRegisterRequest String sAppId tU2FKey[] keys Returns tU2F_U2fRegisterRequest
+        tU2F_U2fRegisterRequest tRegReq
+
+        Move C_U2F_MSGTYPE_REGISTER_REQUEST to tRegReq.type
+
+        Move C_U2F_VERSION to tRegReq.registerRequests[0].version
+        Get NewChallenge   to tRegReq.registerRequests[0].challenge
+        Move sAppId        to tRegReq.registerRequests[0].appId
+        Get PrepareRegisteredKeysForTransport keys tRegReq.registerRequests[0].challenge sAppId to tRegReq.registeredKeys
+
+        Function_Return tRegReq
+    End_Function
+
+    Function NewAuthenticateRequest String sAppId tU2FKey[] keys Returns tU2F_U2FAuthenticateRequest
+        tU2F_U2FAuthenticateRequest tAuthReq
+
+        Move C_U2F_MSGTYPE_SIGN_REQUEST to tAuthReq.type
+        Get NewChallenge to tAuthReq.challenge
+        Get PrepareRegisteredKeysForTransport keys tAuthReq.challenge sAppId to tAuthReq.registeredKeys
+
+        Function_Return tAuthReq
+    End_Function
+
+    { Visibility=Private }
+    Function PrepareRegisteredKeysForTransport tU2FKey[] keys String sChallenge String sAppId Returns tU2F_RegisteredKey[]
+        Integer iKey iLastKey
+        tU2F_RegisteredKey[] result
+
+        Move (SizeOfArray(keys)-1) to iLastKey
+        For iKey from 0 to iLastKey
+            Move C_U2F_VERSION to result[iKey].version
+            Move sAppId        to result[iKey].appId
+            Move sChallenge    to result[iKey].challenge
+            Get Bin2Base64_UrlSafe of ghoSecurity keys[iKey].ucaKeyHandle to result[iKey].keyHandle
+        Loop
+
+        Function_Return result
+    End_Function
+
+    Function ParseClientData UChar[] ucaClientData Returns tU2F_ClientData
+        Boolean bSuccess
+        Handle  hoJson
+        tU2F_ClientData data
+
+        Get Create (RefClass(cJsonObject)) to hoJson
+        Get ParseUtf8 of hoJson ucaClientData to bSuccess
+        If bSuccess Begin
+            Get MemberValue of hoJson "typ"       to data.typ
+            Get MemberValue of hoJson "challenge" to data.challenge
+            Get MemberValue of hoJson "origin"    to data.origin
+        End
+        Send Destroy of hoJson
+
+        Function_Return data
+    End_Function
+
+    Function ParseRegistrationResponseData String sRegistrationData Returns tU2F_RegistrationResponseData
+        Integer iCertLen iCertBytes
+        Integer iPos
+        UChar[] ucaRegData
+        UChar[] ucaSigDer
+        tU2F_RegistrationResponseData data
+        tU2F_RegistrationResponseData empty
+
+        Get Base642Bin_UrlSafe of ghoSecurity sRegistrationData to ucaRegData
+
+        // first byte must be 0x05
+        If (ucaRegData[0] <> 5) Function_Return empty
+
+        Move (CopyArray(ucaRegData, 2, 65)) to data.ucaPublicKey
+        Move (CopyArray(ucaRegData, 67, 66+ucaRegData[66])) to data.ucaKeyHandle
+
+        // read the certificate (X.509 DER format)
+        // starts with $30 (SEQUENCE)
+        Move (66+ucaRegData[66]+1) to iPos
+        If (ucaRegData[iPos] <> $30) Function_Return empty
+        Increment iPos
+        // now length
+        Move ucaRegData[iPos] to iCertLen
+        If (iCertLen iand 128 > 0) Begin
+            // length is multiple bytes
+            Move (iCertLen - 128) to iCertBytes
+            Move 0 to iCertLen
+            While (iCertBytes > 0)
+                Increment iPos
+                Move (iCertLen * 256) to iCertLen
+                Add ucaRegData[iPos] to iCertLen
+
+                Decrement iCertBytes
+            Loop
+        End
+        // extract certificate
+        Increment iPos
+        Move (CopyArray(ucaRegData, 66+ucaRegData[66]+1, iPos+iCertLen-1)) to data.ucaAttestationCertificate
+        Add iCertLen to iPos
+
+        // the rest is the signature
+        Move (CopyArray(ucaRegData, iPos, SizeOfArray(ucaRegData)-1)) to ucaSigDer
+        Get DecodeSignatureFromDerFormat ucaSigDer to data.ucaSignature
+
+        Function_Return data
+    End_Function
+
+    // The signature is encoded useing ASN.1 DER. This means we need to decode it before we can use
+    // it with CNG.
+    //
+    // ECDSA-Sig-Value ::= SEQUENCE {
+    //  r  Integer,
+    //  s  Integer
+    // }
+    //
+    // This method only works for ECDSA-P256 signatures, which have a 32-byte r and 32-byte s.
+    Function DecodeSignatureFromDerFormat UChar[] ucaSignature Returns UChar[]
+        Integer iLen iPos
+        UChar[] ucaEmpty
+        UChar[] ucaInt
+        UChar[] ucaRawSig
+
+        // SEQUENCE
+        If (ucaSignature[0] <> $30) Function_Return ucaEmpty
+        Move ucaSignature[1] to iLen
+        If (iLen+2 < SizeOfArray(ucaSignature)) Function_Return ucaEmpty
+        Move 2 to iPos
+
+        // integer r
+        If (ucaSignature[iPos] <> 2) Function_Return ucaEmpty
+        Move ucaSignature[iPos+1] to iLen
+        Add 2 to iPos
+        Move (CopyArray(ucaSignature, iPos, iPos+iLen-1)) to ucaInt
+        Add iLen to iPos
+        // correct integer length to 32 bytes
+        If (iLen > 32) Move (CopyArray(ucaInt, SizeOfArray(ucaInt)-32, SizeOfArray(ucaInt)-1)) to ucaInt
+        If (iLen < 32) Move (AppendArray(ResizeArray(ucaInt, 32-SizeOfArray(ucaInt)), ucaInt)) to ucaInt
+        Move ucaInt to ucaRawSig
+
+        // integer s
+        If (ucaSignature[iPos] <> 2) Function_Return ucaEmpty
+        Move ucaSignature[iPos+1] to iLen
+        Add 2 to iPos
+        Move (CopyArray(ucaSignature, iPos, iPos+iLen-1)) to ucaInt
+        // correct integer length to 32 bytes
+        If (iLen > 32) Move (CopyArray(ucaInt, SizeOfArray(ucaInt)-32, SizeOfArray(ucaInt)-1)) to ucaInt
+        If (iLen < 32) Move (AppendArray(ResizeArray(ucaInt, 32-SizeOfArray(ucaInt)), ucaInt)) to ucaInt
+        Move (AppendArray(ucaRawSig, ucaInt)) to ucaRawSig
+//        Add iLen to iPos
+
+        Function_Return ucaRawSig
+    End_Function
+
+    // verify signature using ECDSA (NCRYPT_ECDSA_P256_ALGORITHM)
+    Function VerifySignature UChar[] ucaPublicKey UChar[] ucaSignData UChar[] ucaSignature Returns Boolean
+        Boolean bValid
+        Handle  hoCNG
+        Handle  hProv hKey
+        Integer iHeaderSize
+        UChar[] ucaBlob
+        BCRYPT_ECCKEY_BLOB tBlobHeader
+
+// ToDo: rewrite this to use a DFSecurity class instead of low-level CNG
+
+        Get CreateNamed (RefClass(cCryptoApiNextGen)) "oCryptoApiNextGen_VerifySignature" to hoCNG
+
+        // open key storage provider
+        Get NCryptOpenStorageProvider of hoCNG MS_KEY_STORAGE_PROVIDER to hProv
+        If (hProv = 0) Goto U2FVerifySignature_Cleanup
+
+        // build key import blob
+        Move BCRYPT_ECDSA_PUBLIC_P256_MAGIC to tBlobHeader.dwMagic
+        Move (256/8) to tBlobHeader.cbKey
+        Move (SizeOfType(BCRYPT_ECCKEY_BLOB)) to iHeaderSize
+        Move (ResizeArray(ucaBlob, iHeaderSize + (2 * tBlobHeader.cbKey))) to ucaBlob
+        // copy header into blob
+        Move (MemCopy(AddressOf(ucaBlob), AddressOf(tBlobHeader), iHeaderSize)) to gVoid
+        // copy public key into blob
+        Move (MemCopy(AddressOf(ucaBlob) + iHeaderSize, AddressOf(ucaPublicKey), 2*tBlobHeader.cbKey)) to gVoid
+
+        // import key
+        Get NCryptImportKey of hoCNG hProv 0 BCRYPT_ECCPUBLIC_BLOB ucaBlob to hKey
+        If (hKey = 0) Goto U2FVerifySignature_Cleanup
+
+        // hash ucaSignData and verify signature
+        Send Update of oSha256Hash ucaSignData
+        Get Finalize of oSha256Hash to ucaSignData
+        Get NCryptVerifySignature of hoCNG hKey 0 ucaSignData ucaSignature to bValid
+
+U2FVerifySignature_Cleanup:
+        If (hKey <> 0) Send NCryptFreeObject of hoCNG hKey
+        If (hProv <> 0) Send NCryptFreeObject of hoCNG hProv
+        Send Destroy of hoCNG
+
+        Function_Return bValid
+    End_Function
+
+    Function PackU2FKeyForStorage tU2FKey key Returns String
+        Handle hoJson
+        String sKeyHandle
+        String sPublicKey
+        String sResult
+
+        Get Bin2Base64 of ghoSecurity key.ucaKeyHandle to sKeyHandle
+        Get Bin2Base64 of ghoSecurity key.ucaPublicKey to sPublicKey
+
+        Get Create (RefClass(cJsonObject)) to hoJson
+        Send InitializeJsonType of hoJson jsonTypeObject
+        Send SetMemberValue of hoJson "KeyHandle" jsonTypeString sKeyHandle
+        Send SetMemberValue of hoJson "PublicKey" jsonTypeString sPublicKey
+        Get Stringify of hoJson to sResult
+        Send Destroy of hoJson
+
+        Function_Return sResult
+    End_Function
+
+    Function UnpackU2FKeyFromStorage String sInput Returns tU2FKey
+        Boolean bSuccess
+        Address aResult
+        Handle  hoJson
+        Integer iLen
+        String  sKeyHandle
+        String  sPublicKey
+        tU2FKey key
+
+        Get Create (RefClass(cJsonObject)) to hoJson
+        Get ParseString of hoJson sInput to bSuccess
+        If bSuccess Begin
+            Get MemberValue of hoJson "KeyHandle" to sKeyHandle
+            Get MemberValue of hoJson "PublicKey" to sPublicKey
+            Get Base642Bin of ghoSecurity sKeyHandle to key.ucaKeyHandle
+            Get Base642Bin of ghoSecurity sPublicKey to key.ucaPublicKey
+        End
+        Send Destroy of hoJson
+
+        Function_Return key
+    End_Function
+
+End_Class

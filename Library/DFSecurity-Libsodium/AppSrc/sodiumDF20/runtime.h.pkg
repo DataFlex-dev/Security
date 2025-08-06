@@ -1,0 +1,46 @@
+﻿#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_sodium_runtime_has_neon "sodium_runtime_has_neon" sLibsodiumDllName ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_runtime_has_sse2 "sodium_runtime_has_sse2" sLibsodiumDllName ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_runtime_has_sse3 "sodium_runtime_has_sse3" sLibsodiumDllName ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_runtime_has_ssse3 "sodium_runtime_has_ssse3" sLibsodiumDllName ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_runtime_has_sse41 "sodium_runtime_has_sse41" sLibsodiumDllName ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_runtime_has_avx "sodium_runtime_has_avx" sLibsodiumDllName ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_runtime_has_avx2 "sodium_runtime_has_avx2" sLibsodiumDllName ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_runtime_has_pclmul "sodium_runtime_has_pclmul" sLibsodiumDllName ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_runtime_has_aesni "sodium_runtime_has_aesni" sLibsodiumDllName ;
+    Returns Integer
+
+//* ------------------------------------------------------------------------- */
+
+//int _sodium_runtime_get_cpu_features(void) ;
+

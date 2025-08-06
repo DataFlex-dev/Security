@@ -1,0 +1,406 @@
+Use DFSecurity.pkg
+Use CNG\cCngAlgorithmProvider.pkg
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cCngHash_Impl_Base is a cSecureHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Boolean Private_pbReusable
+        { Visibility=Private }
+        Property Handle  Private_phoHash
+        { Visibility=Private }
+        Property String  Private_psAlgorithm BCRYPT_SHA256_ALGORITHM
+
+        Object oAlgProv is a cCngAlgorithmProvider
+        End_Object
+    End_Procedure
+
+    Procedure Destroy
+        Send FreeHash
+
+        Forward Send Destroy
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure FreeHash
+        Handle hoHash
+
+        Get Private_phoHash to hoHash
+        If (hoHash <> 0) Begin
+            Send Destroy of hoHash
+            Set Private_phoHash to 0
+        End
+    End_Procedure
+
+    // @param ucaKey is optional.
+// ToDo: when reusable fails, we need to store the key internally for reinitialization...
+    Function Private_Init UChar[] ucaKey Returns Boolean
+        Boolean  bUseKey
+        Boolean  bOpened
+        Boolean  bReusable
+        Handle   hoHash
+        String   sAlgId
+        UChar[]  ucaEmptyOrKey
+        UInteger uiFlags
+
+        Move (num_arguments > 0) to bUseKey
+
+        Get Private_psAlgorithm to sAlgId
+
+        // already open?
+        If (phExternalHandle(oAlgProv) = 0) Begin
+            // try reusable
+            Move True to bReusable
+            Move BCRYPT_HASH_REUSABLE_FLAG to uiFlags
+            If bUseKey Add BCRYPT_ALG_HANDLE_HMAC_FLAG to uiFlags
+            Get Open of oAlgProv sAlgId "" uiFlags to bOpened
+    
+            // try non-reusable
+            If not bOpened Begin
+                Move False to bReusable
+                Move (uiFlags - BCRYPT_HASH_REUSABLE_FLAG) to uiFlags
+                Get Open of oAlgProv sAlgId "" uiFlags to bOpened
+            End
+    
+            If not bOpened Begin
+                Error DFERR_PROGRAM "Could not open algorithm provider"
+                Function_Return False
+            End
+
+            Set Private_pbReusable to bReusable
+        End
+        Else Get Private_pbReusable to bReusable
+
+        Move (If(bReusable, BCRYPT_HASH_REUSABLE_FLAG, 0)) to uiFlags
+        If bUseKey Move ucaKey to ucaEmptyOrKey
+        Get CreateHash of oAlgProv uiFlags ucaEmptyOrKey to hoHash
+        If (hoHash = 0) Begin
+            Error DFERR_PROGRAM "Could not create hash"
+            Function_Return False
+        End
+
+        Set Private_phoHash to hoHash
+
+        Function_Return True
+    End_Function
+
+    // @param iOutlen is not used.
+    Function Init Integer iOutlen Returns Boolean
+        Boolean  bSuccess
+        Get Private_Init to bSuccess
+        Function_Return bSuccess
+    End_Function
+
+    // @param iOutlen is not used.
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Boolean  bSuccess
+        Get Private_Init ucaKey to bSuccess
+        Function_Return bSuccess
+    End_Function
+
+    Procedure Reinitialize
+        If (not(Private_pbReusable(Self))) Begin
+            Send FreeHash
+            Get Init C_SEC_DEFAULT to gVoid
+        End
+    End_Procedure
+
+    Function Update UChar[] ucaData Returns Boolean
+        Handle hoHash
+
+        Get Private_phoHash to hoHash
+        If (hoHash = 0) Function_Return False
+
+        Send AddData of hoHash ucaData
+
+        Function_Return True
+    End_Function
+
+    Function Final Returns UChar[]
+        UChar[] ucaEmpty
+        UChar[] ucaHash
+        Handle hoHash
+
+        Get Private_phoHash to hoHash
+        If (hoHash = 0) Function_Return ucaEmpty
+
+        Get Finish of hoHash to ucaHash
+
+        Function_Return ucaHash
+    End_Function
+
+End_Class
+
+Class cCngHash_Impl_Md2 is a cCngHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_psAlgorithm to BCRYPT_MD2_ALGORITHM
+    End_Procedure
+
+    Function Init Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 16) Function_Return False
+
+        Forward Get Init C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Error DFERR_PROGRAM "This hash implementation does not support HMAC!"
+        Function_Return False
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return 0
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return 0
+    End_Function
+
+End_Class
+
+Class cCngHash_Impl_Md4 is a cCngHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_psAlgorithm to BCRYPT_MD4_ALGORITHM
+    End_Procedure
+
+    Function Init Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 16) Function_Return False
+
+        Forward Get Init C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Error DFERR_PROGRAM "This hash implementation does not support HMAC!"
+        Function_Return False
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return 0
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return 0
+    End_Function
+
+End_Class
+
+Class cCngHash_Impl_Md5 is a cCngHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_psAlgorithm to BCRYPT_MD5_ALGORITHM
+    End_Procedure
+
+    Function Init Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 16) Function_Return False
+
+        Forward Get Init C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 16) Function_Return False
+
+        Forward Get InitWithKey ucaKey C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return 16
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return 16
+    End_Function
+
+End_Class
+
+Class cCngHash_Impl_Sha1 is a cCngHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_psAlgorithm to BCRYPT_SHA1_ALGORITHM
+    End_Procedure
+
+    Function Init Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 20) Function_Return False
+
+        Forward Get Init C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 20) Function_Return False
+
+        Forward Get InitWithKey ucaKey C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return 20
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return 20
+    End_Function
+
+End_Class
+
+Class cCngHash_Impl_Sha256 is a cCngHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_psAlgorithm to BCRYPT_SHA256_ALGORITHM
+    End_Procedure
+
+    Function Init Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 32) Function_Return False
+
+        Forward Get Init C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 32) Function_Return False
+
+        Forward Get InitWithKey ucaKey C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return 32
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return 32
+    End_Function
+
+End_Class
+
+Class cCngHash_Impl_Sha384 is a cCngHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_psAlgorithm to BCRYPT_SHA384_ALGORITHM
+    End_Procedure
+
+    Function Init Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 48) Function_Return False
+
+        Forward Get Init C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 48) Function_Return False
+
+        Forward Get InitWithKey ucaKey C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return 32
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return 48
+    End_Function
+
+End_Class
+
+Class cCngHash_Impl_Sha512 is a cCngHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_psAlgorithm to BCRYPT_SHA512_ALGORITHM
+    End_Procedure
+
+    Function Init Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 64) Function_Return False
+
+        Forward Get Init C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> 64) Function_Return False
+
+        Forward Get InitWithKey ucaKey C_SEC_DEFAULT to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return 32
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return 64
+    End_Function
+
+End_Class
+
+Define C_SEC_HASH_CNG_MD2 for (RefClass(cCngHash_Impl_Md2))
+Define C_SEC_HASH_CNG_MD4 for (RefClass(cCngHash_Impl_Md4))
+Define C_SEC_HASH_CNG_MD5 for (RefClass(cCngHash_Impl_Md5))
+Define C_SEC_HASH_CNG_SHA1 for (RefClass(cCngHash_Impl_Sha1))
+Define C_SEC_HASH_CNG_SHA256 for (RefClass(cCngHash_Impl_Sha256))
+Define C_SEC_HASH_CNG_SHA384 for (RefClass(cCngHash_Impl_Sha384))
+Define C_SEC_HASH_CNG_SHA512 for (RefClass(cCngHash_Impl_Sha512))
+
+Define C_SEC_HASH_CNG_HMAC_MD5 for (RefClass(cCngHash_Impl_Md5))
+Define C_SEC_HASH_CNG_HMAC_SHA1 for (RefClass(cCngHash_Impl_Sha1))
+Define C_SEC_HASH_CNG_HMAC_SHA256 for (RefClass(cCngHash_Impl_Sha256))
+Define C_SEC_HASH_CNG_HMAC_SHA384 for (RefClass(cCngHash_Impl_Sha384))
+Define C_SEC_HASH_CNG_HMAC_SHA512 for (RefClass(cCngHash_Impl_Sha512))

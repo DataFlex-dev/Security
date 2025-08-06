@@ -1,0 +1,51 @@
+Use CNG\CNG.pkg
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cCng_ExternalHandleWrappingObject is a cObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Handle Private_phExternalHandle 0
+
+        Object oCryptoApiNextGen is a cCryptoApiNextGen
+        End_Object
+    End_Procedure
+
+    Procedure Destroy_Object
+        Send Internal_ReleaseExternalHandle
+        Forward Send Destroy_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure Internal_ReleaseExternalHandle
+        Handle hOldHandle
+
+        Get Private_phExternalHandle to hOldHandle
+        If (hOldHandle <> 0) Begin
+            Send ReleaseExternalHandle hOldHandle
+            Set Private_phExternalHandle to 0
+        End
+    End_Procedure
+
+    { MethodType=Property }
+    Procedure Set phExternalHandle Handle hExternalHandle
+        Send Internal_ReleaseExternalHandle
+        Set Private_phExternalHandle to hExternalHandle
+    End_Procedure
+
+    { MethodType=Property }
+    Function phExternalHandle Returns Handle
+        Function_Return (Private_phExternalHandle(Self))
+    End_Function
+
+    { MethodType=Event }
+    // Called whenever the external handle must be released. This must call the proper cleanup method.
+    Procedure ReleaseExternalHandle Handle hExternalHandle
+        // do not use the low-level API here, because that object may be destroyed earlier ...
+        Error DFERR_PROGRAM "Event method ReleaseExternalHandle() must be overriden!"
+    End_Procedure
+
+End_Class

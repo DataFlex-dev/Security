@@ -1,0 +1,6 @@
+Object
+    // ToDo: make sure you include the required javascript files in your index.html:
+    //
+    // <script type="text/javascript" src="qrcode/qrcode.min.js"></script>
+    // <script src="Custom/WebQrCode.js"></script>
+End_Object

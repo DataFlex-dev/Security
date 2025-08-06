@@ -1,0 +1,14 @@
+﻿Use cWebImage.pkg
+
+Class cWebQrCode is a cWebImage
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { WebProperty=Client }
+        Property String psValue ""
+
+        Set psJSClass to "WebQrCode"
+    End_Procedure
+
+End_Class

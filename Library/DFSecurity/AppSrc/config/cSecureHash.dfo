@@ -1,0 +1,16 @@
+Object
+    // ToDo: Set the hash implementation, and optionally other properties.
+//    Set piHashImplementation to C_SEC_HASH_
+//    Set piOutputBytes to C_SEC_DEFAULT
+
+    // ToDo: For keyed hashes uncomment the following.
+//    Procedure Initialize
+//        UChar[] ucaKey
+//
+//        // ToDo: load the key into ucaKey here
+//
+//        Forward Send Initialize (&ucaKey)
+//    End_Procedure
+
+    Send Initialize
+End_Object

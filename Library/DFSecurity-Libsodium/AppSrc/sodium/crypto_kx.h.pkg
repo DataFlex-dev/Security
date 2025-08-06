@@ -1,0 +1,68 @@
+Define crypto_kx_PUBLICKEYBYTES for 32
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kx_publickeybytes "crypto_kx_publickeybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_kx_SECRETKEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kx_secretkeybytes "crypto_kx_secretkeybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_kx_SEEDBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kx_seedbytes "crypto_kx_seedbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_kx_SESSIONKEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kx_sessionkeybytes "crypto_kx_sessionkeybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_kx_PRIMITIVE for "x25519blake2b"
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kx_primitive "crypto_kx_primitive" sLibsodiumDllName ;
+    Returns String
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kx_seed_keypair "crypto_kx_seed_keypair" sLibsodiumDllName ;
+    Pointer pk;     // length: crypto_kx_PUBLICKEYBYTES
+    Pointer sk;     // length: crypto_kx_SECRETKEYBYTES
+    Pointer seed;   // length: crypto_kx_SEEDBYTES
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kx_keypair "crypto_kx_keypair" sLibsodiumDllName ;
+    Pointer pk;     // length: crypto_kx_PUBLICKEYBYTES
+    Pointer sk;     // length: crypto_kx_SECRETKEYBYTES
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kx_client_session_keys "crypto_kx_client_session_keys" sLibsodiumDllName ;
+    Pointer rx;         // length: crypto_kx_SESSIONKEYBYTES
+    Pointer tx;         // length: crypto_kx_SESSIONKEYBYTES
+    Pointer client_pk;  // length: crypto_kx_PUBLICKEYBYTES
+    Pointer client_sk;  // length: crypto_kx_SECRETKEYBYTES
+    Pointer server_pk;  // length: crypto_kx_PUBLICKEYBYTES
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kx_server_session_keys "crypto_kx_server_session_keys" sLibsodiumDllName ;
+    Pointer rx;         // length: crypto_kx_SESSIONKEYBYTES
+    Pointer tx;         // length: crypto_kx_SESSIONKEYBYTES
+    Pointer server_pk;  // length: crypto_kx_PUBLICKEYBYTES
+    Pointer server_sk;  // length: crypto_kx_SECRETKEYBYTES
+    Pointer client_pk;  // length: crypto_kx_PUBLICKEYBYTES
+    Returns Integer

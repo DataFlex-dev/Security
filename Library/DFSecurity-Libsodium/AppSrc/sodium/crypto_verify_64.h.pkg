@@ -1,0 +1,19 @@
+Define crypto_verify_64_BYTES for 64
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_verify_64_bytes "crypto_verify_64_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_verify_64 "crypto_verify_64" sLibsodiumDllName ;
+    Pointer x ;
+    Pointer y ;
+    Returns Integer

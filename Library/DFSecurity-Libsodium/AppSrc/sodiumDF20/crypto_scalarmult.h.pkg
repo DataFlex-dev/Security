@@ -1,0 +1,43 @@
+﻿#IF (!@ >= 200)
+  Use sodiumDF20\crypto_scalarmult_curve25519.h.pkg
+#ELSE
+  Use sodium\crypto_scalarmult_curve25519.h.pkg
+#ENDIF
+
+Define crypto_scalarmult_BYTES for crypto_scalarmult_curve25519_BYTES
+
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_scalarmult_bytes "crypto_scalarmult_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_scalarmult_SCALARBYTES for crypto_scalarmult_curve25519_SCALARBYTES
+
+{ Visibility=Private }
+External_Function libsodium_crypto_scalarmult_scalarbytes "crypto_scalarmult_scalarbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_scalarmult_PRIMITIVE for "curve25519"
+
+{ Visibility=Private }
+External_Function libsodium_crypto_scalarmult_primitive "crypto_scalarmult_primitive" sLibsodiumDllName ;
+    Returns String
+
+{ Visibility=Private }
+External_Function libsodium_crypto_scalarmult_base "crypto_scalarmult_base" sLibsodiumDllName ;
+    Pointer q ;
+    Pointer n ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_scalarmult "crypto_scalarmult" sLibsodiumDllName ;
+    Pointer q ;
+    Pointer n ;
+    Pointer p ;
+    Returns Integer
+

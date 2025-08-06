@@ -1,0 +1,146 @@
+Define crypto_box_curve25519xchacha20poly1305_SEEDBYTES for 32
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_seedbytes "crypto_box_curve25519xchacha20poly1305_seedbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_box_curve25519xchacha20poly1305_PUBLICKEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_publickeybytes "crypto_box_curve25519xchacha20poly1305_publickeybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_box_curve25519xchacha20poly1305_SECRETKEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_secretkeybytes "crypto_box_curve25519xchacha20poly1305_secretkeybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_box_curve25519xchacha20poly1305_BEFORENMBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_beforenmbytes "crypto_box_curve25519xchacha20poly1305_beforenmbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_box_curve25519xchacha20poly1305_NONCEBYTES for 24
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_noncebytes "crypto_box_curve25519xchacha20poly1305_noncebytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_box_curve25519xchacha20poly1305_MACBYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_macbytes "crypto_box_curve25519xchacha20poly1305_macbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_seed_keypair "crypto_box_curve25519xchacha20poly1305_seed_keypair" sLibsodiumDllName ;
+    Pointer pk ;
+    Pointer sk ;
+    Pointer seed ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_keypair "crypto_box_curve25519xchacha20poly1305_keypair" sLibsodiumDllName ;
+    Pointer pk ;
+    Pointer sk ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_easy "crypto_box_curve25519xchacha20poly1305_easy" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Pointer  n ;
+    Pointer  pk ;
+    Pointer  sk ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_open_easy "crypto_box_curve25519xchacha20poly1305_open_easy" sLibsodiumDllName ;
+    Pointer  m ;
+    Pointer  c ;
+    BigInt   clen ;
+    Pointer  n ;
+    Pointer  pk ;
+    Pointer  sk ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_detached "crypto_box_curve25519xchacha20poly1305_detached" sLibsodiumDllName ;
+    Pointer c ;
+    Pointer mac ;
+    Pointer m ;
+    BigInt   mlen ;
+    Pointer  n ;
+    Pointer  pk ;
+    Pointer  sk ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_open_detached "crypto_box_curve25519xchacha20poly1305_open_detached" sLibsodiumDllName ;
+    Pointer m ;
+    Pointer c ;
+    Pointer mac ;
+    BigInt   clen ;
+    Pointer  n ;
+    Pointer  pk ;
+    Pointer  sk ;
+    Returns  Integer
+
+//* -- Precomputation interface -- */
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_beforenm "crypto_box_curve25519xchacha20poly1305_beforenm" sLibsodiumDllName ;
+    Pointer k ;
+    Pointer pk ;
+    Pointer sk ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_easy_afternm "crypto_box_curve25519xchacha20poly1305_easy_afternm" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Pointer  n ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_open_easy_afternm "crypto_box_curve25519xchacha20poly1305_open_easy_afternm" sLibsodiumDllName ;
+    Pointer  m ;
+    Pointer  c ;
+    BigInt   clen ;
+    Pointer  n ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_detached_afternm "crypto_box_curve25519xchacha20poly1305_detached_afternm" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  mac ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Pointer  n ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_box_curve25519xchacha20poly1305_open_detached_afternm "crypto_box_curve25519xchacha20poly1305_open_detached_afternm" sLibsodiumDllName ;
+    Pointer  m ;
+    Pointer  c ;
+    Pointer  mac ;
+    BigInt   clen ;
+    Pointer  n ;
+    Pointer  k ;
+    Returns  Integer
+

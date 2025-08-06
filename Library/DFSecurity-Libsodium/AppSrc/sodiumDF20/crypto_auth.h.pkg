@@ -1,0 +1,49 @@
+//#include "crypto_auth_hmacsha512256.h"
+
+Define crypto_auth_BYTES for crypto_auth_hmacsha512256_BYTES
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_bytes "crypto_auth_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_auth_KEYBYTES for crypto_auth_hmacsha512256_KEYBYTES
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_keybytes "crypto_auth_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_auth_PRIMITIVE for "hmacsha512256"
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_primitive "crypto_auth_primitive" sLibsodiumDllName ;
+    Returns String
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth "crypto_auth" sLibsodiumDllName ;
+    Pointer  out ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_verify "crypto_auth_verify" sLibsodiumDllName ;
+    Pointer  h ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_keygen "crypto_auth_keygen" sLibsodiumDllName ;
+    Pointer k;      // length: crypto_auth_KEYBYTES
+    Returns Void_Type
+

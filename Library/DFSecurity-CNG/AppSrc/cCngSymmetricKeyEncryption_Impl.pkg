@@ -1,0 +1,345 @@
+Use cSecureSymmetricKeyEncryptionMethod.pkg
+Use CNG\cCngAlgorithmProvider.pkg
+
+{ Visibility=Private }
+Class cCngSymmetricKeyEncryptor_Impl is a cSecureSymmetricKeyEncryptor_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Handle Private_phoKey
+        { Visibility=Private }
+        Property UChar[] Private_pucaIV
+
+        {Visibility=Private }
+        Property Boolean Private_pbStarted False
+
+        Property Boolean pbUseBlockPadding
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure Initialize Handle hoKey
+        UChar[]  ucaIV
+        UInteger iLen
+
+        Set Private_phoKey to hoKey
+        // generate new random IV
+        Get puiBlockLength of hoKey to iLen
+        Get RandomData of ghoSecurity iLen to ucaIV
+        Set Private_pucaIV to ucaIV
+    End_Procedure
+
+    Procedure Set pucaIV UChar[] ucaIV
+        Set Private_pucaIV to ucaIV
+    End_Procedure
+
+    Function pucaIV Returns UChar[]
+        Function_Return (Private_pucaIV(Self))
+    End_Function
+
+    Function EncryptChunk UChar[] ucaData Returns UChar[]
+        Boolean bStarted
+        Handle  hoKey
+        UChar[] ucaIV
+        UChar[] ucaResult
+        UInteger uiFlags
+
+        Get Private_pbStarted to bStarted
+        If not bStarted Begin
+            Get Private_pucaIV to ucaIV
+            Set Private_pbStarted to True
+        End
+
+        If (pbUseBlockPadding(Self)) Move (BCRYPT_BLOCK_PADDING) to uiFlags
+
+        Get Private_phoKey to hoKey
+        Get Encrypt of hoKey ucaData uiFlags (&ucaIV) to ucaResult
+
+        Function_Return ucaResult
+    End_Function
+
+    Procedure Destroy_Object
+        Handle hoKey
+
+        Get Private_phoKey to hoKey
+        If (hoKey <> 0) Send Destroy of hoKey
+
+        Forward Send Destroy_Object
+    End_Procedure
+
+End_Class
+
+{ Visibility=Private }
+Class cCngSymmetricKeyDecryptor_Impl is a cSecureSymmetricKeyDecryptor_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Handle Private_phoKey
+        { Visibility=Private }
+        Property UChar[] Private_pucaIV
+
+        {Visibility=Private }
+        Property Boolean Private_pbStarted False
+
+        Property Boolean pbUseBlockPadding
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure Initialize Handle hoKey UChar[]  ucaIV
+        Set Private_phoKey to hoKey
+        Set Private_pucaIV to ucaIV
+    End_Procedure
+
+    Function DecryptChunk UChar[] ucaData Returns UChar[]
+        Boolean bStarted
+        Handle  hoKey
+        UChar[] ucaIV
+        UChar[] ucaResult
+        UInteger uiFlags
+
+        Get Private_pbStarted to bStarted
+        If not bStarted Begin
+            Get Private_pucaIV to ucaIV
+            Set Private_pbStarted to True
+        End
+
+        If (pbUseBlockPadding(Self)) Move (BCRYPT_BLOCK_PADDING) to uiFlags
+
+        Get Private_phoKey to hoKey
+        Get Decrypt of hoKey ucaData uiFlags (&ucaIV) to ucaResult
+
+        Function_Return ucaResult
+    End_Function
+
+    Procedure Destroy_Object
+        Handle hoKey
+
+        Get Private_phoKey to hoKey
+        If (hoKey <> 0) Send Destroy of hoKey
+
+        Forward Send Destroy_Object
+    End_Procedure
+
+End_Class
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cCngSymmetricKeyEncryption_Impl_Base is a cSecureSymmetricKeyEncryptionMethod_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Handle Private_phoKey
+        { Visibility=Private }
+        Property Integer Private_piBlockLength
+        { Visibility=Private }
+        Property String Private_psAlgorithm
+        { Visibility=Private }
+        Property String Private_psChainingMode
+
+        Property Boolean pbUseBlockPadding True
+
+        Object oAlgProv is a cCngAlgorithmProvider
+        End_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Init UChar[] ByRef ucaKey Returns Boolean
+        Boolean  bOpened
+        Boolean  bSuccess
+        Handle   hoKey
+        Integer  iKeyLen
+        String   sAlgId
+        String   sChainMode
+        UInteger iBlockLen
+
+        Get Private_psAlgorithm   to sAlgId
+        Get Private_piBlockLength to iKeyLen
+        
+        If (SizeOfArray(ucaKey) <> iKeyLen) Begin
+            Error DFERR_PROGRAM (SFormat("Key length must be %1 bytes, not %2.", iKeyLen, SizeOfArray(ucaKey)))
+            Function_Return False
+        End
+
+        // already open?
+        If (phExternalHandle(oAlgProv) = 0) Begin
+            Get Open of oAlgProv sAlgId to bOpened
+            If not bOpened Begin
+                Error DFERR_PROGRAM "Could not open algorithm provider"
+                Function_Return False
+            End
+        End
+
+        Get Private_psChainingMode to sChainMode
+        Set peChainingMode of oAlgProv to sChainMode
+
+        Get ImportPlaintextKey of oAlgProv ucaKey to hoKey
+        Move (hoKey <> 0) to bSuccess
+        If bSuccess Set Private_phoKey to hoKey
+
+        // ToDo: secure overwrite key
+
+        Function_Return bSuccess
+    End_Function
+
+    Function InitWithKey UChar[] ByRef ucaKey Returns Boolean
+        Boolean  bSuccess
+        Get Private_Init (&ucaKey) to bSuccess
+        Function_Return bSuccess
+    End_Function
+
+    Function NewEncryptor Returns Handle
+        Handle hoEnc
+        Handle hoEncKey
+        Handle hoKey
+
+        Get Private_phoKey to hoKey
+        If (hoKey = 0) Function_Return 0
+
+        Get Duplicate of hoKey to hoEncKey
+        Get Create (RefClass(cCngSymmetricKeyEncryptor_Impl)) to hoEnc
+        Send Initialize of hoEnc hoEncKey
+        Set pbUseBlockPadding of hoEnc to (pbUseBlockPadding(Self))
+
+        Function_Return hoEnc
+    End_Function
+
+    Function NewDecryptor UChar[] ucaIV Returns Handle
+        Handle hoDec
+        Handle hoDecKey
+        Handle hoKey
+
+        Get Private_phoKey to hoKey
+        If (hoKey = 0) Function_Return 0
+
+        Get Duplicate of hoKey to hoDecKey
+        Get Create (RefClass(cCngSymmetricKeyDecryptor_Impl)) to hoDec
+        Send Initialize of hoDec hoDecKey ucaIV
+        Set pbUseBlockPadding of hoDec to (pbUseBlockPadding(Self))
+
+        Function_Return hoDec
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return (Private_piBlockLength(Self))
+    End_Function
+
+    Function MinimumKeyBytes Integer iImplementation Returns UInteger
+        Function_Return (Private_piBlockLength(Self))
+    End_Function
+
+End_Class
+
+{ ClassType=Abstract }
+Class cCngSymmetricKeyEncryption_Impl_BaseNotRecommended is a cCngSymmetricKeyEncryption_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Property Boolean pbIKnowThisIsNotRecommended False
+    End_Procedure
+
+    Function NewEncryptor Returns Handle
+        Handle hoEnc
+
+        If (not(pbIKnowThisIsNotRecommended(Self))) Begin
+            Error DFERR_PROGRAM "Encryption using this chaining mode is not recommended!"
+        End
+        Else Begin
+            Forward Get NewEncryptor to hoEnc
+        End
+
+        Function_Return hoEnc
+    End_Function
+
+End_Class
+
+{ Visibility=Private }
+Class cCngSymmetricKeyEncryption_Impl_Aes128_Cbc is a cCngSymmetricKeyEncryption_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piBlockLength  to 16
+        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_CBC
+    End_Procedure
+
+End_Class
+
+{ Visibility=Private }
+Class cCngSymmetricKeyEncryption_Impl_Aes192_Cbc is a cCngSymmetricKeyEncryption_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piBlockLength  to 24
+        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_CBC
+    End_Procedure
+
+End_Class
+
+{ Visibility=Private }
+Class cCngSymmetricKeyEncryption_Impl_Aes256_Cbc is a cCngSymmetricKeyEncryption_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piBlockLength  to 32
+        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_CBC
+    End_Procedure
+
+End_Class
+
+{ Visibility=Private }
+Class cCngSymmetricKeyEncryption_Impl_Aes128_Ecb is a cCngSymmetricKeyEncryption_Impl_BaseNotRecommended
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piBlockLength  to 16
+        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_ECB
+    End_Procedure
+
+End_Class
+
+{ Visibility=Private }
+Class cCngSymmetricKeyEncryption_Impl_Aes192_Ecb is a cCngSymmetricKeyEncryption_Impl_BaseNotRecommended
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piBlockLength  to 24
+        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_ECB
+    End_Procedure
+
+End_Class
+
+{ Visibility=Private }
+Class cCngSymmetricKeyEncryption_Impl_Aes256_Ecb is a cCngSymmetricKeyEncryption_Impl_BaseNotRecommended
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piBlockLength  to 32
+        Set Private_psAlgorithm    to BCRYPT_AES_ALGORITHM
+        Set Private_psChainingMode to BCRYPT_CHAIN_MODE_ECB
+    End_Procedure
+
+End_Class
+
+Define C_SEC_SYMENC_CNG_AES128_CBC for (RefClass(cCngSymmetricKeyEncryption_Impl_Aes128_Cbc))
+Define C_SEC_SYMENC_CNG_AES192_CBC for (RefClass(cCngSymmetricKeyEncryption_Impl_Aes192_Cbc))
+Define C_SEC_SYMENC_CNG_AES256_CBC for (RefClass(cCngSymmetricKeyEncryption_Impl_Aes256_Cbc))
+
+Define C_SEC_SYMENC_CNG_AES128_ECB for (RefClass(cCngSymmetricKeyEncryption_Impl_Aes128_Ecb))
+Define C_SEC_SYMENC_CNG_AES192_ECB for (RefClass(cCngSymmetricKeyEncryption_Impl_Aes192_Ecb))
+Define C_SEC_SYMENC_CNG_AES256_ECB for (RefClass(cCngSymmetricKeyEncryption_Impl_Aes256_Ecb))

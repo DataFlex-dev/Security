@@ -1,0 +1,46 @@
+Define crypto_core_ed25519_BYTES for 32
+
+#IFDEF IS$WIN64
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_ed25519_bytes "crypto_core_ed25519_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_core_ed25519_UNIFORMBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_ed25519_uniformbytes "crypto_core_ed25519_uniformbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_ed25519_is_valid_point "crypto_core_ed25519_is_valid_point" sLibsodiumDllName ;
+    Pointer p; // const unsigned char *p
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_ed25519_add "crypto_core_ed25519_add" sLibsodiumDllName ;
+    Pointer r;  // unsigned char *r
+    Pointer p;  // const unsigned char *p
+    Pointer q;  // const unsigned char *q
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_ed25519_sub "crypto_core_ed25519_sub" sLibsodiumDllName ;
+    Pointer r;  // unsigned char *r
+    Pointer p;  // const unsigned char *p
+    Pointer q;  // const unsigned char *q
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_ed25519_from_uniform "crypto_core_ed25519_from_uniform" sLibsodiumDllName ;
+    Pointer p;  // unsigned char *p
+    Pointer r;  // const unsigned char *r
+    Returns Integer
+

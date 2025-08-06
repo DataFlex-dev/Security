@@ -1,0 +1,58 @@
+﻿///*
+// * WARNING: Unless you absolutely need to use SHA256 for interoperatibility,
+// * purposes, you might want to consider crypto_generichash() instead.
+// * Unlike SHA256, crypto_generichash() is not vulnerable to length
+// * extension attacks.
+// */
+//
+//typedef struct crypto_hash_sha256_state {
+//    uint32_t state[8] ;
+//    uint64_t count ;
+//    uint8_t  buf[64] ;
+//} crypto_hash_sha256_state ;
+
+{ Visibility=Private }
+External_Function libsodium_crypto_hash_sha256_statebytes "crypto_hash_sha256_statebytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_hash_sha256_STATEBYTES for (libsodium_crypto_hash_sha256_statebytes())
+
+Define crypto_hash_sha256_BYTES for 32
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_hash_sha256_bytes "crypto_hash_sha256_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_hash_sha256 "crypto_hash_sha256" sLibsodiumDllName ;
+    Pointer  out ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_hash_sha256_init "crypto_hash_sha256_init" sLibsodiumDllName ;
+    Pointer state ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_hash_sha256_update "crypto_hash_sha256_update" sLibsodiumDllName ;
+    Pointer  state ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_hash_sha256_final "crypto_hash_sha256_final" sLibsodiumDllName ;
+    Pointer state ;
+    Pointer out ;
+    Returns Integer
+

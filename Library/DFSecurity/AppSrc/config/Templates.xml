@@ -1,0 +1,10 @@
+<Templates>
+	<Template>
+		<ComponentType>0</ComponentType>
+		<Name>Passcode Storage Parameter Estimation Project</Name>
+		<FileName>PasscodeStorageParameterEstimationProject.tpl</FileName>
+		<ImageLarge>ProjectBasicApplication.ico</ImageLarge>
+		<BriefDescription>Passcode Storage Parameter Estimation Project Template</BriefDescription>
+		<LongDescription>Creates a DataFlex project that can be used on the deployment server(s) to estimate the parameters for a specific storage time.</LongDescription>
+	</Template>
+</Templates>

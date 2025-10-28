@@ -1,0 +1,164 @@
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_is_available "crypto_aead_aes256gcm_is_available" sLibsodiumDllName ;
+    Returns Integer
+
+Define crypto_aead_aes256gcm_KEYBYTES  for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_keybytes "crypto_aead_aes256gcm_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_aead_aes256gcm_NSECBYTES for 0
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_nsecbytes "crypto_aead_aes256gcm_nsecbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_aead_aes256gcm_NPUBBYTES for 12
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_npubbytes "crypto_aead_aes256gcm_npubbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_aead_aes256gcm_ABYTES    for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_abytes "crypto_aead_aes256gcm_abytes" sLibsodiumDllName ;
+    Returns UInteger
+
+//typedef CRYPTO_ALIGN(16) unsigned char crypto_aead_aes256gcm_state[512] ;
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_statebytes "crypto_aead_aes256gcm_statebytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_aead_aes256gcm_STATEBYTES for (libsodium_crypto_aead_aes256gcm_statebytes())
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_encrypt "crypto_aead_aes256gcm_encrypt" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  clen_p ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Pointer  ad ;
+    BigInt   adlen ;
+    Pointer  nsec ;
+    Pointer  npub ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_decrypt "crypto_aead_aes256gcm_decrypt" sLibsodiumDllName ;
+    Pointer  m ;
+    Pointer  mlen_p ;
+    Pointer  nsec ;
+    Pointer  c ;
+    BigInt   clen ;
+    Pointer  ad ;
+    BigInt   adlen ;
+    Pointer  npub ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_encrypt_detached "crypto_aead_aes256gcm_encrypt_detached" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  mac ;
+    Pointer  maclen_p ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Pointer  ad ;
+    BigInt   adlen ;
+    Pointer  nsec ;
+    Pointer  npub ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_decrypt_detached "crypto_aead_aes256gcm_decrypt_detached" sLibsodiumDllName ;
+    Pointer  m ;
+    Pointer  nsec ;
+    Pointer  c ;
+    BigInt   clen ;
+    Pointer  mac ;
+    Pointer  ad ;
+    BigInt   adlen ;
+    Pointer  npub ;
+    Pointer  k ;
+    Returns  Integer
+
+//* -- Precomputation interface -- */
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_beforenm "crypto_aead_aes256gcm_beforenm" sLibsodiumDllName ;
+    Pointer ctx ;
+    Pointer k ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_encrypt_afternm "crypto_aead_aes256gcm_encrypt_afternm" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  clen_p ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Pointer  ad ;
+    BigInt   adlen ;
+    Pointer  nsec ;
+    Pointer  npub ;
+    Pointer  ctx ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_decrypt_afternm "crypto_aead_aes256gcm_decrypt_afternm" sLibsodiumDllName ;
+    Pointer  m ;
+    Pointer  mlen_p ;
+    Pointer  nsec ;
+    Pointer  c ;
+    BigInt   clen ;
+    Pointer  ad ;
+    BigInt   adlen ;
+    Pointer  npub ;
+    Pointer  ctx ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_encrypt_detached_afternm "crypto_aead_aes256gcm_encrypt_detached_afternm" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  mac ;
+    Pointer  maclen_p ;
+    Pointer  m ;
+    BigInt   mlen ;
+    Pointer  ad ;
+    BigInt   adlen ;
+    Pointer  nsec ;
+    Pointer  npub ;
+    Pointer  ctx ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_decrypt_detached_afternm "crypto_aead_aes256gcm_decrypt_detached_afternm" sLibsodiumDllName ;
+    Pointer  m ;
+    Pointer  nsec ;
+    Pointer  c ;
+    BigInt   clen ;
+    Pointer  mac ;
+    Pointer  ad ;
+    BigInt   adlen ;
+    Pointer  npub ;
+    Pointer  ctx ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_aead_aes256gcm_keygen "crypto_aead_aes256gcm_keygen" sLibsodiumDllName ;
+    Pointer k;      // length: crypto_aead_aes256gcm_KEYBYTES
+    Returns Void_Type
+

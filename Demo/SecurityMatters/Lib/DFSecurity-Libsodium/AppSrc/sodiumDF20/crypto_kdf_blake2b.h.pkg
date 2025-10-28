@@ -1,0 +1,41 @@
+Define crypto_kdf_blake2b_BYTES_MIN for 16
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kdf_blake2b_bytes_min "crypto_kdf_blake2b_bytes_min" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_kdf_blake2b_BYTES_MAX for 64
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kdf_blake2b_bytes_max "crypto_kdf_blake2b_bytes_max" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_kdf_blake2b_CONTEXTBYTES for 8
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kdf_blake2b_contextbytes "crypto_kdf_blake2b_contextbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_kdf_blake2b_KEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kdf_blake2b_keybytes "crypto_kdf_blake2b_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_kdf_blake2b_derive_from_key "crypto_kdf_blake2b_derive_from_key" sLibsodiumDllName ;
+    Pointer  subkey ;
+    UInteger subkey_len ;
+    BigInt   usbkey_id ;
+    Pointer  ctx;       // length: crypto_kdf_blake2b_CONTEXTBYTES
+    Pointer  key;       // length: crypto_kdf_blake2b_KEYBYTES
+    Returns  Integer
+

@@ -1,0 +1,40 @@
+Use DataDict.pkg
+Use DFSecurity.pkg
+
+Open Squeaks
+Open WebAppUser
+Open WebAppSession
+Open WebAppUser2FA
+
+Object oLoginPasscodeStorageMethod is a cSecurePasscodeStorageMethod
+    Set piPasscodeHashImplementation to C_SEC_PWHASH_LIBSODIUM_ARGON2ID
+    Set piMemLimit to (256*1024*1024)
+    Set piOpsLimit to 3
+    Send Initialize
+End_Object
+
+{ ClassLibrary=WebApp }
+{ HelpTopic=cWebAppUserDataDictionary }
+Class cWebAppUserDataDictionary is a DataDictionary
+    Import_Class_Protocol cSecurePasscodeStorageMethod_DD_Mixin
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Send Define_cSecurePasscodeStorageMethod_DD_Mixin
+
+        Set Main_File to WebAppUser.File_Number
+
+        Set Add_Client_File to WebAppSession.File_Number
+        Set Add_Client_File to Squeaks.File_Number
+        Set Add_Client_File to WebAppUser2FA.File_Number
+
+        Set Foreign_Field_Option DD_KEYFIELD DD_NOPUT to True
+        Set Foreign_Field_Option DD_KEYFIELD DD_FINDREQ to True
+        Set Foreign_Field_Option DD_INDEXFIELD DD_NOPUT to True
+        Set Foreign_Field_Option DD_DEFAULT DD_DISPLAYONLY to True
+
+        Set Field_PasscodeStorageObject Field WebAppUser.Password to oLoginPasscodeStorageMethod
+    End_Procedure
+
+End_Class

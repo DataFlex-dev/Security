@@ -1,0 +1,62 @@
+﻿//typedef struct randombytes_implementation {
+//    const char *(*implementation_name)(void); /* required */
+//    uint32_t    (*random)(void);              /* required */
+//    void        (*stir)(void);                /* optional */
+//    uint32_t    (*uniform)(const uint32_t upper_bound); /* optional, a default implementation will be used If NULL */
+//    void        (*buf)(void * const buf, const size_t size); /* required */
+//    int         (*Close)(void);               /* optional */
+//} randombytes_implementation ;
+
+Define randombytes_SEEDBYTES for 32
+
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_randombytes_seedbytes "randombytes_seedbytes" sLibsodiumDllName ;
+        Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_randombytes_buf "randombytes_buf" sLibsodiumDllName ;
+    Pointer  buf ;
+    UInteger size ;
+    Returns  Void_Type
+
+{ Visibility=Private }
+External_Function libsodium_randombytes_buf_deterministic "randombytes_buf_deterministic" sLibsodiumDllName ;
+    Pointer  buf ;
+    UInteger size ;
+    Pointer  seed;      // length: randombytes_SEEDBYTES
+    Returns  Void_Type
+
+{ Visibility=Private }
+External_Function libsodium_randombytes_random "randombytes_random" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_randombytes_uniform "randombytes_uniform" sLibsodiumDllName ;
+    UInteger upper_bound ;
+    Returns  UInteger
+
+{ Visibility=Private }
+External_Function libsodium_randombytes_stir "randombytes_stir" sLibsodiumDllName ;
+    Returns Void_Type
+
+{ Visibility=Private }
+External_Function libsodium_randombytes_close "randombytes_close" sLibsodiumDllName ;
+    Returns Void_Type
+
+//SODIUM_EXPORT
+//int randombytes_set_implementation(randombytes_implementation *impl) ;
+
+//SODIUM_EXPORT
+//const Char *randombytes_implementation_name(void) ;
+
+//* -- NaCl compatibility interface -- */
+//
+//SODIUM_EXPORT
+//void randombytes(unsigned Char * const buf, const unsigned long long buf_len) ;
+

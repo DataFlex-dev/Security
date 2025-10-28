@@ -1,0 +1,7 @@
+[WebService]
+Application=Security Matters
+Object=oWebServiceDispatcher
+ServicePageGenerator=DefaultWebServiceHomePage.xslt
+TestPageGenerator=DefaultWebServiceMethodPage.xslt
+WSDLGenerator=DefaultWebServiceDescription.xslt
+SoapBodyStyle=document

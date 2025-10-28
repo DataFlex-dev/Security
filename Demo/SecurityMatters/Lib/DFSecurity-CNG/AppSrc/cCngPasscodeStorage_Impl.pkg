@@ -1,0 +1,200 @@
+Use DFSecurity.pkg
+Use CNG\cCngAlgorithmProvider.pkg
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cCngPasscodeStorageMethod_Impl_Base is a cSecurePasscodeStorageMethod_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Delegation_Mode to No_Delegation
+
+        { Visibility=Private }
+        Property BigInt Private_piOpsLimit
+
+        { Visibility=Private }
+        Property String Private_HashAlg
+
+        { Visibility=Private }
+        Property String Private_KdfAlg
+
+        Property Integer piOutputBytes C_SEC_DEFAULT
+
+        Property Integer piSaltBytes   C_SEC_DEFAULT
+
+        Object oAlgProv is a cCngAlgorithmProvider
+        End_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Impl_Init Returns Boolean
+        Boolean  bOpened
+        Boolean  bReusable
+        Handle   hoHash
+        String   sAlgId
+        UChar[]  ucaEmptyOrKey
+        UInteger uiFlags
+
+        Get Private_HashAlg to sAlgId
+
+        Send Internal_ReleaseExternalHandle of oAlgProv
+
+        // already open?
+        If (phExternalHandle(oAlgProv) = 0) Begin
+            // try reusable
+            Move True to bReusable
+            Move BCRYPT_HASH_REUSABLE_FLAG to uiFlags
+            Add BCRYPT_ALG_HANDLE_HMAC_FLAG to uiFlags
+            Get Open of oAlgProv sAlgId "" uiFlags to bOpened
+
+            // try non-reusable
+            If not bOpened Begin
+                Move False to bReusable
+                Move (uiFlags - BCRYPT_HASH_REUSABLE_FLAG) to uiFlags
+                Get Open of oAlgProv sAlgId "" uiFlags to bOpened
+            End
+
+            If not bOpened Begin
+                Error DFERR_PROGRAM "Could not open algorithm provider"
+                Function_Return False
+            End
+        End
+
+        Function_Return bOpened
+    End_Function
+
+    Function Init BigInt iOpsLimit Integer iMemLimit Returns Boolean
+        Boolean bSuccess
+
+        If (num_arguments > 0) Set Private_piOpsLimit to iOpsLimit
+
+        Get Private_Impl_Init to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function DeriveKey UChar[] ByRef ucaPasscode UChar[] ucaSalt Integer iOutlen Returns UChar[]
+        UChar[] ucaKey
+        Get Private_Impl_DeriveKey (&ucaPasscode) ucaSalt iOutlen (Private_piOpsLimit(Self)) to ucaKey
+        Function_Return ucaKey
+    End_Function
+
+    Function StorageString UChar[] ByRef ucaPasscode Returns String
+        String sResult
+        Get Private_Impl_StorageString (&ucaPasscode) to sResult
+        Function_Return sResult
+    End_Function
+
+    Function Verify UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bSuccess
+        If (Left(sStorageString, 4) = "$cng") Move (Replace("$cng", sStorageString, '')) to sStorageString
+        Get Private_Impl_Verify (&ucaPasscode) sStorageString to bSuccess
+        Function_Return bSuccess
+    End_Function
+
+End_Class
+
+{ ClassType=Abstract }
+Class cCngPasscodeStorageMethod_Impl_Pbkdf2 is a cCngPasscodeStorageMethod_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_KdfAlg  to BCRYPT_PBKDF2_ALGORITHM
+        Set Private_piOpsLimit to 10000 // CNG default
+    End_Procedure
+
+    Function Private_Impl_DeriveKey UChar[] ByRef ucaPasscode UChar[] ucaSalt Integer iOutlen BigInt iOpsLimit Returns UChar[]
+        Integer  iStatus
+        UBigInt  opslimit
+        UChar[]  ucaKey
+        UInteger outlen
+        UIntegerUInteger cIterations
+
+        Move (If(iOutlen = C_SEC_DEFAULT, 20, iOutlen)) to outlen
+        Move (ResizeArray(ucaKey, outlen)) to ucaKey
+        Move (If(iOpsLimit = C_SEC_DEFAULT, 10000, iOpsLimit)) to opslimit
+        
+#IF (!@ >= 200)     // DataFlex version 20.0 and later - Call the function with BigInt
+        
+        Move (WinAPI_BCryptDeriveKeyPBKDF2(phExternalHandle(oAlgProv), AddressOf(ucaPasscode), SizeOfArray(ucaPasscode), ;
+                AddressOf(ucaSalt), SizeOfArray(ucaSalt), opslimit, ;
+                AddressOf(ucaKey), SizeOfArray(ucaKey), 0)) to iStatus
+#ELSE
+        Move (UnpackUBigInt(opslimit)) to cIterations
+        Move (WinAPI_BCryptDeriveKeyPBKDF2(phExternalHandle(oAlgProv), AddressOf(ucaPasscode), SizeOfArray(ucaPasscode), ;
+                AddressOf(ucaSalt), SizeOfArray(ucaSalt), cIterations.ui1, cIterations.ui2, ;
+                AddressOf(ucaKey), SizeOfArray(ucaKey), 0)) to iStatus
+#ENDIF
+        
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaKey, 0)) to ucaKey
+        End
+
+        Function_Return ucaKey
+    End_Function
+
+    Function Private_Impl_StorageString UChar[] ByRef ucaPasscode Returns String
+        Integer iOutLen
+        Integer iSaltLen
+        String  sResult
+        UBigInt opslimit
+        UChar[] ucaKey ucaSalt
+
+        Move (If(piSaltBytes(Self) = C_SEC_DEFAULT, 24, piSaltBytes(Self))) to iSaltLen
+        Move (If(piOutputBytes(Self) = C_SEC_DEFAULT, 36, piOutputBytes(Self))) to iOutLen
+
+        Move (If(Private_piOpsLimit(Self) = C_SEC_DEFAULT, 10000, Private_piOpsLimit(Self))) to opslimit
+
+        Get BCryptGenRandom of (oCryptoApiNextGen(oAlgProv)) 0 iSaltLen to ucaSalt
+        Get Private_Impl_DeriveKey (&ucaPasscode) ucaSalt iOutLen opslimit to ucaKey
+
+        // move (metadata + ucasalt + ucakey) to sResult
+        Move (SFormat("$cng$%1$%2$%3$%4$%5", ;
+                Private_KdfAlg(Self), ;
+                Private_HashAlg(Self), ;
+                opslimit, ;
+                Bin2Base64(ghoSecurity, ucaSalt), ;
+                Bin2Base64(ghoSecurity, ucaKey))) to sResult
+
+        Function_Return sResult
+    End_Function
+
+    Function Private_Impl_Verify UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        String[] saParts
+        UBigInt  opslimit
+        UChar[]  ucaExpected
+        UChar[]  ucaKey
+        UChar[]  ucaSalt
+
+        Move (StrSplitToArray(sStorageString, '$')) to saParts
+        If (saParts[0]='') Move (RemoveFromArray(saParts, 0)) to saParts
+
+        Move saParts[2] to opslimit
+        Get Base642Bin of ghoSecurity saParts[3] to ucaSalt
+        Get Base642Bin of ghoSecurity saParts[4] to ucaExpected
+
+        Get Private_Impl_DeriveKey (&ucaPasscode) ucaSalt (SizeOfArray(ucaExpected)) opslimit to ucaKey
+
+        Function_Return (IsSameArray(ucaExpected, ucaKey))
+    End_Function
+
+End_Class
+
+Class cCngPasscodeStorageMethod_Impl_Pbkdf2_Sha1 is a cCngPasscodeStorageMethod_Impl_Pbkdf2
+    Procedure Construct_Object
+        Forward Send Construct_Object
+        Set Private_HashAlg to BCRYPT_SHA1_ALGORITHM
+    End_Procedure
+End_Class
+
+Class cCngPasscodeStorageMethod_Impl_Pbkdf2_Sha256 is a cCngPasscodeStorageMethod_Impl_Pbkdf2
+    Procedure Construct_Object
+        Forward Send Construct_Object
+        Set Private_HashAlg to BCRYPT_SHA256_ALGORITHM
+    End_Procedure
+End_Class
+
+Define C_SEC_PWHASH_CNG_PBKDF2_SHA1 for (RefClass(cCngPasscodeStorageMethod_Impl_Pbkdf2_Sha1))
+Define C_SEC_PWHASH_CNG_PBKDF2_SHA256 for (RefClass(cCngPasscodeStorageMethod_Impl_Pbkdf2_Sha256))

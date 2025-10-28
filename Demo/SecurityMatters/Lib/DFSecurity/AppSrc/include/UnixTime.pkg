@@ -1,0 +1,55 @@
+Use VdfBase.pkg
+
+#IFNDEF gVoid
+Global_Variable Void_Type gVoid
+#ENDIF
+
+#IFNDEF _struct_tFileTime
+Struct tFileTime
+    UInteger dwLowDateTime
+    UInteger dwHighDateTime
+End_Struct
+#ENDIF
+
+#IFNDEF _struct_tSystemTime
+Struct tSystemTime
+    UShort wYear
+    UShort wMonth
+    UShort wDayOfWeek
+    UShort wDay
+    UShort wHour
+    UShort wMinute
+    UShort wSecond
+    UShort wMilliseconds
+End_Struct
+#ENDIF
+
+#IFNDEF Get_WinAPI_GetSystemTime
+External_Function WinAPI_GetSystemTime "GetSystemTime" Kernel32.Dll ;
+    Address lpSystemTime ;
+    Returns Void_Type
+#ENDIF
+
+#IFNDEF Get_WinAPI_SystemTimeToFileTime
+External_Function WinAPI_SystemTimeToFileTime "SystemTimeToFileTime" Kernel32.dll ;
+    Pointer lpSystemTime ;
+    Pointer lpFileTime ;
+    Returns Boolean
+#ENDIF
+
+Function CurrentUnixTime Global Returns UBigInt
+    UBigInt     iTime
+    UBigInt     iUnixTime
+    tSystemTime systime
+    tFileTime   filetime
+
+    Move (WinAPI_GetSystemTime(AddressOf(systime))) to gVoid
+    Move (WinAPI_SystemTimeToFileTime(AddressOf(systime), AddressOf(filetime))) to gVoid
+    Move 0 to iTime
+    Move (MemCopy(AddressOf(iTime), AddressOf(filetime), SizeOfType(tFileTime))) to gVoid
+
+    Move (iTime / 10000000) to iTime        // convert to seconds
+    Move (iTime - 11644473600) to iUnixTime // convert to Unix time
+
+    Function_Return iUnixTime
+End_Function

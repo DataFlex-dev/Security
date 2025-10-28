@@ -1,0 +1,16 @@
+[Properties]
+Version=24.0
+[WorkspacePaths]
+ConfigFile=.\Programs\Config.ws
+[Conditionals]
+Is$WebApp=False
+Is$Win64=True
+[Libraries]
+Lib2=.\Lib\DFSecurity-CNG\DFSecurity-CNG-24.0.sws
+Lib3=.\Lib\DFSecurity-Libsodium\DFSecurity-Libsodium-24.0.sws
+Lib4=.\Lib\DFSecurity\DFSecurity-24.0.sws
+[Projects]
+Project0=WebApp.src
+Project1=PwnedPasswordsImport.src
+Project2=SecurityBasics.src
+Project3=DBLogin.src

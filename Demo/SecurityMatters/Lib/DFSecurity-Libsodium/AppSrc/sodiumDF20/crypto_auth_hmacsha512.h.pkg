@@ -1,0 +1,74 @@
+Define crypto_auth_hmacsha512_BYTES for 64
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_hmacsha512_bytes "crypto_auth_hmacsha512_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_auth_hmacsha512_KEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_hmacsha512_keybytes "crypto_auth_hmacsha512_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_hmacsha512 "crypto_auth_hmacsha512" sLibsodiumDllName ;
+    Pointer  out ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_hmacsha512_verify "crypto_auth_hmacsha512_verify" sLibsodiumDllName ;
+    Pointer  h ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Pointer  k ;
+    Returns  Integer
+
+//* ------------------------------------------------------------------------- */
+
+//typedef struct crypto_auth_hmacsha512_state {
+//    crypto_hash_sha512_state ictx ;
+//    crypto_hash_sha512_state octx ;
+//} crypto_auth_hmacsha512_state ;
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_hmacsha512_statebytes "crypto_auth_hmacsha512_statebytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_auth_hmacsha512_STATEBYTES for (libsodium_crypto_auth_hmacsha512_statebytes())
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_hmacsha512_init "crypto_auth_hmacsha512_init" sLibsodiumDllName ;
+    Pointer  state ;
+    Pointer  key ;
+    UInteger keylen ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_hmacsha512_update "crypto_auth_hmacsha512_update" sLibsodiumDllName ;
+    Pointer  state ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_hmacsha512_final "crypto_auth_hmacsha512_final" sLibsodiumDllName ;
+    Pointer state ;
+    Pointer out ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_auth_hmacsha512_keygen "crypto_auth_hmacsha512_keygen" sLibsodiumDllName ;
+    Pointer k;      // length: crypto_auth_hmacsha512_KEYBYTES
+    Returns Void_Type
+

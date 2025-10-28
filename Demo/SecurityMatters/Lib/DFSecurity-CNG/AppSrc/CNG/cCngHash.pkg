@@ -1,0 +1,45 @@
+Use CNG\cCng_ExternalHandleWrappingObject.pkg
+
+Class cCngHash is a cCng_ExternalHandleWrappingObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Pointer Private_ppHashObject
+    End_Procedure
+
+    Procedure ReleaseExternalHandle Handle hExternalHandle
+        Pointer pHashObj
+        Void_Type void
+        // do not use the low-level API here, because that object may be destroyed earlier ...
+        Move (WinAPI_BCryptDestroyHash(hExternalHandle)) to void
+        Get Private_ppHashObject to pHashObj
+        If (pHashObj <> 0) Move (Free(pHashObj)) to void
+    End_Procedure
+
+    Procedure AddData UChar[] ucaData
+        Send BCryptHashData of oCryptoApiNextGen (phExternalHandle(Self)) ucaData
+    End_Procedure
+
+    Function Duplicate Returns Handle
+        Handle  hoNewHash
+        Integer iStatus
+        tHandleAndPointer NewHash
+
+        Get BCryptDuplicateHash of oCryptoApiNextGen (phExternalHandle(Self)) to NewHash
+        Get piLastStatus of oCryptoApiNextGen to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Get Create (RefClass(cCngHash)) to hoNewHash
+            Set phExternalHandle of hoNewHash to NewHash.hHandle
+            Set Private_ppHashObject of hoNewHash to NewHash.pPointer
+        End
+
+        Function_Return hoNewHash
+    End_Function
+
+    Function Finish Returns UChar[]
+        Function_Return (BCryptFinishHash(oCryptoApiNextGen, phExternalHandle(Self)))
+    End_Function
+
+End_Class

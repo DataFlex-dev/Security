@@ -1,0 +1,12 @@
+
+#IF (!@ > 191)
+    CompilerLevelWarning AmbiguousFunctions Off
+#ENDIF
+Use cLibsodiumHash_Impl.pkg
+Use cLibsodiumPasscodeStorage_Impl.pkg
+Use cLibsodiumSecurityEngine.pkg
+#IF (!@ > 191)
+    CompilerLevelWarning AmbiguousFunctions On
+#ENDIF
+
+Get CreateNamed of ghoSecurity (RefClass(cLibsodiumSecurityEngine)) "LibsodiumSecurityEngine" to gVoid

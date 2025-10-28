@@ -1,0 +1,300 @@
+Use DFSecurity.pkg
+Use libsodium\libsodium.pkg
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cLibsodiumPasscodeStorage_Impl_Base is a cSecurePasscodeStorageMethod_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Integer Private_piMemLimit
+        { Visibility=Private }
+        Property BigInt  Private_piOpsLimit
+
+        Object oSodium is a cLibSodium
+        End_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Impl_Init Returns Boolean
+        Boolean bRet
+
+        Get pbInitialized of oSodium to bRet // Get DLL's initialization status
+
+        Function_Return bRet
+    End_Function
+
+    Function Init BigInt iOpsLimit Integer iMemLimit Returns Boolean
+        Boolean bSuccess
+
+        If (num_arguments > 0) Set Private_piOpsLimit to iOpsLimit
+        If (num_arguments > 1) Set Private_piMemLimit to iMemLimit
+
+        Get Private_Impl_Init to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    { Visibility=Private }
+    Function Private_Impl_DeriveKey UChar[] ByRef ucaPasscode UChar[] ucaSalt Integer iOutlen Returns UChar[]
+        UChar[] ucaEmpty
+        Error DFERR_PROGRAM "This PasscodeHash implementation does not support DeriveKey()"
+        Function_Return ucaEmpty
+    End_Function
+
+    Function DeriveKey UChar[] ByRef ucaPasscode UChar[] ucaSalt Integer iOutlen Returns UChar[]
+        UChar[] ucaKey
+
+        Get Private_Impl_DeriveKey (&ucaPasscode) ucaSalt iOutlen to ucaKey
+
+        Function_Return ucaKey
+    End_Function
+
+    { Visibility=Private }
+    Function Private_Impl_StorageString UChar[] ByRef ucaPasscode Returns String
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ''
+    End_Function
+
+    Function StorageString UChar[] ByRef ucaPasscode Returns String
+        String sResult
+        Get Private_Impl_StorageString ucaPasscode to sResult
+        Function_Return ('$libsodium' + sResult)
+    End_Function
+
+    { Visibility=Private }
+    Function Private_Impl_Verify UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return False
+    End_Function
+
+    Function Verify UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bSuccess
+        If (Left(sStorageString, 10) = "$libsodium") Move (Replace("$libsodium", sStorageString, '')) to sStorageString
+        Get Private_Impl_Verify (&ucaPasscode) sStorageString to bSuccess
+        Function_Return bSuccess
+    End_Function
+
+End_Class
+
+Class cLibsodiumPasscodeHash_Impl_Default is a cLibsodiumPasscodeStorage_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piMemLimit to crypto_pwhash_MEMLIMIT_INTERACTIVE
+        Set Private_piOpsLimit to crypto_pwhash_OPSLIMIT_INTERACTIVE
+    End_Procedure
+
+    Function Private_Impl_DeriveKey UChar[] ByRef ucaPasscode UChar[] ucaSalt Integer iOutlen Returns UChar[]
+        UBigInt  opslimit
+        UChar[]  ucaKey
+        UInteger memlimit
+        UInteger outlen
+
+        If (iOutlen = C_SEC_DEFAULT) Move crypto_pwhash_BYTES_MIN to outlen
+        Else Move iOutlen to outlen
+
+        If (Private_piMemLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_MEMLIMIT_INTERACTIVE to memlimit
+        Else Get Private_piMemLimit to memlimit
+        If (Private_piOpsLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_OPSLIMIT_INTERACTIVE to opslimit
+        Else Get Private_piOpsLimit to opslimit
+
+        Get CryptoPwhash of oSodium ;
+                outlen ucaPasscode ucaSalt opslimit memlimit crypto_pwhash_ALG_DEFAULT to ucaKey
+
+        Function_Return ucaKey
+    End_Function
+
+    Function Private_Impl_StorageString UChar[] ByRef ucaPasscode Returns String
+        String   sResult
+        UBigInt  opslimit
+        UInteger memlimit
+
+        If (Private_piMemLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_MEMLIMIT_INTERACTIVE to memlimit
+        Else Get Private_piMemLimit to memlimit
+        If (Private_piOpsLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_OPSLIMIT_INTERACTIVE to opslimit
+        Else Get Private_piOpsLimit to opslimit
+
+        Get CryptoPwhashStr of oSodium ucaPasscode opslimit memlimit to sResult
+
+        Function_Return sResult
+    End_Function
+
+    Function Private_Impl_Verify UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bResult
+
+        Get CryptoPwhashStrVerify of oSodium sStorageString ucaPasscode to bResult
+
+        Function_Return bResult
+    End_Function
+
+End_Class
+
+Class cLibsodiumPasscodeHash_Impl_Argon2i is a cLibsodiumPasscodeStorage_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piMemLimit to crypto_pwhash_argon2i_MEMLIMIT_INTERACTIVE
+        Set Private_piOpsLimit to crypto_pwhash_argon2i_OPSLIMIT_INTERACTIVE
+    End_Procedure
+
+    Function Private_Impl_DeriveKey UChar[] ByRef ucaPasscode UChar[] ucaSalt Integer iOutlen Returns UChar[]
+        UBigInt  opslimit
+        UChar[]  ucaKey
+        UInteger memlimit
+        UInteger outlen
+
+        If (iOutlen = C_SEC_DEFAULT) Move crypto_pwhash_argon2i_BYTES_MIN to outlen
+        Else Move iOutlen to outlen
+
+        If (Private_piMemLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_argon2i_MEMLIMIT_INTERACTIVE to memlimit
+        Else Get Private_piMemLimit to memlimit
+        If (Private_piOpsLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_argon2i_OPSLIMIT_INTERACTIVE to opslimit
+        Else Get Private_piOpsLimit to opslimit
+
+        Get CryptoPwhash of oSodium ;
+                outlen ucaPasscode ucaSalt opslimit memlimit crypto_pwhash_argon2i_ALG_ARGON2I13 to ucaKey
+
+        Function_Return ucaKey
+    End_Function
+
+    Function Private_Impl_StorageString UChar[] ByRef ucaPasscode Returns String
+        String   sResult
+        UBigInt  opslimit
+        UInteger memlimit
+
+        If (Private_piMemLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_argon2i_MEMLIMIT_INTERACTIVE to memlimit
+        Else Get Private_piMemLimit to memlimit
+        If (Private_piOpsLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_argon2i_OPSLIMIT_INTERACTIVE to opslimit
+        Else Get Private_piOpsLimit to opslimit
+
+        Get CryptoPwhashArgon2iStr of oSodium ucaPasscode opslimit memlimit to sResult
+
+        Function_Return sResult
+    End_Function
+
+    Function Private_Impl_Verify UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bResult
+
+        Get CryptoPwhashStrVerify of oSodium sStorageString ucaPasscode to bResult
+
+        Function_Return bResult
+    End_Function
+
+End_Class
+
+Class cLibsodiumPasscodeHash_Impl_Argon2id is a cLibsodiumPasscodeStorage_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piMemLimit to crypto_pwhash_argon2id_MEMLIMIT_INTERACTIVE
+        Set Private_piOpsLimit to crypto_pwhash_argon2id_OPSLIMIT_INTERACTIVE
+    End_Procedure
+
+    Function Private_Impl_DeriveKey UChar[] ByRef ucaPasscode UChar[] ucaSalt Integer iOutlen Returns UChar[]
+        UBigInt  opslimit
+        UChar[]  ucaKey
+        UInteger memlimit
+        UInteger outlen
+
+        If (iOutlen = C_SEC_DEFAULT) Move crypto_pwhash_argon2id_BYTES_MIN to outlen
+        Else Move iOutlen to outlen
+
+        If (Private_piMemLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_argon2id_MEMLIMIT_INTERACTIVE to memlimit
+        Else Get Private_piMemLimit to memlimit
+        If (Private_piOpsLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_argon2id_OPSLIMIT_INTERACTIVE to opslimit
+        Else Get Private_piOpsLimit to opslimit
+
+        Get CryptoPwhash of oSodium ;
+                outlen ucaPasscode ucaSalt opslimit memlimit crypto_pwhash_argon2id_ALG_ARGON2ID13 to ucaKey
+
+        Function_Return ucaKey
+    End_Function
+
+    Function Private_Impl_StorageString UChar[] ByRef ucaPasscode Returns String
+        String   sResult
+        UBigInt  opslimit
+        UInteger memlimit
+
+        If (Private_piMemLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_argon2id_MEMLIMIT_INTERACTIVE to memlimit
+        Else Get Private_piMemLimit to memlimit
+        If (Private_piOpsLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_argon2id_OPSLIMIT_INTERACTIVE to opslimit
+        Else Get Private_piOpsLimit to opslimit
+
+        Get CryptoPwhashArgon2idStr of oSodium ucaPasscode opslimit memlimit to sResult
+
+        Function_Return sResult
+    End_Function
+
+    Function Private_Impl_Verify UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bResult
+
+        Get CryptoPwhashStrVerify of oSodium sStorageString ucaPasscode to bResult
+
+        Function_Return bResult
+    End_Function
+
+End_Class
+
+Class cLibsodiumPasscodeHash_Impl_Scrypt is a cLibsodiumPasscodeStorage_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_piMemLimit to crypto_pwhash_scryptsalsa208sha256_MEMLIMIT_INTERACTIVE
+        Set Private_piOpsLimit to crypto_pwhash_scryptsalsa208sha256_OPSLIMIT_INTERACTIVE
+    End_Procedure
+
+    Function Private_Impl_DeriveKey UChar[] ByRef ucaPasscode UChar[] ucaSalt Integer iOutlen Returns UChar[]
+        UBigInt  opslimit
+        UChar[]  ucaKey
+        UInteger memlimit
+        UInteger outlen
+
+        If (iOutlen = C_SEC_DEFAULT) Move crypto_pwhash_scryptsalsa208sha256_BYTES_MIN to outlen
+        Else Move iOutlen to outlen
+
+        If (Private_piMemLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_scryptsalsa208sha256_MEMLIMIT_INTERACTIVE to memlimit
+        Else Get Private_piMemLimit to memlimit
+        If (Private_piOpsLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_scryptsalsa208sha256_OPSLIMIT_INTERACTIVE to opslimit
+        Else Get Private_piOpsLimit to opslimit
+
+        Get CryptoPwhashSCrypt of oSodium outlen ucaPasscode ucaSalt opslimit memlimit to ucaKey
+
+        Function_Return ucaKey
+    End_Function
+
+    Function Private_Impl_StorageString UChar[] ByRef ucaPasscode Returns String
+        String   sResult
+        UBigInt  opslimit
+        UInteger memlimit
+
+        If (Private_piMemLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_scryptsalsa208sha256_MEMLIMIT_INTERACTIVE to memlimit
+        Else Get Private_piMemLimit to memlimit
+        If (Private_piOpsLimit(Self) = C_SEC_DEFAULT) Move crypto_pwhash_scryptsalsa208sha256_OPSLIMIT_INTERACTIVE to opslimit
+        Else Get Private_piOpsLimit to opslimit
+
+        Get CryptoPwhashSCryptStr of oSodium ucaPasscode opslimit memlimit to sResult
+
+        Function_Return sResult
+    End_Function
+
+    Function Private_Impl_Verify UChar[] ByRef ucaPasscode String sStorageString Returns Boolean
+        Boolean bResult
+
+        Get CryptoPwhashSCryptStrVerify of oSodium sStorageString ucaPasscode to bResult
+
+        Function_Return bResult
+    End_Function
+
+End_Class
+
+Define C_SEC_PWHASH_LIBSODIUM_DEFAULT for (RefClass(cLibsodiumPasscodeHash_Impl_Default))
+Define C_SEC_PWHASH_LIBSODIUM_ARGON2I for (RefClass(cLibsodiumPasscodeHash_Impl_Argon2i))
+Define C_SEC_PWHASH_LIBSODIUM_ARGON2ID for (RefClass(cLibsodiumPasscodeHash_Impl_Argon2id))
+Define C_SEC_PWHASH_LIBSODIUM_SCRYPT for (RefClass(cLibsodiumPasscodeHash_Impl_Scrypt))

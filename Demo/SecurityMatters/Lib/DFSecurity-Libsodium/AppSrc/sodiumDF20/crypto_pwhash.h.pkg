@@ -1,0 +1,182 @@
+//#include "crypto_pwhash_argon2i.h"
+//#include "crypto_pwhash_argon2id.h"
+
+Define crypto_pwhash_ALG_ARGON2I13 for crypto_pwhash_argon2i_ALG_ARGON2I13
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_alg_argon2i13 "crypto_pwhash_alg_argon2i13" sLibsodiumDllName ;
+    Returns Integer
+
+Define crypto_pwhash_ALG_ARGON2ID13 for crypto_pwhash_argon2id_ALG_ARGON2ID13
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_alg_argon2id13 "crypto_pwhash_alg_argon2id13" sLibsodiumDllName ;
+    Returns Integer
+
+Define crypto_pwhash_ALG_DEFAULT for crypto_pwhash_ALG_ARGON2ID13
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_alg_default "crypto_pwhash_alg_default" sLibsodiumDllName ;
+    Returns Integer
+
+Define crypto_pwhash_BYTES_MIN for crypto_pwhash_argon2id_BYTES_MIN
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_bytes_min "crypto_pwhash_bytes_min" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_BYTES_MAX for crypto_pwhash_argon2id_BYTES_MAX
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_bytes_max "crypto_pwhash_bytes_max" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_PASSWD_MIN for crypto_pwhash_argon2id_PASSWD_MIN
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_passwd_min "crypto_pwhash_passwd_min" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_PASSWD_MAX for crypto_pwhash_argon2id_PASSWD_MAX
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_passwd_max "crypto_pwhash_passwd_max" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_SALTBYTES for crypto_pwhash_argon2id_SALTBYTES
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_saltbytes "crypto_pwhash_saltbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_STRBYTES for crypto_pwhash_argon2id_STRBYTES
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_strbytes "crypto_pwhash_strbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_STRPREFIX for crypto_pwhash_argon2id_STRPREFIX
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_strprefix "crypto_pwhash_strprefix" sLibsodiumDllName ;
+    Returns String
+
+Define crypto_pwhash_OPSLIMIT_MIN for crypto_pwhash_argon2id_OPSLIMIT_MIN
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_opslimit_min "crypto_pwhash_opslimit_min" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_OPSLIMIT_MAX for crypto_pwhash_argon2id_OPSLIMIT_MAX
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_opslimit_max "crypto_pwhash_opslimit_max" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_MEMLIMIT_MIN for crypto_pwhash_argon2id_MEMLIMIT_MIN
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_memlimit_min "crypto_pwhash_memlimit_min" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_MEMLIMIT_MAX for crypto_pwhash_argon2id_MEMLIMIT_MAX
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_memlimit_max "crypto_pwhash_memlimit_max" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_OPSLIMIT_INTERACTIVE for crypto_pwhash_argon2id_OPSLIMIT_INTERACTIVE
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_opslimit_interactive "crypto_pwhash_opslimit_interactive" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_MEMLIMIT_INTERACTIVE for crypto_pwhash_argon2id_MEMLIMIT_INTERACTIVE
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_memlimit_interactive "crypto_pwhash_memlimit_interactive" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_OPSLIMIT_MODERATE for crypto_pwhash_argon2id_OPSLIMIT_MODERATE
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_opslimit_moderate "crypto_pwhash_opslimit_moderate" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_MEMLIMIT_MODERATE for crypto_pwhash_argon2id_MEMLIMIT_MODERATE
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_memlimit_moderate "crypto_pwhash_memlimit_moderate" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_OPSLIMIT_SENSITIVE for crypto_pwhash_argon2id_OPSLIMIT_SENSITIVE
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_opslimit_sensitive "crypto_pwhash_opslimit_sensitive" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_pwhash_MEMLIMIT_SENSITIVE for crypto_pwhash_argon2id_MEMLIMIT_SENSITIVE
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_memlimit_sensitive "crypto_pwhash_memlimit_sensitive" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash "crypto_pwhash" sLibsodiumDllName ;
+    Pointer  out ;
+    BigInt  outlen ;
+    Pointer  passwd ;
+    BigInt  passwdlen ;
+    Pointer  salt ;
+    BigInt  opslimit ;
+    UInteger memlimit ;
+    Integer  alg ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_str "crypto_pwhash_str" sLibsodiumDllName ;
+    Pointer  out ;
+    Pointer  passwd ;
+    BigInt   passwdlen ;
+    BigInt   opslimit ;
+    UInteger memlimit ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_str_alg "crypto_pwhash_str_alg" sLibsodiumDllName ;
+    Pointer  str ;
+    Pointer  passwd ;
+    BigInt   passwdlen ;
+    BigInt   opslimit ;
+    UInteger memlimit ;
+    Integer  alg ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_str_verify "crypto_pwhash_str_verify" sLibsodiumDllName ;
+    Pointer  str ;
+    Pointer  passwd ;
+    BigInt   passwdlen ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_str_needs_rehash "crypto_pwhash_str_needs_rehash" sLibsodiumDllName ;
+    Pointer str ;
+    BigInt   opslimit ;
+    UInteger memlimit ;
+    Returns  Integer
+
+Define crypto_pwhash_PRIMITIVE for "argon2id,argon2i"
+
+{ Visibility=Private }
+External_Function libsodium_crypto_pwhash_primitive "crypto_pwhash_primitive" sLibsodiumDllName ;
+    Returns String
+

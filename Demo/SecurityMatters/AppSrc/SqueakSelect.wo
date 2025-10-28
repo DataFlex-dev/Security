@@ -1,0 +1,118 @@
+﻿Use AllWebAppClasses.pkg
+
+Use cWebAppUserDataDictionary.dd
+Use cSqueaksDataDictionary.dd
+
+Object oSqueakSelect is a cWebView
+    Set psCaption to "Squeaks"
+    Set peWebViewStyle to wvsDrilldown
+    Set peViewType to vtSelect
+    Set piColumnCount to 12
+    Set pbShowCaption to False
+    Set piMaxWidth to 1024
+    Set pbServerOnShow to True
+
+    Object oWebAppUser_DD is a cWebAppUserDataDictionary
+    End_Object
+
+    Object oSqueaks_DD is a cSqueaksDataDictionary
+        Set DDO_Server to oWebAppUser_DD
+        Set pbUseDDSQLFilters to True
+
+        Procedure OnConstrain
+            String sSqlFilter
+            String sFilterValue
+
+            Move (SFormat("Squeaks.Status=%1", C_SQUEAK_STATUS_PUBLIC)) to sSqlFilter
+
+            If (IsLoggedIn(ghoWebSessionManager)) Begin
+                Add (SFormat(" OR Squeaks.UserId='%1'", psLoginName(ghoWebSessionManager))) to sSqlFilter
+            End
+
+            WebGet psValue of oFilterForm to sFilterValue
+            If (sFilterValue <> '') Begin
+                Move (SFormat("(%1) AND (Squeaks.UserId like '%%%2%' OR Squeaks.Published like '%%%2%' OR Squeaks.Content like '%%%2%')", sSqlFilter, Trim(sFilterValue))) to sSqlFilter
+            End
+            
+//          To prevent SQL injection, uncomment the code below            
+//            Get SQLEscapedStr sSqlFilter to sSqlFilter
+            Set psSQLFilter of (Main_DD(Self)) to sSqlFilter
+        End_Procedure
+    End_Object
+
+    Set Main_DD To oSqueaks_DD
+    Set Server  To oSqueaks_DD
+
+    Object oFilterForm is a cWebForm
+        Set piColumnSpan to 0
+        Set pbShowLabel to False
+        Set pbServerOnChange to True
+
+        Procedure OnChange String sNewValue String sOldValue
+            Send Rebuild_Constraints of (Main_DD(Self))
+            Send Find of (Main_DD(Self)) FIRST_RECORD 2
+            // trigger grid clear for empty resultset
+            Send FindDDRecordInBuffer of oList
+        End_Procedure
+    End_Object
+
+    Object oWebSpacer1 is a cWebSpacer
+        Set piHeight to 20
+    End_Object
+
+    Object oList is a cWebList
+        Set piColumnSpan to 0
+        Set psCSSClass to "MobileList"
+        Set pbServerOnRowClick to True
+        Set pbFillHeight to True
+        Set pbShowHeader to False
+        Set piSortColumn to 0
+
+        Object oSqueaksPublished is a cWebColumn
+            Entry_Item Squeaks.Published
+            Set psCaption to "Published"
+            Set piWidth to 180
+        End_Object
+
+        Object oWebAppUserFullName is a cWebColumn
+            Entry_Item WebAppUser.FullName
+            Set psCaption to "Author"
+            Set piWidth to 200
+        End_Object
+
+        Object oSqueaksContent is a cWebColumn
+            Entry_Item Squeaks.Content
+            Set psCaption to "Message"
+            Set piWidth to 700
+        End_Object
+
+        Procedure OnRowClick String sRowId
+            Register_Object oSqueakZoom
+            Send NavigateForward of oSqueakZoom Self
+        End_Procedure
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+
+        Object oNewButton is a cWebMenuItem
+            Set psCSSClass to "WebClearMenuItem"
+            Set psCaption to "New"
+
+            Procedure OnClick
+                Register_Object oSqueakZoom
+                Send NavigateForward of oSqueakZoom Self
+            End_Procedure
+
+            Procedure OnGetNavigateForwardData tWebNavigateData ByRef NavigateData Handle hoToView
+                Move True to NavigateData.bNewRecord
+            End_Procedure
+        End_Object
+    End_Object
+
+    // After login OnNavigateForward and OnLoad are _not_ triggered, so we must do loading logic here.
+    Procedure OnShow
+        WebSet pbRender of oNewButton to (IsLoggedIn(ghoWebSessionManager))
+        Send Find of (Main_DD(Self)) FIRST_RECORD 2
+    End_Procedure
+
+End_Object

@@ -1,0 +1,14 @@
+#IF (!@ > 191)
+    CompilerLevelWarning AmbiguousFunctions Off
+#ENDIF
+Use cCngHash_Impl.pkg
+Use cCngPasscodeStorage_Impl.pkg
+Use cCngSignature_Impl.pkg
+#IF (!@ > 191)
+    CompilerLevelWarning AmbiguousFunctions On
+#ENDIF
+Use cCngSecurityEngine.pkg
+Use cCngSymmetricKeyEncryption_Impl.pkg
+Use cCngAuthenticatedEncryption_Impl.pkg
+
+Get CreateNamed of ghoSecurity (RefClass(cCngSecurityEngine)) "CngSecurityEngine" to gVoid

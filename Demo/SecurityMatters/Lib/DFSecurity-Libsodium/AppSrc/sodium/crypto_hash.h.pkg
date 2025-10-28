@@ -1,0 +1,37 @@
+///*
+// * WARNING: Unless you absolutely need to use SHA512 for interoperatibility,
+// * purposes, you might want to consider crypto_generichash() instead.
+// * Unlike SHA512, crypto_generichash() is not vulnerable to length
+// * extension attacks.
+// */
+
+Use sodium\crypto_hash_sha512.h.pkg
+  
+Define crypto_hash_BYTES for crypto_hash_sha512_BYTES
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_hash_bytes "crypto_hash_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_hash "crypto_hash" sLibsodiumDllName ;
+    Pointer  out ;
+    Pointer  in ;
+;// UBigInt  inlen ;
+    UInteger inlen1 ;
+    UInteger inlen2 ;
+    Returns  Integer
+
+Define crypto_hash_PRIMITIVE for "sha512"
+
+{ Visibility=Private }
+External_Function libsodium_crypto_hash_primitive "crypto_hash_primitive" sLibsodiumDllName ;
+    Returns String

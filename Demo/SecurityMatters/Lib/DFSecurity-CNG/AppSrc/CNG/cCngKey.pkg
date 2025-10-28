@@ -1,0 +1,223 @@
+Use CNG\cCng_ExternalHandleWrappingObject.pkg
+
+Class cCngKey is a cCng_ExternalHandleWrappingObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Boolean Private_pbAuthTagMismatch
+        { Visibility=Private }
+        Property Pointer Private_ppKeyObject
+    End_Procedure
+
+    { MethodType=Property }
+    Function piKeyLength Returns UInteger
+        Handle   hKey
+        UInteger uiLen
+
+        Get phExternalHandle to hKey
+        Get BCryptNamedUIntegerPropertyValue of oCryptoApiNextGen hKey BCRYPT_KEY_LENGTH to uiLen
+
+        Function_Return uiLen
+    End_Function
+
+    // Only the ucaData parameter is mandatory. uiFlags is zero by default.
+    // Returns the decrypted data when successful, or an empty UChar[] otherwise.
+    Function Decrypt UChar[] ucaData UInteger uiFlags UChar[] ByRef ucaIV Pointer pAuthInfo Returns UChar[]
+        Handle   hKey
+        Integer  iStatus
+        Pointer  pbIV
+        Pointer  pPaddingInfo
+        UChar[]  ucaOutput
+        UInteger cbIV dwFlags
+
+        Get phExternalHandle to hKey
+        Move (If(num_arguments > 1, uiFlags, 0)) to dwFlags
+        If (num_arguments > 3) Begin
+            Move pAuthInfo to pPaddingInfo
+            // ToDo: find a way to NOT hard-code these offsets
+
+#IF (!@ < 191)
+            Move (DeRefDw(pAuthInfo, 8)) to pbIV
+            Move (DeRefDw(pAuthInfo, 12)) to cbIV
+#ELSE
+            Move (DeRefPtr(pAuthInfo, 8)) to pbIV
+            Move (DeRefDw(pAuthInfo, 8+SizeOfType(Longptr))) to cbIV
+#ENDIF
+        End
+        Else If (num_arguments > 2) Begin
+            Move 0 to pPaddingInfo
+            Move (AddressOf(ucaIV))   to pbIV
+            Move (SizeOfArray(ucaIV)) to cbIV
+        End
+        Else Begin
+            Move 0 to pPaddingInfo
+            Move 0 to pbIV
+            Move 0 to cbIV
+        End
+
+        Get BCryptDecrypt of oCryptoApiNextGen hKey ucaData pPaddingInfo pbIV cbIV dwFlags to ucaOutput
+        Get piLastStatus of oCryptoApiNextGen to iStatus
+        Set Private_pbAuthTagMismatch to (iStatus = STATUS_AUTH_TAG_MISMATCH)
+
+        Function_Return ucaOutput
+    End_Function
+
+    Function Duplicate Returns Handle
+        Handle    hKey
+        Handle    hoNewKey
+        Integer   iStatus
+        tHandleAndPointer dup
+
+        Get phExternalHandle to hKey
+
+        Get BCryptDuplicateKey of oCryptoApiNextGen hKey to dup
+        Get piLastStatus of oCryptoApiNextGen to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Get CreateNamed (RefClass(cCngKey)) ("cCngKey") to hoNewKey
+            Set phExternalHandle    of hoNewKey to dup.hHandle
+            Set Private_ppKeyObject of hoNewKey to dup.pPointer
+        End
+
+        Function_Return hoNewKey
+    End_Function
+
+    // @param uiFlags is zero by default.
+    // @param pAuthInfo is optional. When provided the nonce inside it is used instead of ucaIV.
+    // Returns the encrypted data when successful, or an empty UChar[] otherwise.
+    Function Encrypt UChar[] ucaData UInteger uiFlags UChar[] ByRef ucaIV Pointer pAuthInfo Returns UChar[]
+        Handle   hKey
+        Integer  iStatus
+        Pointer  pPaddingInfo
+        Pointer  pbIV
+        UChar[]  ucaOutput
+        UInteger cbIV
+        UInteger dwFlags
+
+        Get phExternalHandle to hKey
+        Move (If(num_arguments > 1, uiFlags, 0)) to dwFlags
+        If (num_arguments > 3) Begin
+            Move pAuthInfo to pPaddingInfo
+            // ToDo: find a way to NOT hard-code these offsets
+#IF (!@ < 191)
+            Move (DeRefDw(pAuthInfo, 8)) to pbIV
+            Move (DeRefDw(pAuthInfo, 12)) to cbIV
+#ELSE
+            Move (DeRefPtr(pAuthInfo, 8)) to pbIV
+            Move (DeRefDw(pAuthInfo, 8+SizeOfType(Longptr))) to cbIV
+#ENDIF
+        End
+        Else If (num_arguments > 2) Begin
+            Move 0 to pPaddingInfo
+            Move (AddressOf(ucaIV))   to pbIV
+            Move (SizeOfArray(ucaIV)) to cbIV
+        End
+        Else Begin
+            Move 0 to pPaddingInfo
+            Move 0 to pbIV
+            Move 0 to cbIV
+        End
+
+        Get BCryptEncrypt of oCryptoApiNextGen hKey ucaData pPaddingInfo pbIV cbIV dwFlags to ucaOutput
+
+        Function_Return ucaOutput
+    End_Function
+
+    Procedure ReleaseExternalHandle Handle hExternalHandle
+        Pointer pbKeyObject
+
+        Move (WinAPI_BCryptDestroyKey(hExternalHandle)) to gVoid
+
+        Get Private_ppKeyObject to pbKeyObject
+        If (pbKeyObject <> 0) Move (Free(pbKeyObject)) to gVoid
+    End_Procedure
+
+    // Only ucaHashValue is required. When ePaddingScheme is specified, ucaPaddingInfo is required
+    // as well.
+    //
+    // ePaddingScheme can be BCRYPT_PAD_PKCS1 with ucaPaddingInfo a BCRYPT_PKCS1_PADDING_INFO structure.
+    // ePaddingScheme can be BCRYPT_PAD_PSS with ucaPaddingInfo a BCRYPT_PSS_PADDING_INFO structure.
+    Function SignHash UChar[] ucaHashValue UInteger ePaddingScheme UChar[] ucaPaddingInfo Returns UChar[]
+        Handle   hKey
+        Handle   hoPaddingInfo
+//        Integer  iStatus
+//        Pointer  pPaddingInfo
+        UChar[]  ucaSignature
+//        UInteger cbResult
+//        UInteger dwFlags
+
+        Get phExternalHandle to hKey
+//        If (num_arguments > 1) Begin
+//            Move ePaddingScheme to dwFlags
+//            Move (AddressOf(ucaPaddingInfo)) to pPaddingInfo
+//        End
+
+//        Move 0 to cbResult
+        Get BCryptSignHash of oCryptoApiNextGen hKey hoPaddingInfo ucaHashValue to ucaSignature
+//        If (iStatus <> STATUS_SUCCESS) Begin
+////            Send RaiseBCryptError of oCryptoApiNextGen iStatus "SignHash#1"
+//        End
+//        Move (ResizeArray(ucaSignature, cbResult)) to ucaSignature
+//        Move (BCryptSignHash(hKey, pPaddingInfo, AddressOf(ucaHashValue), SizeOfArray(ucaHashValue), AddressOf(ucaSignature), SizeOfArray(ucaSignature), AddressOf(cbResult), dwFlags)) to iStatus
+//        If (iStatus <> STATUS_SUCCESS) Begin
+////            Send RaiseBCryptError of oCryptoApiNextGen iStatus "SignHash#2"
+//        End
+
+        Function_Return ucaSignature
+    End_Function
+
+    // Only ucaHashValue and ucaSignature are required. When ePaddingScheme is specified, ucaPaddingInfo
+    // is required as well.
+    //
+    // ePaddingScheme can be BCRYPT_PAD_PKCS1 with ucaPaddingInfo a BCRYPT_PKCS1_PADDING_INFO structure.
+    // ePaddingScheme can be BCRYPT_PAD_PSS with ucaPaddingInfo a BCRYPT_PSS_PADDING_INFO structure.
+    Function VerifySignature UChar[] ucaHashValue UChar[] ucaSignature UInteger ePaddingScheme UChar[] ucaPaddingInfo Returns Boolean
+        Boolean  bValid
+        Handle   hKey
+        Handle   hoPaddingInfo
+//        Integer  iStatus
+//        Pointer  pPaddingInfo
+//        UInteger dwFlags
+
+        Get phExternalHandle to hKey
+//        If (num_arguments > 2) Begin
+//            Move ePaddingScheme to dwFlags
+//            Move (AddressOf(ucaPaddingInfo)) to pPaddingInfo
+//        End
+
+        Get BCryptVerifySignature of oCryptoApiNextGen hKey hoPaddingInfo ucaHashValue ucaSignature to bValid
+//        Move (iStatus = STATUS_SUCCESS) to bValid
+//        If (iStatus <> STATUS_SUCCESS and iStatus <> STATUS_INVALID_SIGNATURE) Begin
+////            Send RaiseBCryptError of oCryptoApiNextGen iStatus "VerifySignature"
+//        End
+
+        Function_Return bValid
+    End_Function
+
+    Function DeriveKey Handle hoBuffers UInteger iOutLen UInteger dwFlags Returns UChar[]
+        Handle  hKey
+        Pointer pParameterList
+        UChar[] ucaDerivedKey
+
+        Get Private_phExternalHandle to hKey
+        Get ppBlob of hoBuffers to pParameterList
+
+        Get BCryptKeyDerivation of oCryptoApiNextGen hKey pParameterList iOutLen dwFlags to ucaDerivedKey
+
+        Function_Return ucaDerivedKey
+    End_Function
+
+    Procedure Finalize
+        Handle  hExternalHandle
+        Handle  hoKey
+        Integer iStatus
+
+        Get Private_phExternalHandle to hExternalHandle
+        Get BCryptFinalizeKeyPair of oCryptoApiNextGen hExternalHandle to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Set phExternalHandle to hExternalHandle
+        End
+    End_Procedure
+
+End_Class

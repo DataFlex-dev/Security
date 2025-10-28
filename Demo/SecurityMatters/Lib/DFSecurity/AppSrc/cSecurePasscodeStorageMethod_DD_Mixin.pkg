@@ -1,0 +1,68 @@
+Use VdfBase.pkg
+
+Class cSecurePasscodeStorageMethod_DD_Mixin is a Mixin
+
+    Procedure Define_cSecurePasscodeStorageMethod_DD_Mixin
+        { Visibility=Private }
+        Property Handle[] Private_piPasscodeStorageObjects
+    End_Procedure
+
+    Function Field_PasscodeStorageObject Integer iField Returns Handle
+        Handle   hoHash
+        Handle[] hoaHashes
+
+        Get Private_piPasscodeStorageObjects to hoaHashes
+        If (SizeOfArray(hoaHashes) > iField) Move hoaHashes[iField] to hoHash
+
+        Function_Return hoHash
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set Field_PasscodeStorageObject Integer iField Handle hoPasscodeStorage
+        Handle[] hoaHashes
+
+        Get Private_piPasscodeStorageObjects to hoaHashes
+        Move hoPasscodeStorage to hoaHashes[iField]
+        Set Private_piPasscodeStorageObjects to hoaHashes
+    End_Procedure
+
+    // override
+    Procedure Set Field_Current_Value Integer iField String sValue
+        Handle[] hoaHashes
+        UChar[]  ucaPasscode
+
+        Get Private_piPasscodeStorageObjects to hoaHashes
+        If (SizeOfArray(hoaHashes) > iField and hoaHashes[iField] <> 0) Begin
+            Move (StringToUCharArray(sValue)) to ucaPasscode
+            Send SecureStringOverwrite of ghoSecurity (&sValue)
+            Get StorageString of hoaHashes[iField] (&ucaPasscode) to sValue
+            Send SecureUCharArrayOverwrite of ghoSecurity (&ucaPasscode)
+        End
+
+        Forward Set Field_Current_Value iField to sValue
+    End_Procedure
+
+    { Visibility=Private }
+    Function VerifyPasscode Integer iField String sStorageString String sEnteredPasscode Returns Boolean
+        Boolean  bMatch
+        Handle   hoHash
+        Handle[] hoaHashes
+        UChar[]  ucaPasscode
+
+        Get Private_piPasscodeStorageObjects to hoaHashes
+        If (SizeOfArray(hoaHashes) > iField and hoaHashes[iField] <> 0) Begin
+            Move (StringToUCharArray(sEnteredPasscode)) to ucaPasscode
+            Get Verify of hoaHashes[iField] (&ucaPasscode) sStorageString to bMatch
+            Send SecureUCharArrayOverwrite of ghoSecurity (&ucaPasscode)
+        End
+        Else Begin
+            Move (sStorageString = sEnteredPasscode) to bMatch
+        End
+
+        Send SecureStringOverwrite of ghoSecurity (&sEnteredPasscode)
+
+        Function_Return bMatch
+    End_Function
+
+End_Class
+

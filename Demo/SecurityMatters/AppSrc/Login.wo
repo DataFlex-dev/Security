@@ -1,0 +1,302 @@
+Use AllWebAppClasses.pkg
+Use c2FAWebGroup.pkg
+Use cWebLabel.pkg
+
+Object oLoginDialog is a cWebView
+    Set piMinWidth to 250
+    Set piMaxWidth to 420
+    Set pbLoginModeEnforced to False
+    Set piColumnCount to 12
+    Set psCSSClass to "LoginView"
+
+    Delegate Set phoLoginView to Self
+
+    Object oTopSpacer is a cWebSpacer
+        Set pbFillHeight to True
+        Set piColumnSpan to 12
+    End_Object
+
+    Object oWarning is a cWebLabel
+        Set pbVisible to False
+        Set psCaption to "Invalid loginname or passcode."
+        Set peAlign to alignCenter
+        Set piColumnSpan to 12
+        Set psCSSClass to "LoginWarning"
+    End_Object
+
+    Object oLogo is a cWebImage
+        Set piColumnSpan to 10
+        Set psUrl to "images/DF_Logo_Retina.png"
+        Set pePosition to wiFit
+        Set piColumnIndex to 1
+        Set piHeight to 160
+
+        WebSetResponsive piHeight rmMobile to 100  // Best for small smart phones
+    End_Object
+
+    Object oLoginGroup is a cWebGroup
+        Set piColumnCount to 12
+        Set pbShowBorder  to False
+        Set pbShowCaption to False
+        Set psCSSClass to "LoginView"
+
+        Object oLoginName is a cWebForm
+            Set psLabel to "User ID:"
+            Set peLabelPosition to lpTop
+            Set piMaxLength to 20
+            Set piColumnIndex to 1
+            Set pbShowLabel to False
+            Set psPlaceHolder to "loginname"
+            Set piColumnSpan to 10
+        End_Object
+
+        Object oPasscode is a cWebForm
+            Set psLabel to "Passcode:"
+            Set pbPassword to True
+            Set peLabelAlign to alignLeft
+            Set piMaxLength to 20
+            Set peLabelPosition to lpTop
+            Set pbShowLabel to False
+            Set psPlaceHolder to "passcode"
+            Set piColumnSpan to 10
+            Set piColumnIndex to 1
+        End_Object
+
+        Object oWebSpacer1 is a cWebSpacer
+            Set piColumnSpan to 12
+            Set piHeight to 10
+        End_Object
+
+        Object oLoginButton is a cWebButton
+            Set pbShowLabel to False
+            Set psCaption to "Sign in"
+            Set pbServerOnClick to True
+            Set piColumnSpan to 10
+            Set piColumnIndex to 1
+
+            Procedure OnClick
+                Send DoCheckCredentials
+            End_Procedure
+        End_Object
+    End_Object
+
+    Object o2FAGroup is a c2FAWebGroup
+        Set piColumnCount to 12
+        Set pbShowBorder  to False
+        Set pbShowCaption to False
+        Set psAppId to (SFormat("https://%1", SettingValue(Self, "Core", "DomainName")))
+        Set piHashImplementation_Sha256 to C_SEC_HASH_CNG_SHA256
+
+        Set phoSecureOneTimePassword to (oMyOtp(ghoWebApp))
+
+        Procedure StartAuthenticate
+            Forward Send StartAuthenticate
+
+            Handle    hoOtp hoTemp
+            Integer   iNumReq
+            String    sOtpSpec
+
+            Get phoSecureOneTimePassword to hoOtp
+            If (hoOtp <> 0) Begin
+                Get RegisteredOtp to sOtpSpec
+                If (sOtpSpec = '') Break
+
+                Get UnpackFromStorage of hoOtp sOtpSpec to hoTemp
+                If (hoTemp = 0) Break
+
+                Get RequiredNumberOfCodes of hoTemp to iNumReq
+                Send Destroy of hoTemp
+            End
+
+            WebSet pbRender of oOneTimePasscode2 to (iNumReq > 1)
+            WebSet pbRender of oOneTimePasscode3 to (iNumReq > 2)
+        End_Procedure
+
+        Function RegisteredOtp Returns String
+            String sOtp
+
+            Get RegisteredOtp of oSessionManager to sOtp
+
+            Function_Return sOtp
+        End_Function
+
+        Procedure OnOTPAuthenticationFailure
+            Send ShowInfoBox "Authentication code failed - please try again"
+        End_Procedure
+
+        Procedure OnOTPAuthenticationSuccess
+            Send On2FAAuthenticationSuccess of oSessionManager
+            Send DoLogin
+        End_Procedure
+
+        Object oOneTimePasscode is a cWebForm
+            Set psLabel to "Authentication code:"
+            Set peLabelPosition to lpTop
+            Set piMaxLength to 20
+            Set piColumnIndex to 1
+            Set pbShowLabel to False
+            Set psPlaceHolder to "authentication code"
+            Set piColumnSpan to 10
+        End_Object
+
+        Object oOneTimePasscode2 is a cWebForm
+            Set psLabel to "Authentication code 2:"
+            Set peLabelPosition to lpTop
+            Set piMaxLength to 20
+            Set piColumnIndex to 1
+            Set pbShowLabel to False
+            Set psPlaceHolder to "authentication code #2"
+            Set piColumnSpan to 10
+        End_Object
+
+        Object oOneTimePasscode3 is a cWebForm
+            Set psLabel to "Authentication code 3:"
+            Set peLabelPosition to lpTop
+            Set piMaxLength to 20
+            Set piColumnIndex to 1
+            Set pbShowLabel to False
+            Set psPlaceHolder to "authentication code #3"
+            Set piColumnSpan to 10
+        End_Object
+
+        Object oWebSpacer1 is a cWebSpacer
+            Set piColumnSpan to 12
+            Set piHeight to 10
+        End_Object
+
+        Object oVerifyOtpButton is a cWebButton
+            Set pbShowLabel to False
+            Set psCaption to "Verify"
+            Set pbServerOnClick to True
+            Set piColumnSpan to 10
+            Set piColumnIndex to 1
+
+            Procedure OnClick
+                String[] asCodes
+
+                WebGet psValue of oOneTimePasscode to asCodes[0]
+                WebGet psValue of oOneTimePasscode2 to asCodes[1]
+                WebGet psValue of oOneTimePasscode3 to asCodes[2]
+                Send DoVerifyOtp asCodes
+            End_Procedure
+        End_Object
+
+        Object oU2FStatusLabel is a cWebLabel
+            Set piColumnSpan to 10
+            Set piColumnIndex to 1
+            Set psCaption to "Alternatively, press the button on your security key..."
+        End_Object
+
+        Function RegisteredU2FKeys Returns tU2FKey[]
+            tU2FKey[] keys
+
+            Get RegisteredU2FKeys of oSessionManager to keys
+
+            Function_Return keys
+        End_Function
+
+        Procedure OnU2FAuthenticationFailure
+            Send ShowInfoBox "U2F authentication failed - please try again"
+            Send StartAuthenticate
+        End_Procedure
+
+        Procedure OnU2FAuthenticationSuccess
+            Send On2FAAuthenticationSuccess of oSessionManager
+            Send DoLogin
+        End_Procedure
+
+        Procedure OnOTPSave String sOtpSpec
+            Constraint_Set Self Clear
+            Constrain WebAppUser2FA.WebAppUser_ID eq (psLoginName(ghoWebSessionManager))
+            Constrain WebAppUser2FA.IsOath eq 1
+            Constrained_Find First WebAppUser2FA by 1
+            If not Found Begin
+                Clear WebAppUser2FA
+                Get psLoginName of ghoWebSessionManager to WebAppUser2FA.WebAppUser_ID
+                Move 'OATH OTP (One Time Passwords)' to WebAppUser2FA.Description
+                Move (CurrentDateTime()) to WebAppUser2FA.Created
+                Move True to WebAppUser2FA.IsOath
+                Move False to WebAppUser2FA.IsU2f
+            End
+            Move sOtpSpec to WebAppUser2FA.Data
+            SaveRecord WebAppUser2FA
+        End_Procedure
+    End_Object
+
+    Object oBottomSpacer is a cWebSpacer
+        Set pbFillHeight to True
+        Set piColumnSpan to 12
+    End_Object
+
+    Procedure DoCheckCredentials
+        Integer eResult
+        String  sLoginName
+        String  sPasscode
+
+        WebGet psValue of oLoginName to sLoginName
+        WebGet psValue of oPasscode to sPasscode
+
+        Get VerifyCredentials of ghoWebSessionManager sLoginName sPasscode to eResult
+
+        Case Begin
+            Case (eResult = C_AUTH_OK)
+                WebSet psValue of oLoginName to ""
+                WebSet psValue of oPasscode to ""
+
+                Send DoLogin
+                Case Break
+            Case (eResult = C_AUTH_2FA)
+                WebSet psValue of oLoginName to ""
+                WebSet psValue of oPasscode to ""
+
+                WebSet pbRender of oLoginGroup to False
+                WebSet pbRender of o2FAGroup to True
+                Send Focus of oOneTimePasscode
+                Send StartAuthenticate of o2FAGroup
+                Case Break
+            Case Else
+                WebSet pbVisible of oWarning to True
+        Case End
+    End_Procedure
+
+    Procedure DoLogin
+        Handle hoDefaultView
+
+        Send Hide of oLoginDialog
+        Send ShowHeader of ghoWebApp
+        WebSet psCSSClass of ghoWebApp to ""
+        Get GetDefaultView to hoDefaultView
+        If (hoDefaultView > 0) Begin
+            Send Show of hoDefaultView
+        End
+
+        WebSet psValue of oOneTimePasscode to ""
+        WebSet pbVisible of oWarning to False
+    End_Procedure
+
+    Set pbServerOnSubmit to True
+    Procedure OnSubmit
+        Boolean bRender
+
+        WebGet pbRender of oLoginGroup to bRender
+        If bRender Send OnClick of oLoginButton
+        Else Send OnClick of oVerifyOtpButton
+    End_Procedure
+
+    Procedure OnLoad
+        Forward Send OnLoad
+
+        Send HideHeader to ghoWebApp
+        WebSet psCSSClass of ghoWebApp to "LoginBackground"
+
+        If (IsHttps(ghoWebApp)) Begin
+            WebSet pbRender of oLoginGroup to True
+            WebSet pbRender of o2FAGroup to False
+        End
+        Else Begin
+            WebSet pbRender to False
+            Error DFERR_PROGRAM "This application must be run via an encrypted HTTPS connection."
+        End
+    End_Procedure
+
+End_Object

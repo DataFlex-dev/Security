@@ -1,0 +1,538 @@
+Use DFSecurity.pkg
+Use libsodium\libsodium.pkg
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cLibsodiumHash_Impl_Base is a cSecureHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Pointer  Private_ppState
+        { Visibility=Private }
+        Property Pointer  Private_ppStateCopy
+
+        { Visibility=Private }
+        Property UInteger Private_puiOutlen
+
+        { Visibility=Private }
+        Property UInteger Private_puiStatelen
+
+        Object oSodium is a cLibSodium
+        End_Object
+    End_Procedure
+
+    Procedure Destroy_Object
+        Send FreeState
+
+        Forward Send Destroy_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure FreeState
+        Pointer pState
+        Pointer pStateCopy
+
+        Get Private_ppState to pState
+        If (pState <> 0) Begin
+            Move (libsodium_sodium_free(pState)) to gVoid
+
+            Move 0 to pState
+            Set Private_ppState to pState
+        End
+
+        Get Private_ppStateCopy to pStateCopy
+        If (pStateCopy <> 0) Begin
+            Move (libsodium_sodium_free(pStateCopy)) to gVoid
+
+            Move 0 to pStateCopy
+            Set Private_ppStateCopy to pStateCopy
+        End
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Init UInteger uiOutlen Returns Integer
+        Integer  iResult
+        Pointer  pState
+        Pointer  pStateCopy
+        UInteger uiStatelen
+
+        Set Private_puiOutlen to uiOutlen
+
+        Get Private_puiStatelen to uiStatelen
+
+        Move (libsodium_sodium_malloc(uiStatelen)) to pState
+        Get Private_Impl_Init pState to iResult
+
+        If (iResult = 0) Begin
+            Move (libsodium_sodium_malloc(uiStatelen)) to pStateCopy
+            Move (MemCopy(pStateCopy, pState, uiStatelen)) to gVoid
+            Move (libsodium_sodium_mprotect_noaccess(pStateCopy)) to gVoid
+
+            Set Private_ppState to pState
+            Set Private_ppStateCopy to pStateCopy
+        End
+        Else Begin
+            Move (libsodium_sodium_free(pState)) to gVoid
+        End
+
+        Function_Return iResult
+    End_Function
+
+    Function Init Integer iOutlen Returns Boolean
+        Integer iResult
+
+        Get Private_Init iOutlen to iResult
+
+        Function_Return (iResult = 0)
+    End_Function
+
+    { Visibility=Private }
+    Function Private_InitWithKey UChar[] ucaKey UInteger uiOutlen Returns Integer
+        Integer  iResult
+        Pointer  pState
+        Pointer  pStateCopy
+        UInteger uiStatelen
+
+        Set Private_puiOutlen to uiOutlen
+
+        Get Private_puiStatelen to uiStatelen
+
+        Move (libsodium_sodium_malloc(uiStatelen)) to pState
+        Get Private_Impl_InitWithKey pState ucaKey to iResult
+
+        If (iResult = 0) Begin
+            Move (libsodium_sodium_malloc(uiStatelen)) to pStateCopy
+            Move (MemCopy(pStateCopy, pState, uiStatelen)) to gVoid
+            Move (libsodium_sodium_mprotect_noaccess(pStateCopy)) to gVoid
+
+            Set Private_ppState to pState
+            Set Private_ppStateCopy to pStateCopy
+        End
+        Else Begin
+            Move (libsodium_sodium_free(pState)) to gVoid
+        End
+
+        Function_Return iResult
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Integer iResult
+
+        Get Private_InitWithKey ucaKey iOutlen to iResult
+
+        Function_Return (iResult = 0)
+    End_Function
+
+    Procedure Reinitialize
+        Pointer  pState
+        Pointer  pStateCopy
+        UInteger uiStatelen
+
+        Get Private_puiStatelen to uiStatelen
+        Get Private_ppState to pState
+        Get Private_ppStateCopy to pStateCopy
+
+        Move (libsodium_sodium_mprotect_readonly(pStateCopy)) to gVoid
+        Move (MemCopy(pState, pStateCopy, uiStatelen)) to gVoid
+        Move (libsodium_sodium_mprotect_noaccess(pStateCopy)) to gVoid
+    End_Procedure
+
+    Function Update UChar[] ucaData Returns Boolean
+        Integer iResult
+        Pointer pState
+
+        Get Private_ppState to pState
+        Get Private_Impl_Update pState (AddressOf(ucaData)) (SizeOfArray(ucaData)) to iResult
+
+        Function_Return (iResult = 0)
+    End_Function
+
+    Function Final Returns UChar[]
+        Integer  iResult
+        Pointer  pState
+        UChar[]  ucaHash
+        UInteger uiOutlen
+
+        Get Private_ppState to pState
+        Get Private_puiOutlen to uiOutlen
+        Move (ResizeArray(ucaHash, uiOutlen)) to ucaHash
+
+        Get Private_Impl_Final pState (AddressOf(ucaHash)) to iResult
+
+        Function_Return ucaHash
+    End_Function
+
+End_Class
+
+{ Visibility=Private }
+Class cLibsodiumHash_Impl_Blake2b is a cLibsodiumHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_puiOutlen to crypto_generichash_blake2b_BYTES
+        Set Private_puiStatelen to crypto_generichash_blake2b_STATEBYTES
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Impl_Init Pointer pState Returns Integer
+        Integer  iResult
+        UInteger uiOutlen
+
+        Get Private_puiOutlen to uiOutlen
+        Move (libsodium_crypto_generichash_blake2b_init(pState, 0, 0, uiOutlen)) to iResult
+
+        Function_Return iResult
+    End_Function
+
+    { Visibility=Private }
+    Function Private_Impl_InitWithKey Pointer pState UChar[] ucaKey Returns Integer
+        Integer  iResult
+        UInteger uiOutlen
+
+        Get Private_puiOutlen to uiOutlen
+        Move (libsodium_crypto_generichash_blake2b_init(pState, AddressOf(ucaKey), SizeOfArray(ucaKey), uiOutlen)) to iResult
+
+        Function_Return iResult
+    End_Function
+
+    { Visibility=Private }
+    Function Private_Impl_Update Pointer pState Pointer pData UBigInt uiDatalen Returns Integer
+        Integer iResult
+        UIntegerUInteger inlen
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (libsodium_crypto_generichash_blake2b_update(pState, pData, uiDatalen)) to iResult
+
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(uiDatalen)) to inlen
+        Move (libsodium_crypto_generichash_blake2b_update(pState, pData, inlen.ui1, inlen.ui2)) to iResult
+#ENDIF
+
+        Function_Return iResult
+    End_Function
+
+    { Visibility=Private }
+    Function Private_Impl_Final Pointer pState Pointer pOut Returns Integer
+        Integer  iResult
+        UInteger uiOutlen
+
+        Get Private_puiOutlen to uiOutlen
+        Move (libsodium_crypto_generichash_blake2b_final(pState, pOut, uiOutlen)) to iResult
+
+        Function_Return iResult
+    End_Function
+
+    Function Init Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen = C_SEC_DEFAULT) Move crypto_generichash_blake2b_BYTES to iOutlen
+        If (iOutlen < crypto_generichash_blake2b_BYTES_MIN or iOutlen > crypto_generichash_blake2b_BYTES_MAX) Function_Return False
+
+        Forward Get Init iOutlen to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen = C_SEC_DEFAULT) Move crypto_generichash_blake2b_BYTES to iOutlen
+        If (iOutlen < crypto_generichash_blake2b_BYTES_MIN or iOutlen > crypto_generichash_blake2b_BYTES_MAX) Function_Return False
+
+        Forward Get InitWithKey ucaKey iOutlen to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return crypto_generichash_blake2b_BYTES_MIN
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return crypto_generichash_blake2b_BYTES_MAX
+    End_Function
+
+End_Class
+
+{ Visibility=Private }
+Class cLibsodiumHash_Impl_Sha256 is a cLibsodiumHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_puiOutlen to crypto_hash_sha256_BYTES
+        Set Private_puiStatelen to crypto_hash_sha256_STATEBYTES
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Impl_Init Pointer pState Returns Integer
+        Function_Return (libsodium_crypto_hash_sha256_init(pState))
+    End_Function
+
+    { Visibility=Private }
+    Function Private_Impl_Update Pointer pState Pointer pData UBigInt uiDatalen Returns Integer
+        Integer iResult
+        UIntegerUInteger inlen
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (libsodium_crypto_hash_sha256_update(pState, pData, uiDatalen)) to iResult
+
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(uiDatalen)) to inlen
+        Move (libsodium_crypto_hash_sha256_update(pState, pData, inlen.ui1, inlen.ui2)) to iResult
+#ENDIF
+
+        Function_Return iResult
+    End_Function
+
+    { Visibility=Private }
+    Function Private_Impl_Final Pointer pState Pointer pOut Returns Integer
+        Function_Return (libsodium_crypto_hash_sha256_final(pState, pOut))
+    End_Function
+
+    Function Init Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> crypto_hash_sha256_BYTES) Function_Return False
+
+        Forward Get Init crypto_hash_sha256_BYTES to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return 0
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return 0
+    End_Function
+
+End_Class
+
+{ Visibility=Private }
+Class cLibsodiumHash_Impl_Sha512 is a cLibsodiumHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_puiOutlen to crypto_hash_sha512_BYTES
+        Set Private_puiStatelen to crypto_hash_sha512_STATEBYTES
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Impl_Init Pointer pState Returns Integer
+        Function_Return (libsodium_crypto_hash_sha512_init(pState))
+    End_Function
+
+    Function Private_Impl_Update Pointer pState Pointer pData UBigInt uiDatalen Returns Integer
+        Integer iResult
+        UIntegerUInteger inlen
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (libsodium_crypto_hash_sha512_update(pState, pData, uiDatalen)) to iResult
+
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(uiDatalen)) to inlen
+        Move (libsodium_crypto_hash_sha512_update(pState, pData, inlen.ui1, inlen.ui2)) to iResult
+#ENDIF
+
+        Function_Return iResult
+    End_Function
+
+    Function Private_Impl_Final Pointer pState Pointer pOut Returns Integer
+        Function_Return (libsodium_crypto_hash_sha512_final(pState, pOut))
+    End_Function
+
+    Function Init Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> crypto_hash_sha512_BYTES) Function_Return False
+
+        Forward Get Init crypto_hash_sha512_BYTES to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return 0
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return 0
+    End_Function
+
+End_Class
+
+{ Visibility=Private }
+Class cLibsodiumHash_Impl_Hmac_Sha256 is a cLibsodiumHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_puiOutlen to crypto_auth_hmacsha256_BYTES
+        Set Private_puiStatelen to crypto_auth_hmacsha256_STATEBYTES
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Impl_InitWithKey Pointer pState UChar[] ucaKey Returns Integer
+        Function_Return (libsodium_crypto_auth_hmacsha256_init(pState, AddressOf(ucaKey), SizeOfArray(ucaKey)))
+    End_Function
+
+    Function Private_Impl_Update Pointer pState Pointer pData UBigInt uiDatalen Returns Integer
+        Integer iResult
+        UIntegerUInteger inlen
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+
+        Move (libsodium_crypto_auth_hmacsha256_update(pState, pData, uiDatalen)) to iResult
+        
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(uiDatalen)) to inlen
+        Move (libsodium_crypto_auth_hmacsha256_update(pState, pData, inlen.ui1, inlen.ui2)) to iResult
+#ENDIF
+
+        Function_Return iResult
+    End_Function
+
+    Function Private_Impl_Final Pointer pState Pointer pOut Returns Integer
+        Function_Return (libsodium_crypto_auth_hmacsha256_final(pState, pOut))
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> crypto_auth_hmacsha256_BYTES) Function_Return False
+        Forward Get InitWithKey ucaKey crypto_auth_hmacsha256_BYTES to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return crypto_auth_hmacsha256_KEYBYTES
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return crypto_auth_hmacsha256_KEYBYTES
+    End_Function
+
+End_Class
+
+{ Visibility=Private }
+Class cLibsodiumHash_Impl_Hmac_Sha512 is a cLibsodiumHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_puiOutlen to crypto_auth_hmacsha512_BYTES
+        Set Private_puiStatelen to crypto_auth_hmacsha512_STATEBYTES
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Impl_InitWithKey Pointer pState UChar[] ucaKey Returns Integer
+        Function_Return (libsodium_crypto_auth_hmacsha512_init(pState, AddressOf(ucaKey), SizeOfArray(ucaKey)))
+    End_Function
+
+    Function Private_Impl_Update Pointer pState Pointer pData UBigInt uiDatalen Returns Integer
+        Integer iResult
+        UIntegerUInteger inlen
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (libsodium_crypto_auth_hmacsha512_update(pState, pData, uiDatalen)) to iResult
+
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(uiDatalen)) to inlen
+        Move (libsodium_crypto_auth_hmacsha512_update(pState, pData, inlen.ui1, inlen.ui2)) to iResult
+#ENDIF
+
+        Function_Return iResult
+    End_Function
+
+    Function Private_Impl_Final Pointer pState Pointer pOut Returns Integer
+        Function_Return (libsodium_crypto_auth_hmacsha512_final(pState, pOut))
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> crypto_auth_hmacsha512_BYTES) Function_Return False
+        Forward Get InitWithKey ucaKey crypto_auth_hmacsha512_BYTES to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return crypto_auth_hmacsha512_KEYBYTES
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return crypto_auth_hmacsha512_KEYBYTES
+    End_Function
+
+End_Class
+
+{ Visibility=Private }
+Class cLibsodiumHash_Impl_Hmac_Sha512256 is a cLibsodiumHash_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set Private_puiOutlen to crypto_auth_hmacsha512256_BYTES
+        Set Private_puiStatelen to crypto_auth_hmacsha512256_STATEBYTES
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Impl_InitWithKey Pointer pState UChar[] ucaKey Returns Integer
+        Function_Return (libsodium_crypto_auth_hmacsha512256_init(pState, AddressOf(ucaKey), SizeOfArray(ucaKey)))
+    End_Function
+
+    Function Private_Impl_Update Pointer pState Pointer pData UBigInt uiDatalen Returns Integer
+        Integer iResult
+        UIntegerUInteger inlen
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (libsodium_crypto_auth_hmacsha512256_update(pState, pData, uiDatalen)) to iResult
+
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(uiDatalen)) to inlen
+        Move (libsodium_crypto_auth_hmacsha512256_update(pState, pData, inlen.ui1, inlen.ui2)) to iResult
+#ENDIF
+
+        Function_Return iResult
+    End_Function
+
+    Function Private_Impl_Final Pointer pState Pointer pOut Returns Integer
+        Function_Return (libsodium_crypto_auth_hmacsha512256_final(pState, pOut))
+    End_Function
+
+    Function InitWithKey UChar[] ucaKey Integer iOutlen Returns Boolean
+        Boolean bSuccess
+
+        If (iOutlen <> C_SEC_DEFAULT and iOutlen <> crypto_auth_hmacsha512256_BYTES) Function_Return False
+        Forward Get InitWithKey ucaKey crypto_auth_hmacsha512256_BYTES to bSuccess
+
+        Function_Return bSuccess
+    End_Function
+
+    Function MinimumKeyBytes Returns UInteger
+        Function_Return crypto_auth_hmacsha512256_KEYBYTES
+    End_Function
+
+    Function MaximumKeyBytes Returns UInteger
+        Function_Return crypto_auth_hmacsha512256_KEYBYTES
+    End_Function
+
+End_Class
+
+Define C_SEC_HASH_LIBSODIUM_SHA256 for (RefClass(cLibsodiumHash_Impl_Sha256))
+Define C_SEC_HASH_LIBSODIUM_SHA512 for (RefClass(cLibsodiumHash_Impl_Sha512))
+
+Define C_SEC_HASH_LIBSODIUM_BLAKE2b for (RefClass(cLibsodiumHash_Impl_Blake2b))
+Define C_SEC_HASH_LIBSODIUM_HMAC_SHA256 for (RefClass(cLibsodiumHash_Impl_Hmac_Sha256))
+Define C_SEC_HASH_LIBSODIUM_HMAC_SHA512 for (RefClass(cLibsodiumHash_Impl_Hmac_Sha512))
+// HMAC-SHA512-256 in LibSodium is simply a truncated HMAC-SHA512.
+// This is different from HMAC-SHA512/256, which uses truncated SHA512 with a different IV!
+Define C_SEC_HASH_LIBSODIUM_HMAC_SHA512256 for (RefClass(cLibsodiumHash_Impl_Hmac_Sha512256))

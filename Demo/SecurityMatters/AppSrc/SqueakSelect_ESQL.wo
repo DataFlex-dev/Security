@@ -1,0 +1,116 @@
+Use AllWebAppClasses.pkg
+
+Use cWebAppUserDataDictionary.dd
+Use cSqueaksDataDictionary.dd
+
+Object oSqueakSelect_ESQL is a cWebView
+    Set psCaption to "Squeaks (ESQL)"
+    Set peWebViewStyle to wvsDrilldown
+    Set peViewType to vtSelect
+    Set piColumnCount to 12
+    Set pbShowCaption to False
+    Set piMaxWidth to 1024
+    Set pbServerOnShow to True
+
+    Object oFilterForm is a cWebForm
+        Set piColumnSpan to 0
+        Set pbShowLabel to False
+        Set pbServerOnChange to True
+
+        Procedure OnChange String sNewValue String sOldValue
+            Send GridRefresh of oList
+        End_Procedure
+    End_Object
+
+    Object oWebSpacer1 is a cWebSpacer
+        Set piHeight to 20
+    End_Object
+
+    Object oList is a cWebList
+        Set piColumnSpan to 0
+        Set psCSSClass to "MobileList"
+        Set pbFillHeight to True
+        Set pbShowHeader to False
+        Set piSortColumn to -1
+        Set pbDataAware to False
+
+        Object oSqueaksPublished is a cWebColumn
+            Set psCaption to "Published"
+            Set piWidth to 180
+        End_Object
+
+        Object oWebAppUserFullName is a cWebColumn
+            Set psCaption to "Author"
+            Set piWidth to 200
+        End_Object
+
+        Object oSqueaksContent is a cWebColumn
+            Set psCaption to "Message"
+            Set piWidth to 700
+        End_Object
+
+        Procedure OnManualLoadData tWebRow[] ByRef aTheRows String ByRef sCurrentRowID
+            Handle  hoSql
+            Handle  hoDbc
+            Handle  hoStmt
+            Integer iFetchResult
+            Integer iRow
+            String  sFilterValue
+            String  sQry
+            String  sSqlFilter
+
+            // build SQL filter
+            Move (SFormat("Squeaks.Status=%1", C_SQUEAK_STATUS_PUBLIC)) to sSqlFilter
+            If (IsLoggedIn(ghoWebSessionManager)) Begin
+                Add (SFormat(" OR Squeaks.UserId='%1'", psLoginName(ghoWebSessionManager))) to sSqlFilter
+            End
+            WebGet psValue of oFilterForm to sFilterValue
+            If (sFilterValue <> '') Begin
+//                Move (SFormat("(%1) AND (Squeaks.UserId like '%%%2%' OR Squeaks.Published like '%%%2%' OR Squeaks.Content like '%%%2%')", sSqlFilter, Replaces("'", Trim(sFilterValue), "''"))) to sSqlFilter
+                Move (SFormat("(%1) AND (Squeaks.UserId like '%%%2%' OR Squeaks.Published like '%%%2%' OR Squeaks.Content like '%%%2%')", ;
+                        sSqlFilter, Trim(sFilterValue))) to sSqlFilter
+            End
+
+            // build SQL query
+            Move "SELECT Squeaks.Published, WebAppUser.FullName, Squeaks.Content" to sQry
+            Add " FROM Squeaks INNER JOIN WebAppUser ON WebAppUser.LoginName=Squeaks.UserId" to sQry
+            Add (SFormat(" WHERE %1", sSqlFilter)) to sQry
+            Add " ORDER BY Squeaks.Published DESC, Squeaks.ID DESC" to sQry
+
+            // execute SQL query and feed data to the list
+            Get CreateNamed (RefClass(cSQLHandleManager)) "hoSql" to hoSql
+            Open Squeaks
+            Get SQLFileConnect of hoSQL Squeaks.File_Number to hoDbc
+            If (hoDbc <> 0) Begin
+                Get SQLOpen of hoDbc to hoStmt
+                If (hoStmt <> 0) Begin
+                    Send SQLExecDirect of hoStmt sQry
+
+                    Move 0 to iRow
+                    Get SQLFetch of hoStmt to iFetchResult
+                    While (iFetchResult <> 0)
+                        Move iRow to aTheRows[iRow].sRowID
+
+                        Get SQLColumnValue of hoStmt 1 to aTheRows[iRow].aCells[0].sValue
+                        If (aTheRows[iRow].aCells[0].sValue = '0001-01-01 00:00:00') Move "" to aTheRows[iRow].aCells[0].sValue
+                        Move (ToOEM(SQLColumnValue(hoStmt, 2))) to aTheRows[iRow].aCells[1].sValue
+                        Move (ToOEM(SQLColumnValue(hoStmt, 3))) to aTheRows[iRow].aCells[2].sValue
+
+                        Increment iRow
+                        Get SQLFetch of hoStmt to iFetchResult
+                    Loop
+
+                    Send SQLClose of hoStmt
+                End
+                Send SQLDisconnect of hoDbc
+            End
+            Send Destroy of hoSQL
+        End_Procedure
+    End_Object
+
+    // After login OnNavigateForward and OnLoad are _not_ triggered, so we must do loading logic here.
+    Procedure OnShow
+        Send GridRefresh of oList
+    End_Procedure
+
+End_Object

@@ -1,0 +1,9 @@
+#REPLACE FILE4 WebAppUser2FA
+#REPLACE WebAppUser2FA.File_Number |CI4
+#REPLACE WebAppUser2FA.ID |FN4,1
+#REPLACE WebAppUser2FA.WebAppUser_ID |FS4,2
+#REPLACE WebAppUser2FA.Description |FS4,3
+#REPLACE WebAppUser2FA.Created |FM4,4
+#REPLACE WebAppUser2FA.Data |FS4,5
+#REPLACE WebAppUser2FA.IsOath |FN4,6
+#REPLACE WebAppUser2FA.IsU2f |FN4,7

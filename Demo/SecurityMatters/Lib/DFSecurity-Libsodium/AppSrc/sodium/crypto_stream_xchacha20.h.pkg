@@ -1,0 +1,67 @@
+///*
+// *  WARNING: This is just a stream cipher. It is NOT authenticated encryption.
+// *  While it provides some protection against eavesdropping, it does NOT
+// *  provide any security against active attacks.
+// *  Unless you know what you're doing, what you are looking for is probably
+// *  the crypto_box functions.
+// */
+
+Define crypto_stream_xchacha20_KEYBYTES for 32
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_stream_xchacha20_keybytes "crypto_stream_xchacha20_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_stream_xchacha20_NONCEBYTES for 24
+
+{ Visibility=Private }
+External_Function libsodium_crypto_stream_xchacha20_noncebytes "crypto_stream_xchacha20_noncebytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_stream_xchacha20 "crypto_stream_xchacha20" sLibsodiumDllName ;
+    Pointer  c ;
+;// UBigInt  clen ;
+    UInteger clen1 ;
+    UInteger clen2 ;
+    Pointer  n ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_stream_xchacha20_xor "crypto_stream_xchacha20_xor" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  m ;
+;// UBigInt  mlen ;
+    UInteger mlen1 ;
+    UInteger mlen2 ;
+    Pointer  n ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_stream_xchacha20_xor_ic "crypto_stream_xchacha20_xor_ic" sLibsodiumDllName ;
+    Pointer  c ;
+    Pointer  m ;
+;// UBigInt  mlen ;
+    UInteger mlen1 ;
+    UInteger mlen2 ;
+    Pointer  n ;
+;// UBigInt  ic ;
+    UInteger ic1 ;
+    UInteger ic2 ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_stream_xchacha20_keygen "crypto_stream_xchacha20_keygen" sLibsodiumDllName ;
+    Pointer k;      // unsigned char k[crypto_stream_xchacha20_KEYBYTES]
+    Returns Void_Type

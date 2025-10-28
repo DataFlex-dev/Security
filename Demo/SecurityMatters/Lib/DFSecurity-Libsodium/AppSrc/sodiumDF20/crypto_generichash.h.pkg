@@ -1,0 +1,101 @@
+#IF (!@ >= 200)
+  Use sodiumDF20\crypto_generichash_blake2b.h.pkg
+#ELSE
+  Use sodium\crypto_generichash_blake2b.h.pkg
+#ENDIF
+
+Define crypto_generichash_BYTES_MIN for crypto_generichash_blake2b_BYTES_MIN
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_bytes_min "crypto_generichash_bytes_min" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_generichash_BYTES_MAX for crypto_generichash_blake2b_BYTES_MAX
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_bytes_max "crypto_generichash_bytes_max" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_generichash_BYTES for crypto_generichash_blake2b_BYTES
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_bytes "crypto_generichash_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_generichash_KEYBYTES_MIN for crypto_generichash_blake2b_KEYBYTES_MIN
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_keybytes_min "crypto_generichash_keybytes_min" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_generichash_KEYBYTES_MAX for crypto_generichash_blake2b_KEYBYTES_MAX
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_keybytes_max "crypto_generichash_keybytes_max" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_generichash_KEYBYTES for crypto_generichash_blake2b_KEYBYTES
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_keybytes "crypto_generichash_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_generichash_PRIMITIVE for "blake2b"
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_primitive "crypto_generichash_primitive" sLibsodiumDllName ;
+    Returns String
+
+//typedef crypto_generichash_blake2b_state crypto_generichash_state ;
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_statebytes "crypto_generichash_statebytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_generichash_STATEBYTES for (libsodium_crypto_generichash_statebytes())
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash "crypto_generichash" sLibsodiumDllName ;
+    Pointer  out ;
+    UInteger outlen ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Pointer  key ;
+    UInteger keylen ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_init "crypto_generichash_init" sLibsodiumDllName ;
+    Pointer  state ;
+    Pointer  key ;
+    UInteger keylen ;
+    UInteger outlen ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_update "crypto_generichash_update" sLibsodiumDllName ;
+    Pointer  state ;
+    Pointer  in ;
+    BigInt   inlen ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_final "crypto_generichash_final" sLibsodiumDllName ;
+    Pointer  state ;
+    Pointer  out ;
+    UInteger outlen ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_generichash_keygen "crypto_generichash_keygen" sLibsodiumDllName ;
+    Pointer k;      // length: crypto_generichash_KEYBYTES
+    Returns Void_Type
+

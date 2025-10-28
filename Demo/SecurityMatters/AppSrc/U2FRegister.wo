@@ -1,0 +1,185 @@
+Use AllWebAppClasses.pkg
+Use c2FAWebGroup.pkg
+
+Use cWebAppUserDataDictionary.dd
+Use cWebAppUser2FADataDictionary.dd
+
+Object oU2FRegister is a cWebView
+    Object oWebAppUser_DD is a cWebAppUserDataDictionary
+        Procedure OnConstrain
+            Constrain WebAppUser.LoginName eq (psLoginName(ghoWebSessionManager))
+        End_Procedure
+    End_Object
+
+    Object oWebAppUser2FA_DD is a cWebAppUser2FADataDictionary
+        Set Constrain_File to WebAppUser.File_Number
+        Set DDO_Server to oWebAppUser_DD
+
+        Procedure Field_Defaults
+            Set Field_Changed_Value Field WebAppUser2FA.IsOath to False
+            Set Field_Changed_Value Field WebAppUser2FA.IsU2f to True
+        End_Procedure
+    End_Object
+
+    Set Main_DD to oWebAppUser2FA_DD
+    Set Server to oWebAppUser2FA_DD
+
+    Set peWebViewStyle to wvsDrillDown
+    Set peViewType to vtZoom
+    Set pbShowCaption to False
+    Set Verify_Save_msg to 0
+
+    Set psCaption to "Register U2F device"
+
+    Set piMaxWidth to 1024
+    Set piColumnCount to 12
+    Set pbServerOnShow to True
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 1
+        WebSetResponsive piColumnCount rmMobile to 6
+
+        Object oSecondFactorGroup is a c2FAWebGroup
+            Set piColumnCount to 1
+            Set psAppId to (SFormat("https://%1", SettingValue(Self, "Core", "DomainName")))
+            Set piHashImplementation_Sha256 to C_SEC_HASH_CNG_SHA256
+
+            { WebProperty=Server }
+            Property Boolean pbVerify False
+            { WebProperty=Server }
+            Property tU2FKey pNewKey
+
+            Object oRegisterText is a cWebLabel
+                Set psCaption to "Insert your U2F key and press the button to register it."
+            End_Object
+
+            Object oVerifyText is a cWebLabel
+                Set psCaption to "The registration succeeded. Now press the button again to verify that it works correctly."
+            End_Object
+
+            Object oSuccessText is a cWebLabel
+                Set psCaption to "Verification complete. The U2F key has been registered with your account."
+            End_Object
+
+            Function RegisteredU2FKeys Returns tU2FKey[]
+                Boolean   bVerify
+                String    sLoginName
+                tU2FKey   newkey
+                tU2FKey[] keys
+
+                WebGet pbVerify to bVerify
+                If bVerify Begin
+                    // verify the new key only
+                    WebGet pNewKey to keys[0]
+                End
+                Else Begin
+                    // return registered FIDO U2F keys for the _authenticated_ user
+                    Get RegisteredU2FKeys of ghoWebSessionManager to keys
+                End
+
+                Function_Return keys
+            End_Function
+
+            Procedure OnU2FRegistrationFailure
+                Send UserError "Registration failed. You can try again if you like."
+                Send StartRegister
+            End_Procedure
+
+            Procedure OnU2FRegistrationSuccess tU2F_RegistrationResponseData data
+                tU2FKey newkey
+
+                WebSet pbRender of oRegisterText to False
+                WebSet pbRender of oVerifyText to True
+
+                Move data.ucaKeyHandle to newkey.ucaKeyHandle
+                Move data.ucaPublicKey to newkey.ucaPublicKey
+                WebSet pbVerify to True
+                WebSet pNewKey to newkey
+
+                Send StartAuthenticate
+            End_Procedure
+
+            Procedure OnU2FAuthenticationFailure
+                Send UserError "Verification failed. You can try again if you like."
+                Send StartAuthenticate
+            End_Procedure
+
+            Procedure OnU2FAuthenticationSuccess
+                WebSet pbRender of oRegisterText to False
+                WebSet pbRender of oVerifyText to False
+                WebSet pbRender of oSuccessText to True
+                WebSet pbRender of oEditGroup to True
+
+                Send SaveNewKey
+            End_Procedure
+
+            Procedure SaveNewKey
+                tU2FKey newkey
+
+                WebGet pNewKey to newkey
+
+                Clear WebAppUser2FA
+                Get psLoginName of ghoWebSessionManager to WebAppUser2FA.WebAppUser_ID
+                Move '' to WebAppUser2FA.Description
+                Move (CurrentDateTime()) to WebAppUser2FA.Created
+                Get PackU2FKeyForStorage of oU2F newkey to WebAppUser2FA.Data
+                Move False to WebAppUser2FA.IsOath
+                Move True to WebAppUser2FA.IsU2f
+                SaveRecord WebAppUser2FA
+
+                Send Request_Assign of oWebAppUser2FA_DD
+            End_Procedure
+        End_Object
+
+        Object oEditGroup is a cWebGroup
+            Set psCaption to "Caption"
+            Set piColumnCount to 12
+            Set pbShowBorder to False
+            Set pbShowCaption to False
+
+            Object oWebAppUser2FA_ID is a cWebForm
+                Entry_Item WebAppUser2FA.ID
+                Set piColumnSpan to 0
+                Set psLabel to "ID"
+                Set peLabelPosition to lpTop
+                Set pbRender to False
+            End_Object
+
+            Object oWebAppUser2FA_Description is a cWebForm
+                Entry_Item WebAppUser2FA.Description
+                Set piColumnSpan to 0
+                Set psPlaceHolder to "Description"
+                Set pbShowLabel to False
+            End_Object
+
+            Object oSaveButton is a cWebButton
+                Set piColumnSpan to 3
+                Set psCaption to C_$Save
+
+                Procedure OnClick
+                    Send Request_Save
+                End_Procedure
+            End_Object
+        End_Object
+    End_Object
+
+    Procedure OnViewSaved Handle hoServer Boolean bChanged
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnViewDeleted Handle hoDDO
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnShow
+        // initiate U2F key registration
+        WebSet pbRender of oRegisterText to True
+        WebSet pbRender of oVerifyText to False
+        WebSet pbRender of oSuccessText to False
+        WebSet pbRender of oEditGroup to False
+
+        WebSet pbVerify of oSecondFactorGroup to False
+        Send StartRegister of oSecondFactorGroup
+    End_Procedure
+
+End_Object

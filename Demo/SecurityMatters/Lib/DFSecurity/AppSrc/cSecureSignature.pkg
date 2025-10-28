@@ -1,0 +1,134 @@
+Use DFSecurity.pkg
+
+{ Visibility=Private }
+{ ClassType=Abstract }
+Class cSecureSignature_Impl_Base is a cSecurityObject
+
+    Function Init UChar[] ByRef ucaPublicKey UChar[] ByRef ucaPrivateKey Returns Boolean
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return False
+    End_Function
+
+    Function Sign UChar[] ucaData Returns UChar[]
+        UChar[] ucaEmpty
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return ucaEmpty
+    End_Function
+
+    Function Verify UChar[] ucaSignature UChar[] ucaHash Returns UChar[]
+        Error DFERR_PROGRAM "This method must be overridden!"
+        Function_Return False
+    End_Function
+
+End_Class
+
+Class cSecureSignature is a cSecurityObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        // *** properties needed for Initialize()
+
+        { Visibility=Private }
+        Property Integer Private_piSignImpl 0
+
+        // ***
+
+        { Visibility=Private }
+        Property Handle Private_phoSignImpl 0
+    End_Procedure
+
+    { MethodType=Property }
+    Procedure Set piSignatureImplementation Integer iSignatureImplementation
+        If (Private_phoSignImpl(Self) <> 0) Begin
+            Error DFERR_PROGRAM "Cannot set piSignatureImplementation after Initialize()."
+            Procedure_Return
+        End
+
+        Set Private_piSignImpl to iSignatureImplementation
+    End_Procedure
+
+    Function piSignatureImplementation Returns Integer
+        Function_Return (Private_phoSignImpl(Self))
+    End_Function
+
+    { Visibility=Public }
+    // @param ucaPublicKey The public key. The key will be overwritten with zeroes before returning from this
+    //              method.
+    // @param ucaPrivateKey [Optional] The private key. The key will be overwritten with zeroes before
+    //              returning from this method.
+    Procedure Initialize UChar[] ByRef ucaPublicKey UChar[] ByRef ucaPrivateKey
+        Boolean bSuccess
+        Handle  hoSignImpl
+        Integer iImplClass
+        Integer iOutlen
+
+        If (Private_phoSignImpl(Self) <> 0) Begin
+            If (num_arguments > 0) Send SecureUCharArrayOverwrite (&ucaPublicKey)
+            If (num_arguments > 1) Send SecureUCharArrayOverwrite (&ucaPrivateKey)
+            Error DFERR_PROGRAM "Cannot call Initialize() multiple times."
+            Procedure_Return
+        End
+
+        Get Private_piSignImpl to iImplClass
+        If (iImplClass <> 0) Begin
+			Get Create iImplClass to hoSignImpl
+		End
+        If (hoSignImpl <> 0) Begin
+            If (num_arguments = 0) Get Init of hoSignImpl to bSuccess
+			If (num_arguments = 1) Get Init of hoSignImpl (&ucaPublicKey) to bSuccess
+			If (num_arguments > 1) Get Init of hoSignImpl (&ucaPublicKey) (&ucaPrivateKey) to bSuccess
+			If not bSuccess Begin
+				Send Destroy of hoSignImpl
+				Move 0 to hoSignImpl
+			End
+		End
+
+        If (num_arguments > 0) Send SecureUCharArrayOverwrite (&ucaPublicKey)
+        If (num_arguments > 1) Send SecureUCharArrayOverwrite (&ucaPrivateKey)
+
+        If (hoSignImpl = 0) Begin
+            Error DFERR_PROGRAM "Hash Initialize() failed."
+            Procedure_Return
+        End
+
+        Set Private_phoSignImpl to hoSignImpl
+    End_Procedure
+
+    { Visibility=Public }
+    Function Sign UChar[] ucaHash Returns UChar[]
+        UChar[] ucaSignature
+        Handle  hoSignImpl
+
+        Get Private_phoSignImpl to hoSignImpl
+        If (hoSignImpl = 0) Begin
+            Error DFERR_PROGRAM "Cannot Sign() before Initialize()."
+            Procedure_Return
+        End
+
+        Get Sign of hoSignImpl ucaHash to ucaSignature
+        If (SizeOfArray(ucaSignature) = 0) Begin
+            Error DFERR_PROGRAM "Sign() failed."
+            Procedure_Return
+        End
+
+        Function_Return ucaSignature
+    End_Function
+
+    { Visibility=Public }
+    Function Verify UChar[] ucaSignature UChar[] ucaHash Returns Boolean
+        Boolean bValid
+        Handle  hoSignImpl
+
+        Get Private_phoSignImpl to hoSignImpl
+        If (hoSignImpl = 0) Begin
+            Error DFERR_PROGRAM "Cannot Verify() a signature before Initialize()."
+            Procedure_Return
+        End
+
+        Get Verify of hoSignImpl ucaSignature ucaHash to bValid
+
+        Function_Return bValid
+    End_Function
+
+End_Class

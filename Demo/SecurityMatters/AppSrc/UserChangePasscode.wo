@@ -1,0 +1,205 @@
+Use AllWebAppClasses.pkg
+
+Use cWebAppUserDataDictionary.dd
+Use cWebForm.pkg
+
+Object oUserChangePasscode is a cWebView
+    Object oWebAppUser_DD is a cWebAppUserDataDictionary
+        Procedure OnConstrain
+            Constrain WebAppUser.LoginName eq (psLoginName(ghoWebSessionManager))
+        End_Procedure
+    End_Object
+
+    Set Main_DD to oWebAppUser_DD
+    Set Server to oWebAppUser_DD
+
+    Set peWebViewStyle to wvsDrillDown
+    Set peViewType to vtZoom
+    Set pbShowCaption to False
+    Set Verify_Save_msg to 0
+
+    Set psCaption to "Change passcode"
+
+    Set piMaxWidth to 1024
+    Set piColumnCount to 12
+    Set pbSaveKeys to False
+    Set peChangedViewExitAction to cveAbandonChanges
+    Set pbServerOnSubmit to True
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+        WebSetResponsive piColumnCount rmMobile to 6
+
+        Object oCurrentPasscode is a cWebForm
+            Set piColumnSpan to 0
+            Set psPlaceHolder to "Current passcode:"
+            Set pbShowLabel to False
+        End_Object
+
+        Object oWebSpacer1 is a cWebSpacer
+            Set piHeight to 20
+        End_Object
+
+        Object oWebAppUser_Password is a cWebForm
+            Entry_Item WebAppUser.Password
+            Set piColumnSpan to 0
+            Set psLabel to "Password"
+            Set peLabelPosition to lpTop
+            Set pbRender to False
+        End_Object
+
+        Object oPasscode1 is a cWebForm
+            Set piColumnSpan to 0
+            Set psPlaceHolder to "New passcode:"
+            Set pbShowLabel to False
+            Set pbPassword to True
+            Set pbServerOnValidate to True
+            Set piMaxLength to (SettingValue(Self, "Security", "MaxPasscodeLen", 120))
+
+            Function OnValidate Returns Boolean
+                Boolean bOk
+                String  sValue sError
+
+                Forward Get OnValidate to bOk
+
+                If bOk Begin
+                    WebGet psValue to sValue
+                    Get OnValidateNewPasscode sValue to sError
+                    Move (sError = '') to bOk
+                End
+
+                If bOk Begin
+                    Send HideControlError 1
+                End
+                Else Begin
+                    If (sError <> '') Send ShowControlError 1 sError
+                End
+
+                Function_Return bOk
+            End_Function
+
+            Procedure Refresh Integer eMode
+                Forward Send Refresh eMode
+
+                If (not(AppSynching(ghoWebApp))) Begin
+                    WebSet psValue to ""
+                    WebSet pbChanged to False
+                End
+            End_Procedure
+        End_Object
+
+        Object oPasscode2 is a cWebForm
+            Set piColumnSpan to 0
+            Set psPlaceHolder to "New passcode (again):"
+            Set pbShowLabel to False
+            Set pbPassword to True
+            Set pbServerOnValidate to True
+            Set piMaxLength to (SettingValue(Self, "Security", "MaxPasscodeLen", 120))
+
+            Function OnValidate Returns Boolean
+                Boolean bOk
+                String  sError
+                String  sValue sValue1
+
+                Forward Get OnValidate to bOk
+
+                If bOk Begin
+                    WebGet psValue to sValue
+                    Get OnValidateNewPasscode sValue to sError
+                    Move (sError = '') to bOk
+                End
+
+                If bOk Begin
+                    WebGet psValue of oPasscode1 to sValue1
+                    Move (sValue = sValue1) to bOk
+                    If not bOk Begin
+                        Move "The two passcodes do not match - please try again." to sError
+                    End
+                End
+
+                If bOk Begin
+                    Send HideControlError 1
+                End
+                Else Begin
+                    If (sError <> '') Send ShowControlError 1 sError
+                End
+
+                Function_Return bOk
+            End_Function
+
+            Procedure Refresh Integer eMode
+                Forward Send Refresh eMode
+
+                If (not(AppSynching(ghoWebApp))) Begin
+                    WebSet psValue to ""
+                    WebSet pbChanged to False
+                End
+            End_Procedure
+        End_Object
+
+        Object oWebSpacer2 is a cWebSpacer
+            Set piHeight to 20
+        End_Object
+
+        Object oSaveButton is a cWebButton
+            Set piColumnSpan to 3
+            Set psCaption to "Change"
+
+            Procedure OnClick
+                Send Request_Save
+            End_Procedure
+        End_Object
+    End_Object
+
+    // @returns a message in case of validation issues, or an empty string when successful.
+    Function OnValidateNewPasscode String sPasscode Returns String
+        Boolean bRetVal
+        Integer iMinLen iMaxLen
+        String  sResult
+
+        Get SettingValue "Security" "MinPasscodeLen" 8 to iMinLen
+        Get SettingValue "Security" "MaxPasscodeLen" 120 to iMaxLen
+
+        If (Trim(sPasscode) <> "" and Length(sPasscode) < iMinLen) Begin
+            Move (SFormat("Minimum passcode length is %1 characters", iMinLen)) to sResult
+        End
+        Else If (Length(sPasscode) > iMaxLen) Begin
+            Move (SFormat("Maximum passcode length is %1 characters", iMaxLen)) to sResult
+        End
+
+        Function_Return sResult
+    End_Function
+
+    Procedure OnViewSaved Handle hoServer Boolean bChanged
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnViewDeleted Handle hoDDO
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnSyncView
+        Boolean bOk
+        String  sError
+        String  sPass1 sPass2
+
+        If (not(HasRecord(oWebAppUser_DD))) Procedure_Return
+
+        WebGet psValue of oPasscode1 to sPass1
+        WebGet psValue of oPasscode2 to sPass2
+
+        Move (sPass1 = sPass2) to bOk
+        If bOk Move (sPass1 <> '') to bOk
+        If bOk Begin
+            Get OnValidateNewPasscode sPass1 to sError
+            Move (sError = '') to bOk
+        End
+
+        If bOk Set Field_Changed_Value of oWebAppUser_DD Field WebAppUser.Password to sPass1
+    End_Procedure
+
+    Procedure OnSubmit
+        Send Request_Save
+    End_Procedure
+
+End_Object

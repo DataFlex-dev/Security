@@ -1,0 +1,214 @@
+Use AllWebAppClasses.pkg
+Use cConnection.pkg
+
+Object oApplication is a cApplication
+    Object oConnection is a cConnection
+        Use LoginEncryption.pkg
+    End_Object
+End_Object
+
+Use DFSecurity_CNG.pkg
+Use DFSecurity_LibSodium.pkg
+Use cSecureOneTimePassword.pkg
+Set pbFallbackToPlaintext of ghoSecurity to True
+
+Function SettingValue String sGroup String sName String sDefault Returns String
+    Open Settings
+    Clear Settings
+    Move sGroup to Settings.Group
+    Move sName to Settings.Name
+    Find eq Settings.Name
+    If (not(Found) and num_arguments > 2) Begin
+        Clear Settings
+        Move sGroup to Settings.Group
+        Move sName to Settings.Name
+        Move sDefault to Settings.Value
+        SaveRecord Settings
+    End
+    Function_Return (Trim(Settings.Value))
+End_Function
+
+Object oWebApp is a cWebApp
+    Set psTheme to "Df_Flat_Desktop"
+    Set peAlignView to alignCenter
+
+    // It is important to set this so that all views will default
+    // to drill down style views.
+    Set peApplicationStyle to wvsDrillDown
+    Set psEncryptPassword to "6\mcj]CA[+RIp+y*j<QB6baFs5@pD5W.U?b-h>,A"
+    Set peLoginMode to lmLoginSupported
+
+    { WebProperty=ServerSession }
+    Property Integer piAuthenticationState
+
+    Function IsHttps Returns Boolean
+        Boolean bIsHttps
+        String  sHttps
+
+        Get ServerVariable of ghoWebServiceDispatcher "HTTPS" to sHttps
+        Move (Lowercase(sHttps) = "on") to bIsHttps
+
+        Function_Return bIsHttps
+    End_Function
+
+    Object oViewStack is a cWebViewStack
+    End_Object
+
+    // the default OTP config
+    Object oMyOtp is a cSecureOneTimePassword
+        Set piHashImplementation to C_SEC_HASH_CNG_HMAC_SHA1
+        Set psIssuer to "Security Matters"
+    End_Object
+
+    Procedure HideHeader
+        WebSet pbRender of oHeaderPanel to False
+    End_Procedure
+
+    Procedure ShowHeader
+        WebSet pbRender of oHeaderPanel to True
+    End_Procedure
+
+    Object oHeaderPanel is a cWebPanel
+        Set peRegion to prTop
+        Set psCSSClass to "HeaderPanel"
+
+        Object oMenuPanel is a cWebPanel
+            Set peRegion to prLeft
+            Set piWidth to 50
+
+            Object oMenuButton is a cWebMenuButton
+                Set piMenuHeight to 500
+
+                Object oSqueaksEsqlItem is a cWebMenuItem
+                    Set psCaption to "Squeaks (ESQL)"
+
+                    Procedure OnClick
+                        Send NavigateBegin to oSqueakSelect_ESQL Self False
+                    End_Procedure
+                End_Object
+
+                Object oOtpDemoItem is a cWebMenuItem
+                    Set psCaption to "TOTP demo"
+                    Procedure OnClick
+                        Send NavigateBegin to oOTPDemo Self False
+                    End_Procedure
+                End_Object
+                Object oUser_itm is a cWebMenuItem
+                    Set psCaption to "User profile"
+                    Set pbBeginGroup to True
+
+                    Procedure OnClick
+                        Send NavigateBegin of oUserSettings Self False
+                    End_Procedure
+
+                    Procedure OnChangeRights
+                        WebSet pbRender to (IsLoggedIn(ghoWebSessionManager))
+                    End_Procedure
+                End_Object
+
+                Object oSignIn_itm is a cWebMenuItem
+                    Set psCaption to C_$LogIn
+                    Set pbBeginGroup to True
+
+                    Procedure OnClick
+                        Send RequestLogin of ghoWebSessionManager
+                    End_Procedure
+
+                    Procedure OnChangeRights
+                        WebSet pbRender to (not(IsLoggedIn(ghoWebSessionManager)))
+                    End_Procedure
+                End_Object
+
+                Object oSignOut_itm is a cWebMenuItem
+                    Set psCaption to C_$LogOut
+
+                    Procedure OnClick
+                        Send RequestLogOut of ghoWebSessionManager
+                    End_Procedure
+
+                    Procedure OnChangeRights
+                        WebSet pbRender to (IsLoggedIn(ghoWebSessionManager))
+                    End_Procedure
+                End_Object
+            End_Object
+
+            Object oBackButton is a cWebButton
+                Set psCSSClass to "WebBack_Icon"
+                Set pbRender to False
+
+                Procedure OnClick
+                    Handle hoTop
+
+                    Get TopViewHandle of oViewStack to hoTop
+                    If (hoTop > 0) Begin
+                        Send NavigateCancel of hoTop
+                    End
+                End_Procedure
+            End_Object
+
+            Send AddClient of oViewStack Self
+
+            Procedure OnUpdateViewStack
+                Handle hoTop hoDflt
+                Integer eMode
+                Boolean bTop
+
+                WebGet peMode of ghoWebApp to eMode
+
+                Get TopViewHandle of oViewStack to hoTop
+                Get GetDefaultView to hoDflt
+                Move (hoTop=0 or hoTop=hoDflt) to bTop
+
+                WebSet pbRender of oBackButton to (not(bTop) and eMode >= rmMobile)
+                WebSet pbRender of oMenuButton to (bTop or eMode < rmMobile)
+            End_Procedure
+
+        End_Object
+
+        Object oCaptionPanel is a cWebPanel
+            Set piColumnCount to 12
+
+            Object oCaptionBreadcrumb is a cWebBreadcrumb
+                Set peBreadcrumbStyle to crumbCaption
+                WebSetResponsive peBreadcrumbStyle rmMobile to crumbDropDown
+            End_Object
+        End_Object
+
+        Object oActionPanel is a cWebPanel
+            Set peRegion to prRight
+            Set piColumnCount to 1
+            Set piWidth to 110
+
+            Object oMainActions is a cWebActionBar
+                Set psGroupName to "MainActions"
+
+                Set piColumnSpan to 0
+                Set peAlign to alignRight
+            End_Object
+        End_Object
+
+        Object oBreadcrumbPanel is a cWebPanel
+            Set peRegion to prBottom
+
+            Object oHorizontalBreadcrumb is a cWebBreadcrumb
+                WebSetResponsive pbRender rmMobile to False
+            End_Object
+        End_Object
+    End_Object
+
+    Use SessionManager.wo
+    Use Login.wo
+    Use WebResourceManager.wo
+
+    Use UserSettings.wo
+
+    Use SqueakSelect.wo
+    Use SqueakSelect_ESQL.wo
+    Use SqueakZoom.wo
+    Use OTPDemo.wo
+
+    Set phoDefaultView to oSqueakSelect
+
+End_Object
+
+Send StartWebApp of oWebApp

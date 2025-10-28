@@ -1,0 +1,1832 @@
+﻿Use CNG\cDllWrapper.pkg
+Use cCharTranslate.pkg
+Use CNG\bcrypt.h.pkg
+Use CNG\ncrypt.h.pkg
+
+Define DFERR_CNG for 4452
+
+// Strings are UTF8 in DF20 and later, and are OEM before that.
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+    Define DFCodepage for CP_UTF8
+#ELSE  // 19.1 and earlier
+    Define DFCodepage for CP_OEMCP
+#ENDIF
+
+#IFNDEF _struct_tHandleAndPointer
+Struct tHandleAndPointer
+    Handle  hHandle
+    Pointer pPointer
+End_Struct
+#ENDIF
+
+#IFNDEF _struct_tUIntegerAndUCharArray
+Struct tUIntegerAndUCharArray
+    UInteger uiUInteger
+    UChar[]  ucaUCharArray
+End_Struct
+#ENDIF
+
+#IFNDEF _struct_tKeyInfo
+Struct tKeyInfo
+    String   sName
+    String   sAlgId
+    UInteger uiLegacyKeySpec
+    UInteger uiFlags
+End_Struct
+#ENDIF
+
+#IFNDEF _struct_tAlgorithmInfo
+Struct tAlgorithmInfo
+    String   sName
+    UInteger uiClass
+    UInteger uiAlgOperations
+    UInteger uiFlags
+#IFDEF IS$WIN64
+    Integer  iMissingAligment1
+#ENDIF
+End_Struct
+#ENDIF
+
+#IF (!@ < 191)
+    Define Longptr for Integer
+#ENDIF
+
+
+Class cCryptoApiNextGen_CharTranslate is a cCharTranslate
+
+    Function StringToUtf16UCharArray String sValue Returns UChar[]
+        Integer   iBytes
+        Pointer   pszValue
+        UChar[]   ucaValue
+        Void_Type void
+
+        Move 0 to iBytes
+        Get Utf16FromStr sValue DFCodepage (&iBytes) to pszValue
+        Move ((iBytes + 1) * 2) to iBytes
+        Move (ResizeArray(ucaValue, iBytes)) to ucaValue
+        Move (CopyMemory(AddressOf(ucaValue), pszValue, iBytes)) to void
+        Move (Free(pszValue)) to void
+
+        Function_Return ucaValue
+    End_Function
+
+End_Class
+
+Register_Object oCryptoApiNextGen_CharTranslate
+
+{ ClassType=Abstract }
+Class cCryptoApiNextGen_Structure is a cObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Property Pointer Private_pStructure
+    End_Procedure
+
+    Procedure End_Construct_Object
+        Forward Send End_Construct_Object
+
+        Send Initialize
+    End_Procedure
+
+    Procedure Destroy_Object
+        Pointer   pStructure
+        Void_Type void
+
+        Get Private_pStructure to pStructure
+        If (pStructure <> 0) Begin
+            Send FreeStructure pStructure
+
+            Move (Free(pStructure)) to void
+            Set Private_pStructure to 0
+        End
+
+        Forward Send Destroy_Object
+    End_Procedure
+
+    Procedure Initialize
+        Error DFERR_PROGRAM "This method must be overriden!"
+    End_Procedure
+
+    Procedure FreeStructure Pointer pStructure
+        Error DFERR_PROGRAM "This method must be overriden!"
+    End_Procedure
+
+End_Class
+
+{ ClassType=Abstract }
+Class cCryptoApiNextGen_KeyBlob is a cCryptoApiNextGen_Structure
+
+    Function Blob Returns UChar[]
+        UChar[]   ucaBlob
+        Error DFERR_PROGRAM "This method must be overriden!"
+        Function_Return ucaBlob
+    End_Function
+
+End_Class
+
+Class cCryptoApiNextGen_KeyBlobPlaintext is a cCryptoApiNextGen_KeyBlob
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Property BCRYPT_KEY_DATA_BLOB_HEADER Private_BlobHeader
+        Property UChar[] Private_pucaKeyData
+
+        Send Initialize
+    End_Procedure
+
+    Procedure Initialize
+        BCRYPT_KEY_DATA_BLOB_HEADER blobhead
+
+        Move BCRYPT_KEY_DATA_BLOB_MAGIC    to blobhead.dwMagic
+        Move BCRYPT_KEY_DATA_BLOB_VERSION1 to blobhead.dwVersion
+        Move 0                             to blobhead.cbKeyData
+
+        Set Private_BlobHeader to blobhead
+    End_Procedure
+
+    { MethodType=Property }
+    Procedure Set pucaKeyData UChar[] ucaKey
+        BCRYPT_KEY_DATA_BLOB_HEADER blobhead
+
+        Get Private_BlobHeader to blobhead
+        Move (SizeOfArray(ucaKey)) to blobhead.cbKeyData
+        Set Private_BlobHeader to blobhead
+
+        Set Private_pucaKeyData to ucaKey
+    End_Procedure
+
+    Function Blob Returns UChar[]
+        UChar[]   ucaBlob ucaKey
+        Void_Type void
+        BCRYPT_KEY_DATA_BLOB_HEADER blobhead
+
+        Get Private_BlobHeader to blobhead
+        Get Private_pucaKeyData to ucaKey
+
+        Move (ResizeArray(ucaBlob, SizeOfType(BCRYPT_KEY_DATA_BLOB_HEADER) + SizeOfArray(ucaKey))) to ucaBlob
+        Move (MemCopy(AddressOf(ucaBlob), AddressOf(blobhead), SizeOfType(BCRYPT_KEY_DATA_BLOB_HEADER))) to void
+        Move (MemCopy(AddressOf(ucaBlob) + SizeOfType(BCRYPT_KEY_DATA_BLOB_HEADER), AddressOf(ucaKey), SizeOfArray(ucaKey))) to void
+
+        Function_Return ucaBlob
+    End_Function
+
+End_Class
+
+Class cCryptoApiNextGen_PaddingInfoStructure is a cCryptoApiNextGen_Structure
+
+    Function BCryptPadFlagValue Returns UInteger
+        Error DFERR_PROGRAM "This method must be overriden!"
+        Function_Return 0
+    End_Function
+
+End_Class
+
+Class cCryptoApiNextGen_PaddingInfoPkcs1 is a cCryptoApiNextGen_PaddingInfoStructure
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Property String Private_psAlgId
+    End_Procedure
+
+    Procedure Initialize
+        Pointer   pStructure
+        Void_Type void
+        BCRYPT_PKCS1_PADDING_INFO PaddingInfo
+
+        Move (Alloc(SizeOfType(BCRYPT_PKCS1_PADDING_INFO))) to pStructure
+        Move (MemCopy(pStructure, AddressOf(PaddingInfo), SizeOfType(BCRYPT_PKCS1_PADDING_INFO))) to void
+
+        Set psAlgId to (Private_psAlgId(Self))
+
+        Set Private_pStructure to pStructure
+    End_Procedure
+
+    Procedure FreeStructure Pointer pStructure
+        Void_Type void
+        BCRYPT_PKCS1_PADDING_INFO PaddingInfo
+
+        Move (MemCopy(AddressOf(PaddingInfo), pStructure, SizeOfType(BCRYPT_PKCS1_PADDING_INFO))) to void
+        If (PaddingInfo.pszAlgId <> 0) Move (Free(PaddingInfo.pszAlgId)) to void
+    End_Procedure
+
+    Function BCryptPadFlagValue Returns UInteger
+        Function_Return BCRYPT_PAD_PKCS1
+    End_Function
+
+    { MethodType=Property }
+    Function psAlgId Returns String
+        Function_Return (Private_psAlgId(Self))
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set psAlgId String sAlgId
+        Pointer   pStructure
+        Void_Type void
+        BCRYPT_PKCS1_PADDING_INFO PaddingInfo
+
+        Set Private_psAlgId to sAlgId
+
+        If (Private_pStructure(Self) <> 0) Begin
+            Move (MemCopy(AddressOf(PaddingInfo), Private_pStructure(Self), SizeOfType(BCRYPT_PKCS1_PADDING_INFO))) to void
+
+            If (PaddingInfo.pszAlgId <> 0) Begin
+                Move (Free(PaddingInfo.pszAlgId)) to void
+                Move 0 to PaddingInfo.pszAlgId
+            End
+
+            If (Length(sAlgId) > 0) Begin
+                Get Utf16FromStr of oCryptoApiNextGen_CharTranslate sAlgId DFCodepage (&void) to PaddingInfo.pszAlgId
+            End
+
+            Move (MemCopy(Private_pStructure(Self), AddressOf(PaddingInfo), SizeOfType(BCRYPT_PKCS1_PADDING_INFO))) to void
+        End
+    End_Procedure
+
+End_Class
+
+Class cCryptoApiNextGen_PaddingInfoPss is a cCryptoApiNextGen_PaddingInfoStructure
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Property String   Private_psAlgId
+        Property UInteger Private_puiSaltLength
+    End_Procedure
+
+    Procedure Initialize
+        Pointer   pStructure
+        Void_Type void
+        BCRYPT_PSS_PADDING_INFO PaddingInfo
+
+        Move (Alloc(SizeOfType(BCRYPT_PSS_PADDING_INFO))) to pStructure
+        Set Private_pStructure to pStructure
+
+        Move (MemCopy(pStructure, AddressOf(PaddingInfo), SizeOfType(BCRYPT_PSS_PADDING_INFO))) to void
+        Set psAlgId to (Private_psAlgId(Self))
+    End_Procedure
+
+    Procedure FreeStructure Pointer pStructure
+        Void_Type void
+        BCRYPT_PSS_PADDING_INFO PaddingInfo
+
+        Move (MemCopy(AddressOf(PaddingInfo), pStructure, SizeOfType(BCRYPT_PSS_PADDING_INFO))) to void
+        If (PaddingInfo.pszAlgId <> 0) Move (Free(PaddingInfo.pszAlgId)) to void
+    End_Procedure
+
+    Function BCryptPadFlagValue Returns UInteger
+        Function_Return BCRYPT_PAD_PSS
+    End_Function
+
+    { MethodType=Property }
+    Function psAlgId Returns String
+        Function_Return (Private_psAlgId(Self))
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set psAlgId String sAlgId
+        Pointer   pStructure
+        Void_Type void
+        BCRYPT_PSS_PADDING_INFO PaddingInfo
+
+        Set Private_psAlgId to sAlgId
+
+        If (Private_pStructure(Self) <> 0) Begin
+            Move (MemCopy(AddressOf(PaddingInfo), Private_pStructure(Self), SizeOfType(BCRYPT_PSS_PADDING_INFO))) to void
+
+            If (PaddingInfo.pszAlgId <> 0) Begin
+                Move (Free(PaddingInfo.pszAlgId)) to void
+                Move 0 to PaddingInfo.pszAlgId
+            End
+
+            If (Length(sAlgId) > 0) Begin
+                Get Utf16FromStr of oCryptoApiNextGen_CharTranslate sAlgId DFCodepage (&void) to PaddingInfo.pszAlgId
+            End
+
+            Move (MemCopy(Private_pStructure(Self), AddressOf(PaddingInfo), SizeOfType(BCRYPT_PSS_PADDING_INFO))) to void
+        End
+    End_Procedure
+
+    { MethodType=Property }
+    Function puiSaltLength Returns UInteger
+        Function_Return (Private_puiSaltLength(Self))
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set puiSaltLength UInteger uiBytes
+        Pointer   pStructure
+        Void_Type void
+        BCRYPT_PSS_PADDING_INFO PaddingInfo
+
+        Set Private_puiSaltLength to uiBytes
+
+        If (Private_pStructure(Self) <> 0) Begin
+            Move (MemCopy(AddressOf(PaddingInfo), Private_pStructure(Self), SizeOfType(BCRYPT_PSS_PADDING_INFO))) to void
+
+            Move uiBytes to PaddingInfo.cbSalt
+
+            Move (MemCopy(Private_pStructure(Self), AddressOf(PaddingInfo), SizeOfType(BCRYPT_PSS_PADDING_INFO))) to void
+        End
+    End_Procedure
+
+End_Class
+
+Class cCryptoApiNextGen_AuthenticatedCipherModeInfo is a cObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Boolean  Private_pbChain
+        { Visibility=Private }
+        Property Pointer  Private_ppBlob
+        { Visibility=Private }
+        Property UChar[]  Private_pucaAuthTag
+        { Visibility=Private }
+        Property UInteger Private_puiBlobSize
+
+        Property UChar[]  pucaNonce
+        Property UChar[]  pucaAuthData
+        Property UInteger puiMaxTagLength 16
+    End_Procedure
+
+    Procedure FreeBlob
+        Pointer   pBlob
+        Void_Type void
+
+        Get Private_ppBlob to pBlob
+        If (pBlob <> 0) Move (Free(pBlob)) to void
+        Set Private_ppBlob to pBlob
+    End_Procedure
+
+    Procedure Destroy_Object
+        Send FreeBlob
+        Forward Send Destroy_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Function UCharArrayFromPointer Pointer pData UInteger uiBytes Returns UChar[]
+        Boolean bOk
+        UChar[] ucaValue
+
+        Move (ResizeArray(ucaValue, uiBytes)) to ucaValue
+        Move (MemCopy(AddressOf(ucaValue), pData, uiBytes)) to bOk
+        If not bok Move (ResizeArray(ucaValue, 0)) to ucaValue
+
+        Function_Return ucaValue
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set pbChain Boolean bValue
+        BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO info
+        Boolean bOk
+        Pointer pBlob
+        UChar[] ucaValue
+
+        Get Private_ppBlob to pBlob
+        If (pBlob <> 0) Begin
+            Move (MemCopy(AddressOf(info), pBlob, SizeOfType(BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO))) to bOk
+            If (bValue) Move (AddBitValue(BCRYPT_AUTH_MODE_CHAIN_CALLS_FLAG, info.dwFlags)) to info.dwFlags
+            Else        Move (RemoveBitValue(BCRYPT_AUTH_MODE_CHAIN_CALLS_FLAG, info.dwFlags)) to info.dwFlags
+            Move (MemCopy(pBlob, AddressOf(info), SizeOfType(BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO))) to bOk
+        End
+        Else Begin
+            Set Private_pbChain to bValue
+        End
+    End_Procedure
+
+    { MethodType=Property }
+    Function pbChain Returns Boolean
+        BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO info
+        Boolean bOk
+        Boolean bValue
+        Pointer pBlob
+        UChar[] ucaValue
+
+        Get Private_ppBlob to pBlob
+        If (pBlob <> 0) Begin
+            Move (MemCopy(AddressOf(info), pBlob, SizeOfType(BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO))) to bOk
+            Move (IsFlagIn(BCRYPT_AUTH_MODE_CHAIN_CALLS_FLAG, info.dwFlags)) to bValue
+        End
+        Else Begin
+            Get Private_pbChain to bValue
+        End
+
+        Function_Return bValue
+    End_Function
+
+    { MethodType=Property }
+    Function ppBlob Returns Pointer
+        Pointer pBlob
+
+        Get Private_ppBlob to pBlob
+        If (pBlob = 0) Begin
+            Get BuildBlob to pBlob
+            Set Private_ppBlob to pBlob
+        End
+
+        Function_Return pBlob
+    End_Function
+
+    { MethodType=Property }
+    Function pucaAuthTag Returns UChar[]
+        BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO info
+        Boolean bOk
+        Pointer pBlob
+        UChar[] ucaValue
+
+        Get Private_ppBlob to pBlob
+        If (pBlob = 0) Begin
+            Get Private_pucaAuthTag to ucaValue
+        End
+        Else Begin
+            Move (MemCopy(AddressOf(info), pBlob, SizeOfType(BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO))) to bOk
+            Get UCharArrayFromPointer (info.pbTag) (info.cbTag) to ucaValue
+        End
+
+        Function_Return ucaValue
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set pucaAuthTag UChar[] ucaValue
+        Set Private_pucaAuthTag to ucaValue
+    End_Procedure
+
+    { Visibility=Private }
+    Function BuildBlob Returns Pointer
+        BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO authInfo
+        Boolean  bOk
+        Pointer  pBlob
+        Pointer  pPart
+        UChar[]  ucaAuthData
+        UChar[]  ucaAuthTag
+        UChar[]  ucaNonce
+        UInteger uiBlobLen
+        UInteger uiMaxAuthTagLen
+
+        Get puiMaxTagLength to uiMaxAuthTagLen
+
+        Get pucaNonce    to ucaNonce
+        Get pucaAuthData to ucaAuthData
+        Get pucaAuthTag  to ucaAuthTag
+        If (SizeOfArray(ucaAuthTag) = 0) Begin
+            Move (ResizeArray(ucaAuthTag, uiMaxAuthTagLen)) to ucaAuthTag
+        End
+
+        Move (SizeOfType(BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO)) to authInfo.cbSize
+        Move BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO_VERSION to authInfo.dwInfoVersion
+        Move (SizeOfArray(ucaNonce))               to authInfo.cbNonce
+        Move (SizeOfArray(ucaAuthTag))             to authInfo.cbTag
+        Move (SizeOfArray(ucaAuthData))            to authInfo.cbAuthData
+
+        Move (authInfo.cbSize + authInfo.cbNonce + authInfo.cbTag + authInfo.cbAuthData) to uiBlobLen
+        If (Private_pbChain(Self)) Begin
+            Move uiMaxAuthTagLen to authInfo.cbMacContext
+            Add authInfo.cbMacContext to uiBlobLen
+        End
+
+        Move (Alloc(uiBlobLen)) to pBlob
+        If (pBlob = 0) Begin
+            Error DFERR_OUT_OF_MEMORY
+            Function_Return 0
+        End
+
+        Move (pBlob + authInfo.cbSize) to pPart
+
+        // start with authtag and maccontext because they seem to require aligned memory blocks
+        Move pPart to authInfo.pbTag
+        Add authInfo.cbTag to pPart
+
+        If (Private_pbChain(Self)) Begin
+            Move pPart to authInfo.pbMacContext
+            Add authInfo.cbMacContext to pPart
+
+            Move (AddBitValue(BCRYPT_AUTH_MODE_CHAIN_CALLS_FLAG, authInfo.dwFlags)) to authInfo.dwFlags
+        End
+
+        If (SizeOfArray(ucaAuthData) > 0) Begin
+            Move pPart to authInfo.pbAuthData
+            Add authInfo.cbAuthData to pPart
+        End
+
+        Move pPart to authInfo.pbNonce
+        Add authInfo.cbNonce to pPart
+
+        Move (MemCopy(pBlob, AddressOf(authInfo), authInfo.cbSize)) to bOk
+        If bOk Move (MemCopy(authInfo.pbNonce, AddressOf(ucaNonce), authInfo.cbNonce)) to bOk
+        If bOk Move (MemCopy(authInfo.pbTag, AddressOf(ucaAuthTag), authInfo.cbTag)) to bOk
+        If (bOk and authInfo.pbAuthData <> 0) Move (MemCopy(authInfo.pbAuthData, AddressOf(ucaAuthData), authInfo.cbAuthData)) to bOk
+
+        If not bOk Begin
+            Move (Free(pBlob)) to bOk
+            Move 0 to pBlob
+        End
+
+        Function_Return pBlob
+    End_Function
+
+End_Class
+
+Class cCryptoApiNextGen_BufferList is a cObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Pointer  Private_ppBlob
+        { Visibility=Private }
+        Property tUIntegerAndUCharArray[] Private_paBuffers
+
+        Property UInteger puiVersion BCRYPTBUFFER_VERSION
+
+        Object oCryptoApiNextGen_CharTranslate is a cCryptoApiNextGen_CharTranslate
+        End_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Function RoundUp UInteger uiValue Integer iFactor Returns UInteger
+        Integer iMod
+
+        Move (Mod(uiValue, iFactor)) to iMod
+        Move (uiValue - iMod + iFactor) to uiValue
+
+        Function_Return uiValue
+    End_Function
+
+    { Visibility=Private }
+    Procedure FreeBlob
+        Pointer   pBlob
+        Void_Type void
+
+        Get Private_ppBlob to pBlob
+        If (pBlob <> 0) Begin
+            Move (Free(pBlob)) to void
+        End
+        Set Private_ppBlob to pBlob
+    End_Procedure
+
+    Procedure Destroy_Object
+        Send FreeBlob
+        Forward Send Destroy_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Function CompareBuffers tUIntegerAndUCharArray Buffer1 tUIntegerAndUCharArray Buffer2 Returns Integer
+        Integer iResult
+
+        If (Buffer1.uiUInteger = Buffer2.uiUInteger) Begin
+            Move (EQ) to iResult
+        End
+        Else If (Buffer1.uiUInteger < Buffer2.uiUInteger) Begin
+            Move (LT) to iResult
+        End
+        Else Begin
+            Move (GT) to iResult
+        End
+
+        Function_Return iResult
+    End_Function
+
+    { Visibility=Private }
+    Procedure Set Internal_BufferValue UInteger uiBufferType UChar[] ucaBuffer
+        Integer iBufferIndex
+        tUIntegerAndUCharArray Buffer
+        tUIntegerAndUCharArray[] aBuffers
+
+        Get Private_paBuffers to aBuffers
+        Move uiBufferType to Buffer.uiUInteger
+        Move (SearchArray(Buffer, aBuffers, Self, (RefFunc(CompareBuffers)))) to iBufferIndex
+        If (iBufferIndex = -1) Begin
+            Move (SizeOfArray(aBuffers)) to iBufferIndex
+            Move uiBufferType to aBuffers[iBufferIndex].uiUInteger
+        End
+        Move ucaBuffer to aBuffers[iBufferIndex].ucaUCharArray
+
+        Set Private_paBuffers to aBuffers
+    End_Procedure
+
+    Procedure Set psBufferValue UInteger uiBufferType String sBuffer
+        UChar[]   ucaBuffer
+        Void_Type void
+
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sBuffer to ucaBuffer
+
+        Set Internal_BufferValue uiBufferType to ucaBuffer
+    End_Procedure
+
+    Procedure Set pucaBufferValue UInteger uiBufferType UChar[] ucaBuffer
+        Set Internal_BufferValue uiBufferType to ucaBuffer
+    End_Procedure
+
+    Procedure Set puiBufferValue UInteger uiBufferType UInteger uiBuffer
+        UChar[]   ucaBuffer
+        UInteger  buf
+        Void_Type void
+
+        // this fixes cases where this method is called with a non-uinteger uiBuffer parameter
+        Move uiBuffer to buf
+        Move (ResizeArray(ucaBuffer, SizeOfType(UInteger))) to ucaBuffer
+        Move (MemCopy(AddressOf(ucaBuffer), AddressOf(buf), SizeOfType(UInteger))) to void
+
+        Set Internal_BufferValue uiBufferType to ucaBuffer
+    End_Procedure
+
+    Procedure Set pubiBufferValue UInteger uiBufferType UBigInt ubiBuffer
+        UBigInt   buf
+        UChar[]   ucaBuffer
+        Void_Type void
+
+        // this fixes cases where this method is called with a non-ubigint ubiBuffer parameter
+        Move ubiBuffer to buf
+        Move (ResizeArray(ucaBuffer, SizeOfType(UBigInt))) to ucaBuffer
+        Move (MemCopy(AddressOf(ucaBuffer), AddressOf(buf), SizeOfType(UBigInt))) to void
+
+        Set Internal_BufferValue uiBufferType to ucaBuffer
+    End_Procedure
+
+    { MethodType=Property }
+    Function ppBlob Returns Pointer
+        Pointer pBlob
+
+        Get Private_ppBlob to pBlob
+        If (pBlob <> 0) Begin
+            Send FreeBlob
+        End
+
+        Get BuildBlob to pBlob
+        Set Private_ppBlob to pBlob
+
+        Function_Return pBlob
+    End_Function
+
+    { Visibility=Private }
+    // The blob contains a single alloc which contains all data as the following pseudo-struct:
+    // * BCryptBufferDesc
+    // * BCryptBuffer[]
+    // * BCryptBuffer[0] data
+    // * BCryptBuffer[1] data
+    // * ....
+    // * BCryptBuffer[last] data
+    Function BuildBlob Returns Pointer
+        Integer   iBuffer iBuffers
+        Pointer   pBlob
+        Pointer   pBuffer pBufferData
+        UInteger  uiBlobLen
+        Void_Type void
+        BCryptBuffer Buffer
+        BCryptBufferDesc Header
+        tUIntegerAndUCharArray[] aBuffers
+
+        Get Private_paBuffers to aBuffers
+        Move (SizeOfArray(aBuffers)) to iBuffers
+
+        Move (SizeOfType(BCryptBufferDesc) + (iBuffers * SizeOfType(BCryptBuffer))) to uiBlobLen
+        For iBuffer from 0 to (iBuffers-1)
+            Move (uiBlobLen + RoundUp(Self, SizeOfArray(aBuffers[iBuffer].ucaUCharArray), 4)) to uiBlobLen
+        Loop
+        Move (Alloc(uiBlobLen)) to pBlob
+
+        Get puiVersion to Header.ulVersion
+        Move iBuffers to Header.cBuffers
+        Move (pBlob + SizeOfType(BCryptBufferDesc)) to Header.pBuffers
+        Move (MemCopy(pBlob, AddressOf(Header), SizeOfType(BCryptBufferDesc))) to void
+
+        Move Header.pBuffers to pBuffer
+        Move (pBuffer + (iBuffers * SizeOfType(BCryptBuffer))) to pBufferData
+        For iBuffer from 0 to (iBuffers-1)
+            Move aBuffers[iBuffer].uiUInteger to Buffer.BufferType
+            Move (SizeOfArray(aBuffers[iBuffer].ucaUCharArray)) to Buffer.cbBuffer
+            Move pBufferData to Buffer.pvBuffer
+
+            Move (MemCopy(pBuffer, AddressOf(Buffer), SizeOfType(BCryptBuffer))) to void
+            Move (MemCopy(pBufferData, AddressOf(aBuffers[iBuffer].ucaUCharArray), Buffer.cbBuffer)) to void
+
+            Move (pBuffer + SizeOfType(BCryptBuffer)) to pBuffer
+            Move (pBufferData + RoundUp(Self, Buffer.cbBuffer, 4)) to pBufferData
+        Loop
+
+        Function_Return pBlob
+    End_Function
+
+End_Class
+
+Class cCryptoApiNextGen_CryptographicConfigurationFunctions_Mixin is a Mixin
+
+    // The external function returns incomplete data...!
+    Function BCryptEnumAlgorithms UInteger dwAlgOperations Returns String[]
+        Integer   iItem
+        Integer   iStatus
+        Pointer   ppAlgList
+        String[]  saAlgorithms
+        UInteger  cbAlgCount
+        Void_Type void
+        BCRYPT_ALGORITHM_IDENTIFIER[] aAlgorithms
+
+        Move 0 to cbAlgCount
+        Move 0 to ppAlgList
+        Move (WinAPI_BCryptEnumAlgorithms(dwAlgOperations, AddressOf(cbAlgCount), AddressOf(ppAlgList), 0)) to iStatus
+        If (iStatus = STATUS_SUCCESS and ppAlgList <> 0) Begin
+            Move (ResizeArray(aAlgorithms, cbAlgCount)) to aAlgorithms
+            Move (MemCopy(AddressOf(aAlgorithms), ppAlgList, SizeOfType(CRYPT_PROVIDERS) * cbAlgCount)) to void
+
+            Move (ResizeArray(saAlgorithms, cbAlgCount)) to saAlgorithms
+            For iItem from 0 to (cbAlgCount - 1)
+                Get Utf16ToStr of oCryptoApiNextGen_CharTranslate aAlgorithms[iItem].pszName DFCodepage -1 to saAlgorithms[iItem]
+            Loop
+        End
+
+        Send BCryptFreeBuffer ppAlgList
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return saAlgorithms
+    End_Function
+
+    Function BCryptEnumRegisteredProviders Returns String[]
+        Integer   iItem
+        Integer   iStatus
+        Pointer   pBuffer
+        Pointer   ppProviderName pProviderName
+        String[]  saProviders
+        UInteger  cbBuffer
+        Void_Type void
+        CRYPT_PROVIDERS providers
+
+        Move 0 to cbBuffer
+        Move 0 to pBuffer
+        Move (WinAPI_BCryptEnumRegisteredProviders(AddressOf(cbBuffer), AddressOf(pBuffer))) to iStatus
+        If (iStatus = STATUS_SUCCESS and pBuffer <> 0) Begin
+            Move (MemCopy(AddressOf(providers), pBuffer, SizeOfType(CRYPT_PROVIDERS))) to void
+
+            Move (ResizeArray(saProviders, providers.cProviders)) to saProviders
+            For iItem from 0 to (providers.cProviders - 1)
+                Move (providers.rgpszProviders + (4 * iItem)) to ppProviderName
+#IF (!@ < 191)
+                Move (DeRefDw(ppProviderName, 0)) to pProviderName
+#ELSE
+                Move (DeRefPtr(ppProviderName, 0)) to pProviderName
+#ENDIF
+                Get Utf16ToStr of oCryptoApiNextGen_CharTranslate pProviderName DFCodepage -1 to saProviders[iItem]
+            Loop
+        End
+
+        Send BCryptFreeBuffer pBuffer
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return saProviders
+    End_Function
+
+End_Class
+
+Class cCryptoApiNextGen_CryptographicPrimitiveFunctions_Mixin is a Mixin
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375377.aspx
+    Procedure BCryptCloseAlgorithmProvider Handle hAlgorithm
+        Integer iStatus
+
+        Move (WinAPI_BCryptCloseAlgorithmProvider(hAlgorithm, 0)) to iStatus
+        Set Private_piLastStatus to iStatus
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375383.aspx
+    Function BCryptCreateHash Handle hAlgorithm UChar[] ucaSecret UInteger dwFlags Returns tHandleAndPointer
+        Integer   iStatus
+        Pointer   pbSecret
+        UInteger  cbHashObject
+        UInteger  cbSecret
+        Void_Type void
+        tHandleAndPointer hashObject
+
+        Get BCryptNamedUIntegerPropertyValue hAlgorithm BCRYPT_OBJECT_LENGTH to cbHashObject
+        Move (Alloc(cbHashObject)) to hashObject.pPointer
+
+        If (SizeOfArray(ucaSecret) <> 0) Begin
+            Move (SizeOfArray(ucaSecret)) to cbSecret
+            Move (AddressOf(ucaSecret)) to pbSecret
+        End
+
+        Move 0 to hashObject.hHandle
+        Move (WinAPI_BCryptCreateHash(hAlgorithm, AddressOf(hashObject.hHandle), hashObject.pPointer, cbHashObject, pbSecret, cbSecret, dwFlags)) to iStatus
+
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (Free(hashObject.pPointer)) to void
+            Move 0 to hashObject.pPointer
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return hashObject
+    End_Function
+
+    // The IV pointer and length must be the same for consecutive calls when using authenticated
+    // encryption. Replacing this with a ByRef UChar[] creates potential issues for higher code
+    // layers.
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375391.aspx
+    Function BCryptDecrypt Handle hKey UChar[] ucaCiphertext Pointer pPaddingInfo Pointer pbIV UInteger cbIV UInteger dwFlags Returns UChar[]
+        Integer  iStatus
+        UChar[]  ucaOutput
+        UInteger cbResult
+
+        Move 0 to cbResult
+        Move (WinAPI_BCryptDecrypt(hKey, AddressOf(ucaCiphertext), SizeOfArray(ucaCiphertext), pPaddingInfo, pbIV, cbIV, 0, 0, AddressOf(cbResult), dwFlags)) to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, cbResult)) to ucaOutput
+            Move (WinAPI_BCryptDecrypt(hKey, AddressOf(ucaCiphertext), SizeOfArray(ucaCiphertext), pPaddingInfo, pbIV, cbIV, AddressOf(ucaOutput), SizeOfArray(ucaOutput), AddressOf(cbResult), dwFlags)) to iStatus
+            // correct padding
+            Move (ResizeArray(ucaOutput, cbResult)) to ucaOutput
+            If (iStatus <> STATUS_SUCCESS) Begin
+                Move (ResizeArray(ucaOutput, 0)) to ucaOutput
+            End
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaOutput
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375393.aspx
+    Function BCryptDeriveKey Handle hSharedSecret String eKDF BCryptBufferDesc ParameterList UInteger dwFlags Returns UChar[]
+        Integer  iStatus
+        Pointer  pParameterList
+        UChar[]  ucaDerivedKey
+        UChar[]  ucaKDF
+        UInteger cbResult
+
+        Get StringToUtf16UCharArray eKDF to ucaKDF
+        Move (If(ParameterList.cBuffers = 0, 0, AddressOf(ParameterList))) to pParameterList
+
+        Move 0 to cbResult
+        Move (WinAPI_BCryptDeriveKey(hSharedSecret, AddressOf(ucaKDF), pParameterList, 0, 0, AddressOf(cbResult), dwFlags)) to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaDerivedKey, cbResult)) to ucaDerivedKey
+            Move (WinAPI_BCryptDeriveKey(hSharedSecret, AddressOf(ucaKDF), pParameterList, AddressOf(ucaDerivedKey), cbResult, AddressOf(cbResult), dwFlags)) to iStatus
+            If (iStatus <> STATUS_SUCCESS) Begin
+                Move (ResizeArray(ucaDerivedKey, 0)) to ucaDerivedKey
+            End
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaDerivedKey
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375399.aspx
+    Procedure BCryptDestroyHash tHandleAndPointer Hash
+        Integer   iStatus
+        Void_Type void
+
+        Move (WinAPI_BCryptDestroyHash(Hash.hHandle)) to iStatus
+        Set Private_piLastStatus to iStatus
+
+        If (Hash.pPointer <> 0) Move (Free(Hash.pPointer)) to void
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375404.aspx
+    Procedure BCryptDestroyKey tHandleAndPointer Key
+        Integer iStatus
+        Void_Type void
+
+        Move (WinAPI_BCryptDestroyKey(Key.hHandle)) to iStatus
+        Set Private_piLastStatus to iStatus
+
+        If (Key.pPointer <> 0) Move (Free(Key.pPointer)) to void
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375407.aspx
+    Procedure BCryptDestroySecret Handle hSecret
+        Integer iStatus
+
+        Move (WinAPI_BCryptDestroySecret(hSecret)) to iStatus
+        Set Private_piLastStatus to iStatus
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375413.aspx
+    Function BCryptDuplicateHash Handle hHash Returns tHandleAndPointer
+        Handle    hAlgProv
+        Integer   iStatus
+        UInteger  cbHashObject
+        Void_Type void
+        tHandleAndPointer NewHashObject
+
+//        Get puiObjectLength of CryptoApiNextGen to cbHashObject
+        Get BCryptNamedUIntegerPropertyValue hHash BCRYPT_PROVIDER_HANDLE to hAlgProv
+        Get BCryptNamedUIntegerPropertyValue hAlgProv BCRYPT_OBJECT_LENGTH to cbHashObject
+        Move (Alloc(cbHashObject)) to NewHashObject.pPointer
+
+        Move 0 to NewHashObject.hHandle
+        Move (WinAPI_BCryptDuplicateHash(hHash, AddressOf(NewHashObject.hHandle), NewHashObject.pPointer, cbHashObject, 0)) to iStatus
+
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (Free(NewHashObject.pPointer)) to void
+            Move 0 to NewHashObject.pPointer
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return NewHashObject
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375419.aspx
+    Function BCryptDuplicateKey Handle hKey Returns tHandleAndPointer
+        Handle    hAlgProv
+        Integer   iStatus
+        UInteger  cbKeyObject
+        Void_Type void
+        tHandleAndPointer NewKeyObject
+
+        Get BCryptNamedUIntegerPropertyValue hKey BCRYPT_PROVIDER_HANDLE to hAlgProv
+        Get BCryptNamedUIntegerPropertyValue hAlgProv BCRYPT_OBJECT_LENGTH to cbKeyObject
+        Move (Alloc(cbKeyObject)) to NewKeyObject.pPointer
+
+        Move 0 to NewKeyObject.hHandle
+        Move (WinAPI_BCryptDuplicateKey(hKey, AddressOf(NewKeyObject.hHandle), NewKeyObject.pPointer, cbKeyObject, 0)) to iStatus
+
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (Free(NewKeyObject.pPointer)) to void
+            Move 0 to NewKeyObject.pPointer
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return NewKeyObject
+    End_Function
+
+    // The IV pointer and length must be the same for consecutive calls when using authenticated
+    // encryption. Replacing this with a ByRef UChar[] creates potential issues for higher code
+    // layers.
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375421.aspx
+    Function BCryptEncrypt Handle hKey UChar[] ucaPlaintext Pointer pPaddingInfo Pointer pbIV UInteger cbIV UInteger dwFlags Returns UChar[]
+        Integer  iStatus
+        UChar[]  ucaOutput
+        UInteger cbResult
+
+        Move 0 to cbResult
+        Move (WinAPI_BCryptEncrypt(hKey, AddressOf(ucaPlaintext), SizeOfArray(ucaPlaintext), pPaddingInfo, pbIV, cbIV, 0, 0, AddressOf(cbResult), dwFlags)) to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, cbResult)) to ucaOutput
+            Move (WinAPI_BCryptEncrypt(hKey, AddressOf(ucaPlaintext), SizeOfArray(ucaPlaintext), pPaddingInfo, pbIV, cbIV, AddressOf(ucaOutput), SizeOfArray(ucaOutput), AddressOf(cbResult), dwFlags)) to iStatus
+            If (iStatus <> STATUS_SUCCESS) Begin
+                Move (ResizeArray(ucaOutput, 0)) to ucaOutput
+            End
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaOutput
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375434.aspx
+    Function BCryptExportKey Handle hKey Handle hExportKey String eBlobType Returns UChar[]
+        Integer  iStatus
+        UChar[]  ucaBlobType
+        UChar[]  ucaOutput
+        UInteger cbResult
+
+        Get StringToUtf16UCharArray eBlobType to ucaBlobType
+
+        Move 0 to cbResult
+        Move (WinAPI_BCryptExportKey(hKey, hExportKey, AddressOf(ucaBlobType), 0, 0, AddressOf(cbResult), 0)) to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, cbResult)) to ucaOutput
+            Move (WinAPI_BCryptExportKey(hKey, hExportKey, AddressOf(ucaBlobType), AddressOf(ucaOutput), cbResult, AddressOf(cbResult), 0)) to iStatus
+            If (iStatus <> STATUS_SUCCESS) Begin
+                Move (ResizeArray(ucaOutput, 0)) to ucaOutput
+            End
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaOutput
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375439.aspx
+    Function BCryptFinalizeKeyPair Handle hKey Returns Boolean
+        Boolean bSuccess
+        Integer iStatus
+
+        Move (WinAPI_BCryptFinalizeKeyPair(hKey, 0)) to iStatus
+        Move (iStatus = STATUS_SUCCESS) to bSuccess
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return bSuccess
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375443.aspx
+    Function BCryptFinishHash Handle hHash Returns UChar[]
+        Integer  iStatus
+        UChar[]  ucaOutput
+        UInteger cbOutput
+
+        Get BCryptNamedUIntegerPropertyValue hHash BCRYPT_HASH_LENGTH to cbOutput
+        Move (ResizeArray(ucaOutput, cbOutput)) to ucaOutput
+
+        Move (WinAPI_BCryptFinishHash(hHash, AddressOf(ucaOutput), cbOutput, 0)) to iStatus
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, 0)) to ucaOutput
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaOutput
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375445.aspx
+    Procedure BCryptFreeBuffer Pointer pvBuffer
+        Void_Type void
+        If (pvBuffer <> 0) Move (WinAPI_BCryptFreeBuffer(pvBuffer)) to void
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375451.aspx
+    Function BCryptGenerateKeyPair Handle hAlgorithm UInteger uiKeyLength Returns Handle
+        Handle  hKey
+        Integer iStatus
+
+        Move 0 to hKey
+        Move (WinAPI_BCryptGenerateKeyPair(hAlgorithm, AddressOf(hKey), uiKeyLength, 0)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return hKey
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375453.aspx
+    Function BCryptGenerateSymmetricKey Handle hAlgorithm UChar[] ucaSecret Returns tHandleAndPointer
+        Integer   iStatus
+        UInteger  cbKeyObject
+        tHandleAndPointer KeyObject
+
+        Get BCryptNamedUIntegerPropertyValue hAlgorithm BCRYPT_OBJECT_LENGTH to cbKeyObject
+        Move (Alloc(cbKeyObject)) to KeyObject.pPointer
+
+        Move 0 to KeyObject.hHandle
+        Move (WinAPI_BCryptGenerateSymmetricKey(hAlgorithm, AddressOf(KeyObject.hHandle), KeyObject.pPointer, cbKeyObject, AddressOf(ucaSecret), SizeOfArray(ucaSecret), 0)) to iStatus
+
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (Free(KeyObject.pPointer)) to gVoid
+            Move 0 to KeyObject.pPointer
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return KeyObject
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375458.aspx
+    Function BCryptGenRandom Handle hAlgorithm Integer iBytes Returns UChar[]
+        Integer  iStatus
+        UChar[]  ucaBuffer
+        UInteger dwFlags
+
+        If (hAlgorithm = 0) Move BCRYPT_USE_SYSTEM_PREFERRED_RNG to dwFlags
+
+        Move (ResizeArray(ucaBuffer, iBytes)) to ucaBuffer
+        Move (WinAPI_BCryptGenRandom(hAlgorithm, AddressOf(ucaBuffer), iBytes, dwFlags)) to iStatus
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaBuffer, 0)) to ucaBuffer
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaBuffer
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375464.aspx
+    Function BCryptGetProperty Handle hCngObject String sPropertyName Returns UChar[]
+        Integer   iStatus
+        UChar[]   ucaOutput
+        UChar[]   ucaPropertyName
+        UInteger  cbOutput
+
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sPropertyName to ucaPropertyName
+
+        Move 0 to cbOutput
+        Move (WinAPI_BCryptGetProperty(hCngObject, AddressOf(ucaPropertyName), 0, 0, AddressOf(cbOutput), 0)) to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, cbOutput)) to ucaOutput
+            Move (WinAPI_BCryptGetProperty(hCngObject, AddressOf(ucaPropertyName), AddressOf(ucaOutput), cbOutput, AddressOf(cbOutput), 0)) to iStatus
+        End
+
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, 0)) to ucaOutput
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        // In 64-bit it sometimes returns 8 bytes instead of 4 bytes, with the last 4 bytes empty. Make sure to always return 4 bytes.
+        If (SizeOfArray(ucaOutput)=8) ;
+            Move (ResizeArray(ucaOutput, 4)) to ucaOutput
+            
+        Function_Return ucaOutput
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/mt633798.aspx
+    // Requires: Windows 10 or Windows Server 2016
+    Function BCryptHash Handle hAlgorithm UChar[] ucaSecret UChar[] ucaInput Returns UChar[]
+        Integer  iStatus
+        Pointer  pbSecret
+        UChar[]  ucaOutput
+        UInteger cbOutput
+        UInteger cbSecret
+
+        Move (SizeOfArray(ucaSecret)) to cbSecret
+        If (cbSecret > 0) Move (AddressOf(ucaSecret)) to pbSecret
+
+        Get BCryptNamedUIntegerPropertyValue hAlgorithm BCRYPT_HASH_LENGTH to cbOutput
+        Move (ResizeArray(ucaOutput, cbOutput)) to ucaOutput
+
+        Move (WinAPI_BCryptHash(hAlgorithm, pbSecret, cbSecret, AddressOf(ucaInput), SizeOfArray(ucaInput), AddressOf(ucaOutput), cbOutput)) to iStatus
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, 0)) to ucaOutput
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaOutput
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375468.aspx
+    Procedure BCryptHashData Handle hHash UChar[] ucaData
+        Integer iStatus
+
+        Move (WinAPI_BCryptHashData(hHash, AddressOf(ucaData), SizeOfArray(ucaData), 0)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375475.aspx
+    Function BCryptImportKey Handle hAlgorithm Handle hImportKey String eBlobType UChar[] ucaBlob Returns tHandleAndPointer
+        Integer   iStatus
+        Pointer   pszBlobType
+        UInteger  cbKeyObject
+        Void_Type void
+        tHandleAndPointer KeyObject
+
+        Get Utf16FromStr of oCryptoApiNextGen_CharTranslate eBlobType DFCodepage (&void) to pszBlobType
+
+        Get BCryptNamedUIntegerPropertyValue hAlgorithm BCRYPT_OBJECT_LENGTH to cbKeyObject
+        Move (Alloc(cbKeyObject)) to KeyObject.pPointer
+
+        Move 0 to KeyObject.hHandle
+        Move (WinAPI_BCryptImportKey(hAlgorithm, hImportKey, pszBlobType, AddressOf(KeyObject.hHandle), KeyObject.pPointer, cbKeyObject, AddressOf(ucaBlob), SizeOfArray(ucaBlob), 0)) to iStatus
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (Free(KeyObject.pPointer)) to void
+            Move 0 to KeyObject.pPointer
+        End
+
+        If (pszBlobType <> 0) Move (Free(pszBlobType)) to void
+        Set Private_piLastStatus to iStatus
+
+        Function_Return KeyObject
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375472.aspx
+    Function BCryptImportKeyPair Handle hAlgorithm Handle hImportKey String eBlobType UChar[] ucaBlob UInteger dwFlags Returns tHandleAndPointer
+        Integer   iStatus
+        UChar[]   ucaBlobType
+        UInteger  cbKeyObject
+        Void_Type void
+        tHandleAndPointer KeyObject
+
+        Get StringToUtf16UCharArray eBlobType to ucaBlobType
+
+        Get BCryptNamedUIntegerPropertyValue hAlgorithm BCRYPT_OBJECT_LENGTH to cbKeyObject
+        Move (Alloc(cbKeyObject)) to KeyObject.pPointer
+
+        Move 0 to KeyObject.hHandle
+        Move (WinAPI_BCryptImportKeyPair(hAlgorithm, hImportKey, AddressOf(ucaBlobType), KeyObject.hHandle, AddressOf(ucaBlob), SizeOfArray(ucaBlob), dwFlags)) to iStatus
+
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (Free(KeyObject.hHandle)) to void
+            Move 0 to KeyObject.hHandle
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return KeyObject
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/hh448506.aspx
+    // Requires: Windows 8 or Windows Server 2012
+    Function BCryptKeyDerivation Handle hKey Pointer pParameterList UInteger cbDerivedKey UInteger dwFlags Returns UChar[]
+        Integer  iStatus
+        UChar[]  ucaDerivedKey
+        UInteger cbResult
+
+        Move (ResizeArray(ucaDerivedKey, cbDerivedKey)) to ucaDerivedKey
+
+        Move 0 to cbResult
+        Move (WinAPI_BCryptKeyDerivation(hKey, pParameterList, AddressOf(ucaDerivedKey), cbDerivedKey, AddressOf(cbResult), dwFlags)) to iStatus
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaDerivedKey, 0)) to ucaDerivedKey
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaDerivedKey
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375479.aspx
+    Function BCryptOpenAlgorithmProvider String sAlgorithm String sImplementation UInteger dwFlags Returns Handle
+        Handle    hAlgorithm
+        Integer   iStatus
+        Pointer   pszImplementation
+        UChar[]   ucaAlgId
+        UChar[]   ucaImplementation
+        Void_Type void
+
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sAlgorithm to ucaAlgId
+        If (sImplementation <> "") Begin
+            Get StringToUtf16UCharArray sImplementation to ucaImplementation
+            Move (AddressOf(ucaImplementation)) to pszImplementation
+        End
+
+        Move 0 to hAlgorithm
+        Move (WinAPI_BCryptOpenAlgorithmProvider(AddressOf(hAlgorithm), AddressOf(ucaAlgId), pszImplementation, dwFlags)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return hAlgorithm
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375496.aspx
+    Function BCryptSecretAgreement Handle hPrivKey Handle hPubKey Returns Handle
+        Handle  hSecret
+        Integer iStatus
+
+        Move 0 to hSecret
+        Move (WinAPI_BCryptSecretAgreement(hPrivKey, hPubKey, AddressOf(hSecret), 0)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return hSecret
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375504.aspx
+    Procedure BCryptSetProperty Handle hCngObject String sPropertyName UChar[] ucaValue
+        Integer   iStatus
+        Pointer   pszPropertyName
+        Void_Type void
+
+        Get Utf16FromStr of oCryptoApiNextGen_CharTranslate sPropertyName DFCodepage (&void) to pszPropertyName
+        Move (WinAPI_BCryptSetProperty(hCngObject, pszPropertyName, AddressOf(ucaValue), SizeOfArray(ucaValue), 0)) to iStatus
+        Move (Free(pszPropertyName)) to void
+
+        Set Private_piLastStatus to iStatus
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375510.aspx
+    // hoPaddingInfo must be NULL or an instance of a cCryptoApiNextGen_PaddingInfoStructure subclass
+    // (cCngPaddingInfoPkcs1 / cCngPaddingInfoPss)
+    Function BCryptSignHash Handle hKey Handle hoPaddingInfo UChar[] ucaHashValue Returns UChar[]
+        Integer  iStatus
+        Pointer  pPaddingInfo
+        UChar[]  ucaOutput
+        UInteger cbResult
+        UInteger dwFlags
+
+        If (hoPaddingInfo <> 0) Begin
+            Get Private_pStructure of hoPaddingInfo to pPaddingInfo
+            Move (AddBitValue(BCryptPadFlagValue(hoPaddingInfo), dwFlags)) to dwFlags
+        End
+
+        Move 0 to cbResult
+        Move (WinAPI_BCryptSignHash(hKey, pPaddingInfo, AddressOf(ucaHashValue), SizeOfArray(ucaHashValue), 0, 0, AddressOf(cbResult), dwFlags)) to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, cbResult)) to ucaOutput
+            Move (WinAPI_BCryptSignHash(hKey, pPaddingInfo, AddressOf(ucaHashValue), SizeOfArray(ucaHashValue), AddressOf(ucaOutput), SizeOfArray(ucaOutput), AddressOf(cbResult), dwFlags)) to iStatus
+            If (iStatus <> STATUS_SUCCESS) Begin
+                Move (ResizeArray(ucaOutput, 0)) to ucaOutput
+            End
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaOutput
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa375515.aspx
+    // hoPaddingInfo must be NULL or an instance of a cCryptoApiNextGen_PaddingInfoStructure subclass
+    // (cCngPaddingInfoPkcs1 / cCngPaddingInfoPss)
+    Function BCryptVerifySignature Handle hKey Handle hoPaddingInfo UChar[] ucaHashValue UChar[] ucaSignature Returns Boolean
+        Boolean  bValid
+        Integer  iStatus
+        Pointer  pPaddingInfo
+        UInteger dwFlags
+
+        If (hoPaddingInfo <> 0) Begin
+            Get Private_pStructure of hoPaddingInfo to pPaddingInfo
+            Move (AddBitValue(BCryptPadFlagValue(hoPaddingInfo), dwFlags)) to dwFlags
+        End
+
+        Move (WinAPI_BCryptVerifySignature(hKey, pPaddingInfo, AddressOf(ucaHashValue), SizeOfArray(ucaHashValue), AddressOf(ucaSignature), SizeOfArray(ucaSignature), dwFlags)) to iStatus
+        Move (iStatus = STATUS_SUCCESS) to bValid
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return bValid
+    End_Function
+
+End_Class
+
+Class cCryptoApiNextGen_HelperFunctions_Mixin is a Mixin
+
+//    Function BCryptDeriveKeyCapi Handle hHash Handle hTargetAlg Integer cbDerivedKey UInteger dwFlags Returns UChar[]
+//    End_Function
+
+//    Function BCryptDeriveKeyPBKDF2 Handle hAlgorithm UChar[] ucaPassword UChar[] ucaSalt UBigInt ubiIterations UInteger cbDerivedKey Returns UChar[]
+//    End_Function
+
+End_Class
+
+Class cCryptoApiNextGen_KeyStorageFunctions_Mixin is a Mixin
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376247.aspx
+    Function NCryptCreatePersistedKey Handle hProvider String sAlgId String sKeyName UInteger dwLegacyKeySpec UInteger dwFlags Returns Handle
+        Handle  hKey
+        Integer iStatus
+        Pointer pszKeyName
+        UChar[] ucaAlgId
+        UChar[] ucaKeyName
+
+        Move 0 to hKey
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sAlgId to ucaAlgId
+        If (sKeyName <> "") Begin
+            Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sKeyName to ucaKeyName
+            Move (AddressOf(ucaKeyName)) to pszKeyName
+        End
+
+        Move (WinAPI_NCryptCreatePersistedKey(hProvider, AddressOf(hKey), AddressOf(ucaAlgId), pszKeyName, dwLegacyKeySpec, dwFlags)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return hKey
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376251.aspx
+    Procedure NCryptDeleteKey Handle hKey UInteger dwFlags
+        Integer iStatus
+
+        Move (WinAPI_NCryptDeleteKey(hKey, dwFlags)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376257.aspx
+    Function NCryptEnumAlgorithms Handle hProvider UInteger dwAlgOperations UInteger dwFlags Returns tAlgorithmInfo[]
+        UInteger dwAlgCount
+        Integer  iItem
+        Integer  iStatus
+        Pointer  pAlgList
+        tAlgorithmInfo[] aAlgInfo
+
+        Move 0 to dwAlgCount
+        Move 0 to pAlgList
+        Move (WinAPI_NCryptEnumAlgorithms(hProvider, dwAlgOperations, AddressOf(dwAlgCount), AddressOf(pAlgList), dwFlags)) to iStatus
+        If (iStatus = ERROR_SUCCESS) Begin
+            For iItem from 0 to (dwAlgCount-1)
+#IF (!@ < 191)
+                Get Utf16ToStr of oCryptoApiNextGen_CharTranslate (DeRefDw(pAlgList, iItem * SizeOfType(tAlgorithmInfo))) DFCodepage (-1) to aAlgInfo[iItem].sName
+#ELSE
+                Get Utf16ToStr of oCryptoApiNextGen_CharTranslate (DeRefPtr(pAlgList, iItem * SizeOfType(tAlgorithmInfo))) DFCodepage (-1) to aAlgInfo[iItem].sName
+#ENDIF
+                Move (DeRefDw(pAlgList, iItem * SizeOfType(tAlgorithmInfo) + SizeOfType(Longptr))) to aAlgInfo[iItem].uiClass
+                Move (DeRefDw(pAlgList, iItem * SizeOfType(tAlgorithmInfo) + SizeOfType(Longptr) + 4)) to aAlgInfo[iItem].uiAlgOperations
+                Move (DeRefDw(pAlgList, iItem * SizeOfType(tAlgorithmInfo) + SizeOfType(Longptr) + 8)) to aAlgInfo[iItem].uiFlags
+            Loop
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        If (pAlgList <> 0) Begin
+            Send NCryptFreeBuffer pAlgList
+            Move 0 to pAlgList
+        End
+
+        Function_Return aAlgInfo
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376259.aspx
+    Function NCryptEnumKeys Handle hProvider UInteger dwFlags Returns tKeyInfo[]
+        Integer iRow
+        Integer iStatus
+        Pointer pEnumState
+        Pointer pKeyInfo
+        NCryptKeyName KeyName
+        tKeyInfo[] KeyInfoList
+        Void_Type  void
+
+        Move 0 to pKeyInfo
+        Move 0 to pEnumState
+        Repeat
+            Move (WinAPI_NCryptEnumKeys(hProvider, 0, AddressOf(pKeyInfo), AddressOf(pEnumState), dwFlags)) to iStatus
+            If (iStatus = ERROR_SUCCESS) Begin
+                Move (MemCopy(AddressOf(KeyName), pKeyInfo, SizeOfType(NCryptKeyName))) to void
+
+                Get Utf16ToStr of oCryptoApiNextGen_CharTranslate KeyName.pszName  DFCodepage -1 to KeyInfoList[iRow].sName
+                Get Utf16ToStr of oCryptoApiNextGen_CharTranslate KeyName.pszAlgid DFCodepage -1 to KeyInfoList[iRow].sAlgId
+                Move KeyName.dwLegacyKeySpec to KeyInfoList[iRow].uiLegacyKeySpec
+                Move KeyName.dwFlags         to KeyInfoList[iRow].uiFlags
+
+                If (pKeyInfo <> 0) Send NCryptFreeBuffer pKeyInfo
+
+                Increment iRow
+            End
+        Until (iStatus <> ERROR_SUCCESS)
+
+        If (pEnumState <> 0) Send NCryptFreeBuffer pEnumState
+
+        Set Private_piLastStatus to (If(iStatus = NTE_NO_MORE_ITEMS, ERROR_SUCCESS, iStatus))
+
+        Function_Return KeyInfoList
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376261.aspx
+    // Returns an array where each item contains two strings: the provider name, and a comment.
+    Function NCryptEnumStorageProviders UInteger dwFlags Returns String[][]
+        UInteger dwProviderCount
+        Integer  iItem iOffset
+        Integer  iStatus
+        Pointer  pProviderList
+        String[][] aaProviders
+
+        Move 0 to dwProviderCount
+        Move 0 to pProviderList
+        Move (WinAPI_NCryptEnumStorageProviders(AddressOf(dwProviderCount), AddressOf(pProviderList), dwFlags)) to iStatus
+        
+        If (iStatus = ERROR_SUCCESS) Begin
+            For iItem from 0 to (dwProviderCount-1)
+                Move (SizeOfType(Longptr) * 2 * iItem) to iOffset
+#IF (!@ < 191)
+                Get Utf16ToStr of oCryptoApiNextGen_CharTranslate (DeRefDw(pProviderList, iOffset))     DFCodepage (-1) to aaProviders[iItem][0]
+                Get Utf16ToStr of oCryptoApiNextGen_CharTranslate (DeRefDw(pProviderList, iOffset + 4)) DFCodepage (-1) to aaProviders[iItem][1]
+#ELSE
+                Get Utf16ToStr of oCryptoApiNextGen_CharTranslate (DeRefPtr(pProviderList, iOffset))    DFCodepage (-1) to aaProviders[iItem][0]
+                Get Utf16ToStr of oCryptoApiNextGen_CharTranslate (DeRefPtr(pProviderList, iOffset + SizeOfType(Longptr))) DFCodepage (-1) to aaProviders[iItem][1]
+#ENDIF
+            Loop
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        If (pProviderList <> 0) Begin
+            Send NCryptFreeBuffer pProviderList
+            Move 0 to pProviderList
+        End
+
+        Function_Return aaProviders
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376263.aspx
+    Function NCryptExportKey Handle hKey Handle hExportKey String eBlobType Returns UChar[]
+        Integer  iStatus
+        UChar[]  ucaBlobType
+        UChar[]  ucaOutput
+        UInteger cbResult
+        bCryptBufferDesc buffers
+
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate eBlobType to ucaBlobType
+
+        Move 0 to cbResult
+        Move (WinAPI_NCryptExportKey(hKey, hExportKey, AddressOf(ucaBlobType), AddressOf(buffers), 0, 0, AddressOf(cbResult), 0)) to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, cbResult)) to ucaOutput
+            Move (WinAPI_NCryptExportKey(hKey, hExportKey, AddressOf(ucaBlobType), AddressOf(buffers), AddressOf(ucaOutput), cbResult, AddressOf(cbResult), 0)) to iStatus
+            If (iStatus <> STATUS_SUCCESS) Begin
+                Move (ResizeArray(ucaOutput, 0)) to ucaOutput
+            End
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaOutput
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376265.aspx
+    Procedure NCryptFinalizeKey Handle hKey UInteger dwFlags
+        Integer iStatus
+
+        Move (WinAPI_NCryptFinalizeKey(hKey, dwFlags)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376267.aspx
+    Procedure NCryptFreeBuffer Handle hObject
+        Integer iStatus
+
+        Move (WinAPI_NCryptFreeBuffer(hObject)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376269.aspx
+    Procedure NCryptFreeObject Handle hObject
+        Integer iStatus
+
+        Move (WinAPI_NCryptFreeObject(hObject)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+    End_Procedure
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376273.aspx
+    Function NCryptGetProperty Handle hCngObject String sPropertyName UInteger dwFlags Returns UChar[]
+        Integer   iStatus
+        UChar[]   ucaOutput
+        UChar[]   ucaPropertyName
+        UInteger  cbOutput
+
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sPropertyName to ucaPropertyName
+
+        Move 0 to cbOutput
+        Move (WinAPI_NCryptGetProperty(hCngObject, AddressOf(ucaPropertyName), 0, 0, AddressOf(cbOutput), dwFlags)) to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, cbOutput)) to ucaOutput
+            Move (WinAPI_NCryptGetProperty(hCngObject, AddressOf(ucaPropertyName), AddressOf(ucaOutput), cbOutput, AddressOf(cbOutput), dwFlags)) to iStatus
+        End
+
+        If (iStatus <> STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, 0)) to ucaOutput
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaOutput
+    End_Function
+
+    // 
+    Function NCryptImportKey Handle hProvider Handle hImportKey String eBlobType UChar[] ucaBlob Returns Handle
+        Handle    hKey
+        Integer   iStatus
+        Pointer   pszBlobType
+
+        Get Utf16FromStr of oCryptoApiNextGen_CharTranslate eBlobType DFCodepage (&gVoid) to pszBlobType
+
+        Move 0 to hKey
+        Move (WinAPI_NCryptImportKey(hProvider, hImportKey, pszBlobType, 0, AddressOf(hKey), AddressOf(ucaBlob), SizeOfArray(ucaBlob), 0)) to iStatus
+        If (iStatus <> STATUS_SUCCESS) Begin
+        End
+
+        If (pszBlobType <> 0) Move (Free(pszBlobType)) to gVoid
+        Set Private_piLastStatus to iStatus
+
+        Function_Return hKey
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376278.aspx
+    Function NCryptIsAlgSupported Handle hProvider String sAlgId UInteger dwFlags Returns Boolean
+        Boolean bSupported
+        Integer iStatus
+        UChar[] ucaAlgId
+
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sAlgId to ucaAlgId
+        Move (WinAPI_NCryptIsAlgSupported(hProvider, AddressOf(ucaAlgId), dwFlags)) to iStatus
+        Move (iStatus = ERROR_SUCCESS) to bSupported
+
+        Set Private_piLastStatus to (If(iStatus = NTE_NOT_SUPPORTED, ERROR_SUCCESS, iStatus))
+
+        Function_Return bSupported
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376284.aspx
+    Function NCryptOpenKey Handle hProvider String sKeyName UInteger dwFlags Returns Handle
+        Handle  hKey
+        Integer iStatus
+        UChar[] ucaKeyName
+
+        Move 0 to hKey
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sKeyName to ucaKeyName
+        Move (WinAPI_NCryptOpenKey(hProvider, AddressOf(hKey), AddressOf(ucaKeyName), 0, dwFlags)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return hKey
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376286.aspx
+    Function NCryptOpenStorageProvider String sProviderName Returns Handle
+        Handle    hProvider
+        Integer   iStatus
+        UChar[]   ucaProviderName
+
+        Move 0 to hProvider
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sProviderName to ucaProviderName
+        Move (WinAPI_NCryptOpenStorageProvider(AddressOf(hProvider), AddressOf(ucaProviderName), 0)) to iStatus
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return hProvider
+    End_Function
+
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa376292.aspx
+    Procedure NCryptSetProperty Handle hCngObject String sPropertyName UChar[] ucaValue UInteger dwFlags
+        Integer   iStatus
+        Pointer   pszPropertyName
+        Void_Type void
+
+        Get Utf16FromStr of oCryptoApiNextGen_CharTranslate sPropertyName DFCodepage (&void) to pszPropertyName
+        Move (WinAPI_NCryptSetProperty(hCngObject, pszPropertyName, AddressOf(ucaValue), SizeOfArray(ucaValue), dwFlags)) to iStatus
+        Move (Free(pszPropertyName)) to void
+
+        Set Private_piLastStatus to iStatus
+    End_Procedure
+
+    // hoPaddingInfo must be NULL or an instance of a cCryptoApiNextGen_PaddingInfoStructure subclass
+    // (cCngPaddingInfoPkcs1 / cCngPaddingInfoPss)
+    Function NCryptSignHash Handle hKey Handle hoPaddingInfo UChar[] ucaHashValue Returns UChar[]
+        Integer  iStatus
+        Pointer  pPaddingInfo
+        UChar[]  ucaOutput
+        UInteger cbResult
+        UInteger dwFlags
+
+        If (hoPaddingInfo <> 0) Begin
+            Get Private_pStructure of hoPaddingInfo to pPaddingInfo
+            Move (AddBitValue(BCryptPadFlagValue(hoPaddingInfo), dwFlags)) to dwFlags
+        End
+
+        Move 0 to cbResult
+        Move (WinAPI_NCryptSignHash(hKey, pPaddingInfo, AddressOf(ucaHashValue), SizeOfArray(ucaHashValue), 0, 0, AddressOf(cbResult), dwFlags)) to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Move (ResizeArray(ucaOutput, cbResult)) to ucaOutput
+            Move (WinAPI_NCryptSignHash(hKey, pPaddingInfo, AddressOf(ucaHashValue), SizeOfArray(ucaHashValue), AddressOf(ucaOutput), SizeOfArray(ucaOutput), AddressOf(cbResult), dwFlags)) to iStatus
+            If (iStatus <> STATUS_SUCCESS) Begin
+                Move (ResizeArray(ucaOutput, 0)) to ucaOutput
+            End
+        End
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return ucaOutput
+    End_Function
+
+    // hoPaddingInfo must be NULL or an instance of a cCryptoApiNextGen_PaddingInfoStructure subclass
+    // (cCngPaddingInfoPkcs1 / cCngPaddingInfoPss)
+    Function NCryptVerifySignature Handle hKey Handle hoPaddingInfo UChar[] ucaHashValue UChar[] ucaSignature Returns Boolean
+        Boolean  bValid
+        Integer  iStatus
+        Pointer  pPaddingInfo
+        UInteger dwFlags
+
+        If (hoPaddingInfo <> 0) Begin
+            Get Private_pStructure of hoPaddingInfo to pPaddingInfo
+            Move (AddBitValue(BCryptPadFlagValue(hoPaddingInfo), dwFlags)) to dwFlags
+        End
+
+        Move (WinAPI_NCryptVerifySignature(hKey, pPaddingInfo, AddressOf(ucaHashValue), SizeOfArray(ucaHashValue), AddressOf(ucaSignature), SizeOfArray(ucaSignature), dwFlags)) to iStatus
+        Move (iStatus = STATUS_SUCCESS) to bValid
+
+        Set Private_piLastStatus to iStatus
+
+        Function_Return bValid
+    End_Function
+
+End_Class
+
+Class cCryptoApiNextGen is a cDllWrapper
+    Import_Class_Protocol cCryptoApiNextGen_CryptographicConfigurationFunctions_Mixin
+    Import_Class_Protocol cCryptoApiNextGen_CryptographicPrimitiveFunctions_Mixin
+    Import_Class_Protocol cCryptoApiNextGen_HelperFunctions_Mixin
+    Import_Class_Protocol cCryptoApiNextGen_KeyStorageFunctions_Mixin
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        Set piErrorCode to DFERR_CNG
+
+        Object oCryptoApiNextGen_CharTranslate is a cCryptoApiNextGen_CharTranslate
+        End_Object
+
+        { Visibility=Private }
+        Property Integer Private_piLastStatus STATUS_SUCCESS
+    End_Procedure
+
+    { MethodType=Property }
+    Function piLastStatus Returns Integer
+        Function_Return (Private_piLastStatus(Self))
+    End_Function
+
+    { MethodType=Property }
+    Function BCryptNamedPropertyValue Handle hCngObject String sPropertyName Returns UChar[]
+        Function_Return (BCryptGetProperty(Self, hCngObject, sPropertyName))
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set BCryptNamedPropertyValue Handle hCngObject String sPropertyName UChar[] ucaValue
+        Send BCryptSetProperty hCngObject sPropertyName ucaValue
+    End_Procedure
+
+    { MethodType=Property }
+    Function BCryptNamedStringPropertyValue Handle hCngObject String sPropertyName Returns String
+        String    sValue
+        UChar[]   ucaValue
+
+        Get BCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+        Get Utf16ToStr of oCryptoApiNextGen_CharTranslate (AddressOf(ucaValue)) DFCodepage -1 to sValue
+
+        Function_Return sValue
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set BCryptNamedStringPropertyValue Handle hCngObject String sPropertyName String sValue
+        UChar[] ucaValue
+
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sValue to ucaValue
+        Set BCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+    End_Procedure
+
+    { MethodType=Property }
+    Function BCryptNamedUIntegerPropertyValue Handle hCngObject String sPropertyName Returns UInteger
+        UChar[]   ucaValue
+        UInteger  uiValue
+        Void_Type void
+
+        Get BCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+        If (SizeOfArray(ucaValue) = SizeOfType(UInteger)) Begin
+            Move 0 to uiValue
+            Move (MemCopy(AddressOf(uiValue), AddressOf(ucaValue), SizeOfType(UInteger))) to void
+        End
+
+        Function_Return uiValue
+    End_Function
+
+    Procedure Set BCryptNamedUIntegerPropertyValue Handle hCngObject String sPropertyName UInteger uiValue
+        UChar[]   ucaValue
+        Void_Type void
+
+        Move (ResizeArray(ucaValue, SizeOfType(UInteger))) to ucaValue
+        Move (MemCopy(AddressOf(ucaValue), AddressOf(uiValue), SizeOfType(UInteger))) to void
+        Set BCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+    End_Procedure
+
+    { MethodType=Property }
+    Function BCryptNamedUIntegerArrayPropertyValue Handle hCngObject String sPropertyName Returns UInteger[]
+        Handle     hAlgorithm
+        UChar[]    ucaValue
+        UInteger[] uiaValues
+        Void_Type  void
+
+        Get BCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+        Move (ResizeArray(uiaValues, SizeOfArray(ucaValue) / SizeOfType(UInteger))) to uiaValues
+        Move (MemCopy(AddressOf(uiaValues), AddressOf(ucaValue), SizeOfArray(ucaValue))) to void
+
+        Function_Return uiaValues
+    End_Function
+
+    { MethodType=Property }
+    Function NCryptNamedPropertyValue Handle hCngObject String sPropertyName Returns UChar[]
+        Function_Return (NCryptGetProperty(Self, hCngObject, sPropertyName, 0))
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set NCryptNamedPropertyValue Handle hCngObject String sPropertyName UChar[] ucaValue
+        Send NCryptSetProperty hCngObject sPropertyName ucaValue 0
+    End_Procedure
+
+    { MethodType=Property }
+    Function NCryptNamedStringPropertyValue Handle hCngObject String sPropertyName Returns String
+        String    sValue
+        UChar[]   ucaValue
+
+        Get NCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+        Get Utf16ToStr of oCryptoApiNextGen_CharTranslate (AddressOf(ucaValue)) DFCodepage -1 to sValue
+
+        Function_Return sValue
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set NCryptNamedStringPropertyValue Handle hCngObject String sPropertyName String sValue
+        UChar[] ucaValue
+
+        Get StringToUtf16UCharArray of oCryptoApiNextGen_CharTranslate sValue to ucaValue
+        Set NCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+    End_Procedure
+
+    { MethodType=Property }
+    Function NCryptNamedUIntegerPropertyValue Handle hCngObject String sPropertyName Returns UInteger
+        UChar[]   ucaValue
+        UInteger  uiValue
+        Void_Type void
+
+        Get NCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+        If (SizeOfArray(ucaValue) = SizeOfType(UInteger)) Begin
+            Move 0 to uiValue
+            Move (MemCopy(AddressOf(uiValue), AddressOf(ucaValue), SizeOfType(UInteger))) to void
+        End
+
+        Function_Return uiValue
+    End_Function
+
+    Procedure Set NCryptNamedUIntegerPropertyValue Handle hCngObject String sPropertyName UInteger uiValue
+        UChar[]   ucaValue
+        Void_Type void
+
+        Move (ResizeArray(ucaValue, SizeOfType(UInteger))) to ucaValue
+        Move (MemCopy(AddressOf(ucaValue), AddressOf(uiValue), SizeOfType(UInteger))) to void
+        Set NCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+    End_Procedure
+
+End_Class

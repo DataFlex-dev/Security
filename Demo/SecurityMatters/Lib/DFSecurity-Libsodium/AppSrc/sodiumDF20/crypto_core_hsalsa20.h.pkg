@@ -1,0 +1,40 @@
+Define crypto_core_hsalsa20_OUTPUTBYTES for 32
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_hsalsa20_outputbytes "crypto_core_hsalsa20_outputbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_core_hsalsa20_INPUTBYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_hsalsa20_inputbytes "crypto_core_hsalsa20_inputbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_core_hsalsa20_KEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_hsalsa20_keybytes "crypto_core_hsalsa20_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_core_hsalsa20_CONSTBYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_hsalsa20_constbytes "crypto_core_hsalsa20_constbytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_core_hsalsa20 "crypto_core_hsalsa20" sLibsodiumDllName ;
+    Pointer out ;
+    Pointer in ;
+    Pointer k ;
+    Pointer c ;
+    Returns Integer
+

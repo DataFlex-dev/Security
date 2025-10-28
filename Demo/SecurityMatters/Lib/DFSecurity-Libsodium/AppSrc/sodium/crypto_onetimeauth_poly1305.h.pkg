@@ -1,0 +1,80 @@
+//typedef CRYPTO_ALIGN(16) struct crypto_onetimeauth_poly1305_state {
+//    unsigned char opaque[256] ;
+//} crypto_onetimeauth_poly1305_state ;
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_crypto_onetimeauth_poly1305_statebytes "crypto_onetimeauth_poly1305_statebytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_onetimeauth_poly1305_STATEBYTES for (libsodium_crypto_onetimeauth_poly1305_statebytes())
+
+Define crypto_onetimeauth_poly1305_BYTES for 16
+
+{ Visibility=Private }
+External_Function libsodium_crypto_onetimeauth_poly1305_bytes "crypto_onetimeauth_poly1305_bytes" sLibsodiumDllName ;
+    Returns UInteger
+
+Define crypto_onetimeauth_poly1305_KEYBYTES for 32
+
+{ Visibility=Private }
+External_Function libsodium_crypto_onetimeauth_poly1305_keybytes "crypto_onetimeauth_poly1305_keybytes" sLibsodiumDllName ;
+    Returns UInteger
+
+{ Visibility=Private }
+External_Function libsodium_crypto_onetimeauth_poly1305 "crypto_onetimeauth_poly1305" sLibsodiumDllName ;
+    Pointer  out ;
+    Pointer  in ;
+;// UBigInt  inlen ;
+    UInteger inlen1 ;
+    UInteger inlen2 ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_onetimeauth_poly1305_verify "crypto_onetimeauth_poly1305_verify" sLibsodiumDllName ;
+    Pointer  h ;
+    Pointer  in ;
+;// UBigInt  inlen ;
+    UInteger inlen1 ;
+    UInteger inlen2 ;
+    Pointer  k ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_onetimeauth_poly1305_init "crypto_onetimeauth_poly1305_init" sLibsodiumDllName ;
+    Pointer  state ;
+    Pointer  key ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_onetimeauth_poly1305_update "crypto_onetimeauth_poly1305_update" sLibsodiumDllName ;
+    Pointer  state ;
+    Pointer  in ;
+;// UBigInt  inlen ;
+    UInteger inlen1 ;
+    UInteger inlen2 ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_onetimeauth_poly1305_final "crypto_onetimeauth_poly1305_final" sLibsodiumDllName ;
+    Pointer  state ;
+    Pointer  out ;
+    Returns  Integer
+
+{ Visibility=Private }
+External_Function libsodium_crypto_onetimeauth_poly1305_keygen "crypto_onetimeauth_poly1305_keygen" sLibsodiumDllName ;
+    Pointer k;      // length: crypto_onetimeauth_poly1305_KEYBYTES
+    Returns Void_Type
+
+
+//* ------------------------------------------------------------------------- */
+
+//int _crypto_onetimeauth_poly1305_pick_best_implementation(void) ;

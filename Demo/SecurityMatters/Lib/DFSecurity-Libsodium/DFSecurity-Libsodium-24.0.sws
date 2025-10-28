@@ -1,0 +1,6 @@
+[Properties]
+Version=24.0
+[WorkspacePaths]
+ConfigFile=.\Programs24.0\Config.ws
+[Libraries]
+Lib1=..\DFSecurity\DFSecurity-24.0.sws

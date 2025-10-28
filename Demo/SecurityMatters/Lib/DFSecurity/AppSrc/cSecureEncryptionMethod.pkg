@@ -1,0 +1,34 @@
+Use DFSecurity.pkg
+
+{ ClassType=Abstract }
+Class cSecureEncryptionMethod is a cSecurityObject
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        // *** properties needed for Initialize()
+
+        { Visibility=Private }
+        Property Integer Private_piEncImpl 0
+
+        // ***
+
+        { Visibility=Private }
+        Property Handle Private_phoEncImpl 0
+    End_Procedure
+
+    { MethodType=Property }
+    Procedure Set piEncryptImplementation Integer iEncryptImplementation
+        If (Private_phoEncImpl(Self) <> 0) Begin
+            Error DFERR_PROGRAM "Cannot set piEncryptImplementation after Initialize()."
+            Procedure_Return
+        End
+
+        Set Private_piEncImpl to iEncryptImplementation
+    End_Procedure
+
+    Function piEncryptImplementation Returns Integer
+        Function_Return (Private_piEncImpl(Self))
+    End_Function
+
+End_Class

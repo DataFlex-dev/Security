@@ -1,0 +1,14 @@
+﻿#IFDEF IS$WIN64
+
+{ Visibility=Private }
+External_Function libsodium_sodium_init "sodium_init" libsodium64.dll ;
+    Returns Integer
+
+#ELSE
+
+{ Visibility=Private }
+External_Function libsodium_sodium_init "sodium_init" libsodium.dll ;
+    Returns Integer
+
+#ENDIF
+

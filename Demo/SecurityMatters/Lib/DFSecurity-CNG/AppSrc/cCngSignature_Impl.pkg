@@ -1,0 +1,103 @@
+Use DFSecurity.pkg
+Use CNG\cCngAlgorithmProvider.pkg
+
+Class cCngSignature_Impl is a cSecureSignature_Impl_Base
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        { Visibility=Private }
+        Property Handle Private_phoKey
+        { Visibility=Private }
+        Property String Private_psAlgorithm BCRYPT_ECDSA_P256_ALGORITHM
+
+        Object oAlgProv is a cCngAlgorithmProvider
+        End_Object
+    End_Procedure
+
+    Function Init UChar[] ByRef ucaPublicKey UChar[] ByRef ucaPrivateKey Returns Boolean
+        Boolean  bOpened
+        Handle   hoKey
+        Integer  iKeyBits
+        String   sAlgId
+
+        Get Private_psAlgorithm to sAlgId
+
+        // already open?
+        If (phExternalHandle(oAlgProv) = 0) Begin
+            Get Open of oAlgProv sAlgId "" 0 to bOpened
+        End
+
+        If not bOpened Begin
+            Error DFERR_PROGRAM "Could not open algorithm provider"
+            Function_Return False
+        End
+
+        If (num_arguments = 0) Begin
+            Case Begin
+                Case (sAlgId = BCRYPT_ECDH_P256_ALGORITHM)
+                Case (sAlgId = BCRYPT_ECDSA_P256_ALGORITHM)
+                    Move 256 to iKeyBits
+                    Case Break
+                Case (sAlgId = BCRYPT_ECDH_P384_ALGORITHM)
+                Case (sAlgId = BCRYPT_ECDSA_P384_ALGORITHM)
+                    Move 384 to iKeyBits
+                    Case Break
+                Case (sAlgId = BCRYPT_ECDH_P521_ALGORITHM)
+                Case (sAlgId = BCRYPT_ECDSA_P521_ALGORITHM)
+                    Move 521 to iKeyBits
+                    Case Break
+            Case End
+            Get GenerateKeyPair of oAlgProv sAlgId iKeyBits to hoKey
+        End
+//        Else If (num_arguments = 1) Begin
+//            Get ImportPublicKey of oAlgProv sAlgId ucaPublicKey to hoKey
+//        End
+//        Else Begin
+//            Get ImportKeyPair of oAlgProv sAlgId ucaPublicKey ucaPrivate to hoKey
+//        End
+
+        If (hoKey = 0) Begin
+            Error DFERR_PROGRAM "Could not create signature"
+            Function_Return False
+        End
+
+        Set Private_phoKey to hoKey
+
+        Function_Return True
+    End_Function
+
+    Function Sign UChar[] ucaData Returns UChar[]
+        Handle  hoKey
+        UChar[] ucaSignature
+
+        Get Private_phoKey to hoKey
+        If (hoKey <> 0) Begin
+            Get SignHash of hoKey ucaData to ucaSignature
+        End
+
+        Function_Return ucaSignature
+    End_Function
+
+    Function Verify UChar[] ucaSignature UChar[] ucaHash Returns UChar[]
+        Boolean bValid
+        Handle  hoKey
+
+        Get Private_phoKey to hoKey
+        If (hoKey <> 0) Begin
+            Get VerifySignature of hoKey ucaHash ucaSignature to bValid
+        End
+
+        Function_Return bValid
+    End_Function
+
+End_Class
+
+Class cCngSignature_Impl_EcdsaP256 is a cCngSignature_Impl
+    Procedure Construct_Object
+        Forward Send Construct_Object
+        Set Private_psAlgorithm to BCRYPT_ECDSA_P256_ALGORITHM
+    End_Procedure
+End_Class
+
+Define C_SEC_SIGNATURE_CNG_ECDSA_P256 for (RefClass(cCngSignature_Impl_EcdsaP256))

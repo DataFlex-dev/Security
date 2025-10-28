@@ -1,0 +1,236 @@
+Use CNG\cCngHash.pkg
+Use CNG\cCngKey.pkg
+
+Class cCngAlgorithmProvider is a cCng_ExternalHandleWrappingObject
+
+    Procedure ReleaseExternalHandle Handle hExternalHandle
+        // do not use the low-level API here, because that object may be destroyed earlier ...
+        Move (WinAPI_BCryptCloseAlgorithmProvider(hExternalHandle, 0)) to gVoid
+    End_Procedure
+
+    // Only the first argument is mandatory. uiFlags is zero by default.
+    // Returns True when successful, or False otherwise.
+    Function Open String sAlgorithm String sImplementation UInteger uiFlags Returns Boolean
+        Boolean bSuccess
+        Handle  hAlgorithm
+        Integer iStatus
+
+        // prevent handles leaking...
+        Get phExternalHandle to hAlgorithm
+        If (hAlgorithm <> 0) Send ReleaseExternalHandle hAlgorithm
+
+        Get BCryptOpenAlgorithmProvider of oCryptoApiNextGen sAlgorithm (If(num_arguments > 1, sImplementation, "")) (If(num_arguments > 2, uiFlags, 0)) to hAlgorithm
+        Get piLastStatus of oCryptoApiNextGen to iStatus
+
+        Move (iStatus = STATUS_SUCCESS) to bSuccess
+        If bSuccess Set phExternalHandle to hAlgorithm
+
+        Function_Return bSuccess
+    End_Function
+
+    { MethodType=Property }
+    Procedure Set peChainingMode String sValue
+        Handle hAlgorithm
+
+        Get phExternalHandle to hAlgorithm
+        Set BCryptNamedStringPropertyValue of oCryptoApiNextGen hAlgorithm BCRYPT_CHAINING_MODE to sValue
+    End_Procedure
+
+    { MethodType=Property }
+    Function peChainingMode Returns String
+        Handle hAlgorithm
+        String sChainingMode
+
+        Get phExternalHandle to hAlgorithm
+        Get BCryptNamedStringPropertyValue of oCryptoApiNextGen hAlgorithm BCRYPT_CHAINING_MODE to sChainingMode
+
+        Function_Return sChainingMode
+    End_Function
+
+//    { MethodType=Property }
+//    Function puiaBlockSizes Returns UInteger[]
+//        Handle     hAlgorithm
+//        UInteger[] uiaBlockSizes
+//
+//        Get phExternalHandle to hAlgorithm
+//        Get NamedUIntegerArrayPropertyValue of oLowLevelCryptoApiNextGen hAlgorithm BCRYPT_BLOCK_SIZE_LIST to uiaBlockSizes
+//
+//        Function_Return uiaBlockSizes
+//    End_Function
+//
+//    { MethodType=Property }
+//    Function ptKeyLengths Returns BCRYPT_KEY_LENGTHS_STRUCT
+//        BCRYPT_KEY_LENGTHS_STRUCT tLengths
+//        Handle     hAlgorithm
+//        UInteger[] uiaKeyLengths
+//
+//        Get phExternalHandle to hAlgorithm
+//        Get NamedUIntegerArrayPropertyValue of oLowLevelCryptoApiNextGen hAlgorithm BCRYPT_KEY_LENGTHS to uiaKeyLengths
+//        Move (CopyMemory(AddressOf(tLengths), AddressOf(uiaKeyLengths), SizeOfType(BCRYPT_KEY_LENGTHS_STRUCT))) to gVoid
+//
+//        Function_Return tLengths
+//    End_Function
+
+//    { MethodType=Property }
+//    Function ptAuthTagLengths Returns BCRYPT_AUTH_TAG_LENGTHS_STRUCT
+//        BCRYPT_AUTH_TAG_LENGTHS_STRUCT tValue
+//        Handle    hAlgorithm
+//        UChar[]   ucaValue
+//
+//        Get phExternalHandle to hAlgorithm
+//        Get NamedPropertyValue of oLowLevelCryptoApiNextGen hAlgorithm BCRYPT_AUTH_TAG_LENGTH to ucaValue
+//        If (SizeOfArray(ucaValue) = SizeOfType(BCRYPT_AUTH_TAG_LENGTHS_STRUCT)) Begin
+//            Move (CopyMemory(AddressOf(tValue), AddressOf(ucaValue), SizeOfType(BCRYPT_AUTH_TAG_LENGTHS_STRUCT))) to gVoid
+//        End
+//
+//        Function_Return tValue
+//    End_Function
+
+    { MethodType=Property }
+    Procedure Set puiMessageBlockLength UInteger uiValue
+        Handle   hAlgorithm
+
+        Get phExternalHandle to hAlgorithm
+        Set BCryptNamedUIntegerPropertyValue of oCryptoApiNextGen hAlgorithm BCRYPT_MESSAGE_BLOCK_LENGTH to uiValue
+    End_Procedure
+
+    { MethodType=Property }
+    Function puiMessageBlockLength Returns UInteger
+        Handle   hAlgorithm
+        UInteger uiBlockLen
+
+        Get phExternalHandle to hAlgorithm
+        Get BCryptNamedUIntegerPropertyValue of oCryptoApiNextGen hAlgorithm BCRYPT_MESSAGE_BLOCK_LENGTH to uiBlockLen
+
+        Function_Return uiBlockLen
+    End_Function
+
+    { MethodType=Property }
+    Function puiBlockLength Returns UInteger
+        Handle   hAlgorithm
+        UInteger uiBlockLen
+
+        Get phExternalHandle to hAlgorithm
+        Get BCryptNamedUIntegerPropertyValue of oCryptoApiNextGen hAlgorithm BCRYPT_BLOCK_LENGTH to uiBlockLen
+
+        Function_Return uiBlockLen
+    End_Function
+
+    { MethodType=Property }
+    Function puiObjectLength Returns UInteger
+        Function_Return (BCryptNamedUIntegerPropertyValue(oCryptoApiNextGen, phExternalHandle(Self), BCRYPT_OBJECT_LENGTH))
+    End_Function
+
+    // None of the arguments are mandatory. uiFlags is zero by default.
+    // Returns a BCryptHash instance when successful, or zero otherwise.
+    Function CreateHash UInteger uiFlags UChar[] ucaSecret Returns Handle
+        Handle    hAlgorithm
+        Handle    hoHash
+        Integer   iStatus
+        Pointer   pbSecret
+        UChar[]   ucaEmpty
+        UInteger  cbSecret
+        UInteger  dwFlags
+        tHandleAndPointer Hash
+
+        Get phExternalHandle to hAlgorithm
+        Move (If(num_arguments > 0, uiFlags, 0)) to dwFlags
+        If (num_arguments > 1 and SizeOfArray(ucaSecret) > 0) Begin
+            Move (SizeOfArray(ucaSecret)) to cbSecret
+            Move (AddressOf(ucaSecret)) to pbSecret
+        End
+
+        Get BCryptCreateHash of oCryptoApiNextGen hAlgorithm (If(num_arguments > 1, ucaSecret, ucaEmpty)) dwFlags to Hash
+        Get piLastStatus of oCryptoApiNextGen to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Get Create (RefClass(cCngHash)) to hoHash
+            Set phExternalHandle of hoHash to Hash.hHandle
+            Set Private_ppHashObject of hoHash to Hash.pPointer
+        End
+
+        Function_Return hoHash
+    End_Function
+
+//    // Returns a BCryptKeyPairBuilder instance when successful, or zero otherwise.
+//    Function KeyPairBuilder UInteger uiKeyLength Returns Handle
+//        Handle    hAlgorithm
+//        Handle    hKey
+//        Handle    hoBuilder
+//        Integer   iStatus
+//
+//        Get phExternalHandle to hAlgorithm
+//
+//        Move 0 to hKey
+//        Move (BCryptGenerateKeyPair(hAlgorithm, AddressOf(hKey), uiKeyLength, 0)) to iStatus
+//
+//        If (iStatus = STATUS_SUCCESS) Begin
+//            Get CreateNamed (RefClass(BCryptKeyPairBuilder)) ("BCryptKeyPairBuilder") to hoBuilder
+//            Set phExternalHandle of hoBuilder to hKey
+//        End
+//
+//        Function_Return hoBuilder
+//    End_Function
+
+    Function GenerateKeyPair String sAlgorithm Integer iKeyLength Returns Handle
+        Handle hAlgorithm
+        Handle hKey
+        Handle hoKey
+
+        Get phExternalHandle to hAlgorithm
+        Get BCryptGenerateKeyPair of oCryptoApiNextGen hAlgorithm iKeyLength to hKey
+        If (hKey <> 0) Begin
+            Get CreateNamed (RefClass(cCngKey)) ("cCngKey") to hoKey
+            Set phExternalHandle of hoKey to hKey
+            Send Finalize of hoKey
+        End
+
+        Function_Return hoKey
+    End_Function
+
+    // Returns a cCngKey instance when successful, or zero otherwise.
+    Function GenerateSymmetricKey UChar[] ucaSecret Returns Handle
+        Handle hAlgorithm
+        Handle hoKey
+        tHandleAndPointer Key
+
+        Get phExternalHandle to hAlgorithm
+
+        Get BCryptGenerateSymmetricKey of oCryptoApiNextGen hAlgorithm ucaSecret to Key
+        If (Key.hHandle <> 0) Begin
+            Get CreateNamed (RefClass(cCngKey)) ("cCngKey") to hoKey
+            Set phExternalHandle of hoKey to Key.hHandle
+            Set Private_ppKeyObject of hoKey to Key.pPointer
+        End
+
+        Function_Return hoKey
+    End_Function
+
+    Function ImportKey Handle hImportKey String eBlobType UChar[] ucaBlob Returns Handle
+        Handle  hoKey
+        Integer iStatus
+        tHandleAndPointer Key
+
+        Get BCryptImportKey of oCryptoApiNextGen (phExternalHandle(Self)) hImportKey eBlobType ucaBlob to Key
+        Get piLastStatus of oCryptoApiNextGen to iStatus
+        If (iStatus = STATUS_SUCCESS) Begin
+            Get Create (RefClass(cCngKey)) to hoKey
+            Set phExternalHandle of hoKey to Key.hHandle
+            Set Private_ppKeyObject of hoKey to Key.pPointer
+        End
+
+        Function_Return hoKey
+    End_Function
+
+    Function ImportPlainTextKey UChar[] ucaKey Returns Handle
+        Handle  hoKey hoKeyBlob
+        Integer iStatus
+
+        Get Create (RefClass(cCryptoApiNextGen_KeyBlobPlaintext)) to hoKeyBlob
+        Set pucaKeyData of hoKeyBlob to ucaKey
+        Get ImportKey 0 BCRYPT_KEY_DATA_BLOB (Blob(hoKeyBlob)) to hoKey
+        Send Destroy of hoKeyBlob
+
+        Function_Return hoKey
+    End_Function
+
+End_Class

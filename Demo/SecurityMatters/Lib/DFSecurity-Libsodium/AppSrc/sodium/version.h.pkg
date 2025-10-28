@@ -1,0 +1,35 @@
+#IF (!@ < 200)
+  // DataFlex version 19.1 and older use Libsodium version 1.0.16 (which has an stdcall interface).
+  Define SODIUM_VERSION_STRING for "1.0.16"
+  Define SODIUM_LIBRARY_VERSION_MAJOR for 10
+  Define SODIUM_LIBRARY_VERSION_MINOR for 1
+#ELSE
+  // DataFlex version 20.0 and higher use Libsodium version 1.0.18 (which does not need stdcall).
+  Define SODIUM_VERSION_STRING for "1.0.20"
+  Define SODIUM_LIBRARY_VERSION_MAJOR for 26
+  Define SODIUM_LIBRARY_VERSION_MINOR for 2
+#ENDIF
+
+#IFNDEF sLibsodiumDllName
+#IFDEF IS$WIN64
+  Define sLibsodiumDllName for libsodium64.dll
+#ELSE
+  Define sLibsodiumDllName for libsodium.dll
+#ENDIF 
+#ENDIF
+
+{ Visibility=Private }
+External_Function libsodium_sodium_version_string "sodium_version_string" sLibsodiumDllName ;
+    Returns Pointer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_library_version_major "sodium_library_version_major" sLibsodiumDllName ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_library_version_minor "sodium_library_version_minor" sLibsodiumDllName ;
+    Returns Integer
+
+{ Visibility=Private }
+External_Function libsodium_sodium_library_minimal "sodium_library_minimal" sLibsodiumDllName ;
+    Returns Integer

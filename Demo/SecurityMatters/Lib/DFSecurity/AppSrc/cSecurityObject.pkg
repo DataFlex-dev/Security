@@ -1,0 +1,40 @@
+// Any public classes in the Security framework should disable delegation completely. Delegation of
+// messages can result in leakage of sensitive data, such as passcodes or encryption keys.
+Class cSecurityObject is a cObject
+    Procedure Construct_Object
+        Forward Send Construct_Object
+        Set Delegation_Mode to No_Delegation
+    End_Procedure
+
+    // We aim to keep plaintext passwords and keys safe, be making sure they are only in memory while
+    // needed. This method securely overwrites a String variable before releasing it, so that it
+    // no longer contains a sensitive value.
+    //
+    // @param sValue [ByRef] the string that is securely overwritten.
+    Procedure SecureStringOverwrite String ByRef sValue
+        Integer iBytes
+        String  sZeroes
+
+        Move (Length(sValue)) to iBytes
+        Move (Repeat(Character(0), iBytes)) to sZeroes
+        Move (MemCopy(AddressOf(sValue), AddressOf(sZeroes), iBytes)) to gVoid
+        Move '' to sValue
+    End_Procedure
+
+    // We aim to keep plaintext passwords and keys safe, be making sure they are only in memory while
+    // needed. This method securely overwrites a UChar array variable before releasing it, so that it
+    // no longer contains a sensitive value.
+    //
+    // @param ucaValue [ByRef] the array that is securely overwritten.
+    Procedure SecureUCharArrayOverwrite UChar[] ByRef ucaValue
+        Boolean bVoid
+        Integer iLen
+        String  sZeroes
+        UChar[] ucaEmpty
+
+        Move (SizeOfArray(ucaValue)) to iLen
+        Move (Repeat(Character(0), iLen)) to sZeroes
+        Move (MemCopy(AddressOf(ucaValue), AddressOf(sZeroes), iLen)) to bVoid
+        Move ucaEmpty to ucaValue
+    End_Procedure
+End_Class

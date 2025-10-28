@@ -1,0 +1,1772 @@
+//***
+// libsodium documentation: https://download.libsodium.org/doc/
+//***
+Use libsodium\cDllWrapper.pkg
+Use libsodium\libsodium.h.pkg
+
+// To Do: crypto_aead_aes256gcm_abytes
+// To Do: crypto_aead_aes256gcm_beforenm
+// To Do: crypto_aead_aes256gcm_decrypt
+// To Do: crypto_aead_aes256gcm_decrypt_afternm
+// To Do: crypto_aead_aes256gcm_decrypt_detached
+// To Do: crypto_aead_aes256gcm_decrypt_detached_afternm
+// To Do: crypto_aead_aes256gcm_encrypt
+// To Do: crypto_aead_aes256gcm_encrypt_afternm
+// To Do: crypto_aead_aes256gcm_encrypt_detached
+// To Do: crypto_aead_aes256gcm_encrypt_detached_afternm
+// To Do: crypto_aead_aes256gcm_is_available
+// To Do: crypto_aead_aes256gcm_keybytes
+// To Do: crypto_aead_aes256gcm_keygen
+// To Do: crypto_aead_aes256gcm_npubbytes
+// To Do: crypto_aead_aes256gcm_nsecbytes
+// To Do: crypto_aead_aes256gcm_statebytes
+// To Do: crypto_aead_chacha20poly1305_abytes
+// To Do: crypto_aead_chacha20poly1305_decrypt
+// To Do: crypto_aead_chacha20poly1305_decrypt_detached
+// To Do: crypto_aead_chacha20poly1305_encrypt
+// To Do: crypto_aead_chacha20poly1305_encrypt_detached
+// To Do: crypto_aead_chacha20poly1305_ietf_abytes
+// To Do: crypto_aead_chacha20poly1305_ietf_decrypt
+// To Do: crypto_aead_chacha20poly1305_ietf_decrypt_detached
+// To Do: crypto_aead_chacha20poly1305_ietf_encrypt
+// To Do: crypto_aead_chacha20poly1305_ietf_encrypt_detached
+// To Do: crypto_aead_chacha20poly1305_ietf_keybytes
+// To Do: crypto_aead_chacha20poly1305_ietf_keygen
+// To Do: crypto_aead_chacha20poly1305_ietf_npubbytes
+// To Do: crypto_aead_chacha20poly1305_ietf_nsecbytes
+// To Do: crypto_aead_chacha20poly1305_keybytes
+// To Do: crypto_aead_chacha20poly1305_keygen
+// To Do: crypto_aead_chacha20poly1305_npubbytes
+// To Do: crypto_aead_chacha20poly1305_nsecbytes
+// To Do: crypto_aead_xchacha20poly1305_ietf_abytes
+// To Do: crypto_aead_xchacha20poly1305_ietf_decrypt
+// To Do: crypto_aead_xchacha20poly1305_ietf_decrypt_detached
+// To Do: crypto_aead_xchacha20poly1305_ietf_encrypt
+// To Do: crypto_aead_xchacha20poly1305_ietf_encrypt_detached
+// To Do: crypto_aead_xchacha20poly1305_ietf_keybytes
+// To Do: crypto_aead_xchacha20poly1305_ietf_keygen
+// To Do: crypto_aead_xchacha20poly1305_ietf_npubbytes
+// To Do: crypto_aead_xchacha20poly1305_ietf_nsecbytes
+// To Do: crypto_auth
+// To Do: crypto_auth_bytes
+// To Do: crypto_auth_hmacsha256
+// To Do: crypto_auth_hmacsha256_bytes
+// To Do: crypto_auth_hmacsha256_final
+// To Do: crypto_auth_hmacsha256_init
+// To Do: crypto_auth_hmacsha256_keybytes
+// To Do: crypto_auth_hmacsha256_keygen
+// To Do: crypto_auth_hmacsha256_statebytes
+// To Do: crypto_auth_hmacsha256_update
+// To Do: crypto_auth_hmacsha256_verify
+// To Do: crypto_auth_hmacsha512
+// To Do: crypto_auth_hmacsha512256
+// To Do: crypto_auth_hmacsha512256_bytes
+// To Do: crypto_auth_hmacsha512256_final
+// To Do: crypto_auth_hmacsha512256_init
+// To Do: crypto_auth_hmacsha512256_keybytes
+// To Do: crypto_auth_hmacsha512256_keygen
+// To Do: crypto_auth_hmacsha512256_statebytes
+// To Do: crypto_auth_hmacsha512256_update
+// To Do: crypto_auth_hmacsha512256_verify
+// To Do: crypto_auth_hmacsha512_bytes
+// To Do: crypto_auth_hmacsha512_final
+// To Do: crypto_auth_hmacsha512_init
+// To Do: crypto_auth_hmacsha512_keybytes
+// To Do: crypto_auth_hmacsha512_keygen
+// To Do: crypto_auth_hmacsha512_statebytes
+// To Do: crypto_auth_hmacsha512_update
+// To Do: crypto_auth_hmacsha512_verify
+// To Do: crypto_auth_keybytes
+// To Do: crypto_auth_keygen
+// To Do: crypto_auth_primitive
+// To Do: crypto_auth_verify
+// To Do: crypto_box_beforenm
+// To Do: crypto_box_beforenmbytes
+// To Do: crypto_box_curve25519xchacha20poly1305_beforenm
+// To Do: crypto_box_curve25519xchacha20poly1305_beforenmbytes
+// To Do: crypto_box_curve25519xchacha20poly1305_detached
+// To Do: crypto_box_curve25519xchacha20poly1305_detached_afternm
+// To Do: crypto_box_curve25519xchacha20poly1305_easy
+// To Do: crypto_box_curve25519xchacha20poly1305_easy_afternm
+// To Do: crypto_box_curve25519xchacha20poly1305_keypair
+// To Do: crypto_box_curve25519xchacha20poly1305_macbytes
+// To Do: crypto_box_curve25519xchacha20poly1305_noncebytes
+// To Do: crypto_box_curve25519xchacha20poly1305_open_detached
+// To Do: crypto_box_curve25519xchacha20poly1305_open_detached_afternm
+// To Do: crypto_box_curve25519xchacha20poly1305_open_easy
+// To Do: crypto_box_curve25519xchacha20poly1305_open_easy_afternm
+// To Do: crypto_box_curve25519xchacha20poly1305_publickeybytes
+// To Do: crypto_box_curve25519xchacha20poly1305_secretkeybytes
+// To Do: crypto_box_curve25519xchacha20poly1305_seed_keypair
+// To Do: crypto_box_curve25519xchacha20poly1305_seedbytes
+// To Do: crypto_box_curve25519xsalsa20poly1305
+// To Do: crypto_box_curve25519xsalsa20poly1305_afternm
+// To Do: crypto_box_curve25519xsalsa20poly1305_beforenm
+// To Do: crypto_box_curve25519xsalsa20poly1305_beforenmbytes
+// To Do: crypto_box_curve25519xsalsa20poly1305_boxzerobytes
+// To Do: crypto_box_curve25519xsalsa20poly1305_keypair
+// To Do: crypto_box_curve25519xsalsa20poly1305_macbytes
+// To Do: crypto_box_curve25519xsalsa20poly1305_noncebytes
+// To Do: crypto_box_curve25519xsalsa20poly1305_open
+// To Do: crypto_box_curve25519xsalsa20poly1305_open_afternm
+// To Do: crypto_box_curve25519xsalsa20poly1305_publickeybytes
+// To Do: crypto_box_curve25519xsalsa20poly1305_secretkeybytes
+// To Do: crypto_box_curve25519xsalsa20poly1305_seed_keypair
+// To Do: crypto_box_curve25519xsalsa20poly1305_seedbytes
+// To Do: crypto_box_curve25519xsalsa20poly1305_zerobytes
+// To Do: crypto_box_detached
+// To Do: crypto_box_detached_afternm
+// To Do: crypto_box_easy
+// To Do: crypto_box_easy_afternm
+// To Do: crypto_box_keypair
+// To Do: crypto_box_macbytes
+// To Do: crypto_box_noncebytes
+// To Do: crypto_box_open_detached
+// To Do: crypto_box_open_detached_afternm
+// To Do: crypto_box_open_easy
+// To Do: crypto_box_open_easy_afternm
+// To Do: crypto_box_primitive
+// To Do: crypto_box_publickeybytes
+// To Do: crypto_box_seal
+// To Do: crypto_box_seal_open
+// To Do: crypto_box_sealbytes
+// To Do: crypto_box_secretkeybytes
+// To Do: crypto_box_seed_keypair
+// To Do: crypto_box_seedbytes
+// To Do: crypto_core_hchacha20
+// To Do: crypto_core_hchacha20_constbytes
+// To Do: crypto_core_hchacha20_inputbytes
+// To Do: crypto_core_hchacha20_keybytes
+// To Do: crypto_core_hchacha20_outputbytes
+// To Do: crypto_core_hsalsa20
+// To Do: crypto_core_hsalsa20_constbytes
+// To Do: crypto_core_hsalsa20_inputbytes
+// To Do: crypto_core_hsalsa20_keybytes
+// To Do: crypto_core_hsalsa20_outputbytes
+// To Do: crypto_core_salsa20
+// To Do: crypto_core_salsa2012
+// To Do: crypto_core_salsa2012_constbytes
+// To Do: crypto_core_salsa2012_inputbytes
+// To Do: crypto_core_salsa2012_keybytes
+// To Do: crypto_core_salsa2012_outputbytes
+// To Do: crypto_core_salsa208
+// To Do: crypto_core_salsa208_constbytes
+// To Do: crypto_core_salsa208_inputbytes
+// To Do: crypto_core_salsa208_keybytes
+// To Do: crypto_core_salsa208_outputbytes
+// To Do: crypto_core_salsa20_constbytes
+// To Do: crypto_core_salsa20_inputbytes
+// To Do: crypto_core_salsa20_keybytes
+// To Do: crypto_core_salsa20_outputbytes
+// To Do: crypto_generichash_blake2b
+// To Do: crypto_generichash_blake2b_bytes
+// To Do: crypto_generichash_blake2b_bytes_max
+// To Do: crypto_generichash_blake2b_bytes_min
+// To Do: crypto_generichash_blake2b_final
+// To Do: crypto_generichash_blake2b_init
+// To Do: crypto_generichash_blake2b_init_salt_personal
+// To Do: crypto_generichash_blake2b_keybytes
+// To Do: crypto_generichash_blake2b_keybytes_max
+// To Do: crypto_generichash_blake2b_keybytes_min
+// To Do: crypto_generichash_blake2b_keygen
+// To Do: crypto_generichash_blake2b_personalbytes
+// To Do: crypto_generichash_blake2b_salt_personal
+// To Do: crypto_generichash_blake2b_saltbytes
+// To Do: crypto_generichash_blake2b_statebytes
+// To Do: crypto_generichash_blake2b_update
+// To Do: crypto_hash
+// To Do: crypto_hash_bytes
+// To Do: crypto_hash_primitive
+// To Do: crypto_hash_sha256
+// To Do: crypto_hash_sha256_bytes
+// To Do: crypto_hash_sha256_final
+// To Do: crypto_hash_sha256_init
+// To Do: crypto_hash_sha256_statebytes
+// To Do: crypto_hash_sha256_update
+// To Do: crypto_hash_sha512
+// To Do: crypto_hash_sha512_bytes
+// To Do: crypto_hash_sha512_final
+// To Do: crypto_hash_sha512_init
+// To Do: crypto_hash_sha512_statebytes
+// To Do: crypto_hash_sha512_update
+// To Do: crypto_kdf_blake2b_bytes_max
+// To Do: crypto_kdf_blake2b_bytes_min
+// To Do: crypto_kdf_blake2b_contextbytes
+// To Do: crypto_kdf_blake2b_derive_from_key
+// To Do: crypto_kdf_blake2b_keybytes
+// To Do: crypto_kdf_bytes_max
+// To Do: crypto_kdf_bytes_min
+// To Do: crypto_kdf_contextbytes
+// To Do: crypto_kdf_derive_from_key
+// To Do: crypto_kdf_keybytes
+// To Do: crypto_kdf_keygen
+// To Do: crypto_kdf_primitive
+// To Do: crypto_kx_client_session_keys
+// To Do: crypto_kx_keypair
+// To Do: crypto_kx_primitive
+// To Do: crypto_kx_publickeybytes
+// To Do: crypto_kx_secretkeybytes
+// To Do: crypto_kx_seed_keypair
+// To Do: crypto_kx_seedbytes
+// To Do: crypto_kx_server_session_keys
+// To Do: crypto_kx_sessionkeybytes
+// To Do: crypto_onetimeauth
+// To Do: crypto_onetimeauth_bytes
+// To Do: crypto_onetimeauth_final
+// To Do: crypto_onetimeauth_init
+// To Do: crypto_onetimeauth_keybytes
+// To Do: crypto_onetimeauth_keygen
+// To Do: crypto_onetimeauth_poly1305
+// To Do: crypto_onetimeauth_poly1305_bytes
+// To Do: crypto_onetimeauth_poly1305_final
+// To Do: crypto_onetimeauth_poly1305_init
+// To Do: crypto_onetimeauth_poly1305_keybytes
+// To Do: crypto_onetimeauth_poly1305_keygen
+// To Do: crypto_onetimeauth_poly1305_statebytes
+// To Do: crypto_onetimeauth_poly1305_update
+// To Do: crypto_onetimeauth_poly1305_verify
+// To Do: crypto_onetimeauth_primitive
+// To Do: crypto_onetimeauth_statebytes
+// To Do: crypto_onetimeauth_update
+// To Do: crypto_onetimeauth_verify
+// To Do: crypto_pwhash_scryptsalsa208sha256_ll
+// To Do: crypto_scalarmult
+// To Do: crypto_scalarmult_base
+// To Do: crypto_scalarmult_bytes
+// To Do: crypto_scalarmult_curve25519
+// To Do: crypto_scalarmult_curve25519_base
+// To Do: crypto_scalarmult_curve25519_bytes
+// To Do: crypto_scalarmult_curve25519_scalarbytes
+// To Do: crypto_scalarmult_primitive
+// To Do: crypto_scalarmult_scalarbytes
+// To Do: crypto_secretbox_detached
+// To Do: crypto_secretbox_easy
+// To Do: crypto_secretbox_keybytes
+// To Do: crypto_secretbox_keygen
+// To Do: crypto_secretbox_macbytes
+// To Do: crypto_secretbox_noncebytes
+// To Do: crypto_secretbox_open_detached
+// To Do: crypto_secretbox_open_easy
+// To Do: crypto_secretbox_primitive
+// To Do: crypto_secretbox_xchacha20poly1305_detached
+// To Do: crypto_secretbox_xchacha20poly1305_easy
+// To Do: crypto_secretbox_xchacha20poly1305_keybytes
+// To Do: crypto_secretbox_xchacha20poly1305_macbytes
+// To Do: crypto_secretbox_xchacha20poly1305_noncebytes
+// To Do: crypto_secretbox_xchacha20poly1305_open_detached
+// To Do: crypto_secretbox_xchacha20poly1305_open_easy
+// To Do: crypto_secretbox_xsalsa20poly1305
+// To Do: crypto_secretbox_xsalsa20poly1305_boxzerobytes
+// To Do: crypto_secretbox_xsalsa20poly1305_keybytes
+// To Do: crypto_secretbox_xsalsa20poly1305_keygen
+// To Do: crypto_secretbox_xsalsa20poly1305_macbytes
+// To Do: crypto_secretbox_xsalsa20poly1305_noncebytes
+// To Do: crypto_secretbox_xsalsa20poly1305_open
+// To Do: crypto_secretbox_xsalsa20poly1305_zerobytes
+// To Do: crypto_shorthash
+// To Do: crypto_shorthash_bytes
+// To Do: crypto_shorthash_keybytes
+// To Do: crypto_shorthash_keygen
+// To Do: crypto_shorthash_primitive
+// To Do: crypto_shorthash_siphash24
+// To Do: crypto_shorthash_siphash24_bytes
+// To Do: crypto_shorthash_siphash24_keybytes
+// To Do: crypto_shorthash_siphashx24
+// To Do: crypto_shorthash_siphashx24_bytes
+// To Do: crypto_shorthash_siphashx24_keybytes
+// To Do: crypto_sign
+// To Do: crypto_sign_bytes
+// To Do: crypto_sign_detached
+// To Do: crypto_sign_ed25519
+// To Do: crypto_sign_ed25519_bytes
+// To Do: crypto_sign_ed25519_detached
+// To Do: crypto_sign_ed25519_keypair
+// To Do: crypto_sign_ed25519_open
+// To Do: crypto_sign_ed25519_pk_to_curve25519
+// To Do: crypto_sign_ed25519_publickeybytes
+// To Do: crypto_sign_ed25519_secretkeybytes
+// To Do: crypto_sign_ed25519_seed_keypair
+// To Do: crypto_sign_ed25519_seedbytes
+// To Do: crypto_sign_ed25519_sk_to_curve25519
+// To Do: crypto_sign_ed25519_sk_to_pk
+// To Do: crypto_sign_ed25519_sk_to_seed
+// To Do: crypto_sign_ed25519_verify_detached
+// To Do: crypto_sign_ed25519ph_final_create
+// To Do: crypto_sign_ed25519ph_final_verify
+// To Do: crypto_sign_ed25519ph_init
+// To Do: crypto_sign_ed25519ph_statebytes
+// To Do: crypto_sign_ed25519ph_update
+// To Do: crypto_sign_final_create
+// To Do: crypto_sign_final_verify
+// To Do: crypto_sign_init
+// To Do: crypto_sign_keypair
+// To Do: crypto_sign_open
+// To Do: crypto_sign_primitive
+// To Do: crypto_sign_publickeybytes
+// To Do: crypto_sign_secretkeybytes
+// To Do: crypto_sign_seed_keypair
+// To Do: crypto_sign_seedbytes
+// To Do: crypto_sign_statebytes
+// To Do: crypto_sign_update
+// To Do: crypto_sign_verify_detached
+// To Do: crypto_stream
+// To Do: crypto_stream_chacha20
+// To Do: crypto_stream_chacha20_ietf
+// To Do: crypto_stream_chacha20_ietf_keybytes
+// To Do: crypto_stream_chacha20_ietf_keygen
+// To Do: crypto_stream_chacha20_ietf_noncebytes
+// To Do: crypto_stream_chacha20_ietf_xor
+// To Do: crypto_stream_chacha20_ietf_xor_ic
+// To Do: crypto_stream_chacha20_keybytes
+// To Do: crypto_stream_chacha20_keygen
+// To Do: crypto_stream_chacha20_noncebytes
+// To Do: crypto_stream_chacha20_xor
+// To Do: crypto_stream_chacha20_xor_ic
+// To Do: crypto_stream_keybytes
+// To Do: crypto_stream_keygen
+// To Do: crypto_stream_noncebytes
+// To Do: crypto_stream_primitive
+// To Do: crypto_stream_salsa20
+// To Do: crypto_stream_salsa2012
+// To Do: crypto_stream_salsa2012_keybytes
+// To Do: crypto_stream_salsa2012_keygen
+// To Do: crypto_stream_salsa2012_noncebytes
+// To Do: crypto_stream_salsa2012_xor
+// To Do: crypto_stream_salsa208
+// To Do: crypto_stream_salsa208_keybytes
+// To Do: crypto_stream_salsa208_keygen
+// To Do: crypto_stream_salsa208_noncebytes
+// To Do: crypto_stream_salsa208_xor
+// To Do: crypto_stream_salsa20_keybytes
+// To Do: crypto_stream_salsa20_keygen
+// To Do: crypto_stream_salsa20_noncebytes
+// To Do: crypto_stream_salsa20_xor
+// To Do: crypto_stream_salsa20_xor_ic
+// To Do: crypto_stream_xchacha20
+// To Do: crypto_stream_xchacha20_keybytes
+// To Do: crypto_stream_xchacha20_keygen
+// To Do: crypto_stream_xchacha20_noncebytes
+// To Do: crypto_stream_xchacha20_xor
+// To Do: crypto_stream_xchacha20_xor_ic
+// To Do: crypto_stream_xor
+// To Do: crypto_stream_xsalsa20
+// To Do: crypto_stream_xsalsa20_keybytes
+// To Do: crypto_stream_xsalsa20_keygen
+// To Do: crypto_stream_xsalsa20_noncebytes
+// To Do: crypto_stream_xsalsa20_xor
+// To Do: crypto_stream_xsalsa20_xor_ic
+// To Do: crypto_verify_16
+// To Do: crypto_verify_16_bytes
+// To Do: crypto_verify_32
+// To Do: crypto_verify_32_bytes
+// To Do: crypto_verify_64
+// To Do: crypto_verify_64_bytes
+// To Do: randombytes_buf_deterministic
+// To Do: randombytes_close
+// To Do: randombytes_implementation_name
+// To Do: randombytes_random
+// To Do: randombytes_salsa20_implementation
+// To Do: randombytes_seedbytes
+// To Do: randombytes_set_implementation
+// To Do: randombytes_stir
+// To Do: randombytes_sysrandom_implementation
+// To Do: randombytes_uniform
+// To Do: sodium_allocarray
+// To Do: sodium_malloc
+// To Do: sodium_mlock
+// To Do: sodium_mprotect_noaccess
+// To Do: sodium_mprotect_readonly
+// To Do: sodium_mprotect_readwrite
+// To Do: sodium_munlock
+// To Do: sodium_runtime_has_aesni
+// To Do: sodium_runtime_has_avx
+// To Do: sodium_runtime_has_avx2
+// To Do: sodium_runtime_has_neon
+// To Do: sodium_runtime_has_pclmul
+// To Do: sodium_runtime_has_sse2
+// To Do: sodium_runtime_has_sse3
+// To Do: sodium_runtime_has_sse41
+// To Do: sodium_runtime_has_ssse3
+
+Define DFERR_LIBSODIUM for 4451
+
+//{ Visibility=Private }
+//{ ClassType=Abstract }
+//Class cLibSodiumHash_Impl_Base is a cObject
+//    
+//    Procedure Construct_Object
+//        Forward Send Construct_Object
+//
+//        // State structure used internally by libsodium.dll.
+//        { Visibility=Private }
+//        Property Pointer  Private_ppState
+//        // Copy of the state structure used internally by libsodium.dll, used to reset the state
+//        // upon reuse.
+//        { Visibility=Private }
+//        Property Pointer  Private_ppStateCopy
+//
+//        // Length of the output hash in bytes. Needed for finalization.
+//        { Visibility=Private }
+//        Property UInteger Private_puiOutlen
+//
+//        // Length of the internal state structure in bytes.
+//        { Visibility=Private }
+//        Property UInteger Private_puiStatelen
+//
+//        Set Delegation_Mode to No_Delegation
+//    End_Procedure
+//
+//    Procedure Destroy_Object
+//        Send FreeState
+//
+//        Forward Send Destroy_Object
+//    End_Procedure
+//
+//    { Visibility=Private }
+//    Procedure FreeState
+//        Pointer pState
+//        Pointer pStateCopy
+//
+//        Get Private_ppState to pState
+//        If (pState <> 0) Begin
+//            Move (libsodium_sodium_free(pState)) to gVoid
+//
+//            Move 0 to pState
+//            Set Private_ppState to pState
+//        End
+//
+//        Get Private_ppStateCopy to pStateCopy
+//        If (pStateCopy <> 0) Begin
+//            Move (libsodium_sodium_free(pStateCopy)) to gVoid
+//
+//            Move 0 to pStateCopy
+//            Set Private_ppStateCopy to pStateCopy
+//        End
+//    End_Procedure
+//
+//    { Visibility=Private }
+//    Function Private_Init UInteger uiOutlen Returns Integer
+//        Integer  iResult
+//        Pointer  pState
+//        Pointer  pStateCopy
+//        UInteger uiStatelen
+//
+//        Get Private_puiStatelen to uiStatelen
+//
+//        Move (libsodium_sodium_malloc(uiStatelen)) to pState
+//        Get Private_Impl_Init pState to iResult
+//
+//        If (iResult = 0) Begin
+//            Move (libsodium_sodium_malloc(uiStatelen)) to pStateCopy
+//            Move (MemCopy(pStateCopy, pState, uiStatelen)) to gVoid
+//            Move (libsodium_sodium_mprotect_noaccess(pStateCopy)) to gVoid
+//
+//            Set Private_ppState to pState
+//            Set Private_ppStateCopy to pStateCopy
+//            Set Private_puiOutlen to uiOutlen
+//        End
+//        Else Begin
+//            Move (libsodium_sodium_free(pState)) to gVoid
+//        End
+//
+//        Function_Return iResult
+//    End_Function
+//
+//    Function Init UInteger uiOutlen Returns Integer
+//        Integer iResult
+//
+//        Get Private_Init uiOutlen to iResult
+//
+//        Function_Return iResult
+//    End_Function
+//
+//    Procedure Reinitialize
+//        Pointer pState
+//        Pointer pStateCopy
+//        UInteger uiStatelen
+//
+//        Get Private_puiStatelen to uiStatelen
+//        Get Private_ppState to pState
+//        Get Private_ppStateCopy to pStateCopy
+//
+//        Move (libsodium_sodium_mprotect_readonly(pStateCopy)) to gVoid
+//        Move (MemCopy(pState, pStateCopy, uiStatelen)) to gVoid
+//        Move (libsodium_sodium_mprotect_noaccess(pStateCopy)) to gVoid
+//    End_Procedure
+//
+//    Function Update UChar[] ucaData Returns Integer
+//        Integer iResult
+//        Pointer pState
+//
+//        Get Private_ppState to pState
+//        Get Private_Impl_Update pState (AddressOf(ucaData)) (SizeOfArray(ucaData)) to iResult
+//
+//        Function_Return iResult
+//    End_Function
+//
+//    Function Final Returns UChar[]
+//        Integer  iResult
+//        Pointer  pState
+//        UChar[]  ucaHash
+//        UInteger uiOutlen
+//
+//        Get Private_ppState to pState
+//        Get Private_puiOutlen to uiOutlen
+//        Move (ResizeArray(ucaHash, uiOutlen)) to ucaHash
+//
+//        Get Private_Impl_Final pState (AddressOf(ucaHash)) to iResult
+//
+//        Function_Return ucaHash
+//    End_Function
+//
+//End_Class
+//
+//// Basic reusable SHA256 hash implementation, to be used internally only.
+//{ Visibility=Private }
+//Class cLibSodiumHash_sha256_Impl is a cLibSodiumHash_Impl_Base
+//    
+//    Procedure Construct_Object
+//        Forward Send Construct_Object
+//
+//        Set Private_puiOutlen to crypto_hash_sha256_BYTES
+//        Set Private_puiStatelen to crypto_hash_sha256_STATEBYTES
+//    End_Procedure
+//
+//    { Visibility=Private }
+//    Function Private_Impl_Init Pointer pState Returns Integer
+//        Function_Return (libsodium_crypto_hash_sha256_init(pState))
+//    End_Function
+//
+//    Function Private_Impl_Update Pointer pState Pointer pData UBigInt uiDatalen Returns Integer
+//        Integer iResult
+//        UIntegerUInteger inlen
+//
+//        Move (UnpackUBigInt(uiDatalen)) to inlen
+//        Move (libsodium_crypto_hash_sha256_update(pState, pData, inlen.ui1, inlen.ui2)) to iResult
+//
+//        Function_Return iResult
+//    End_Function
+//
+//    Function Private_Impl_Final Pointer pState Pointer pOut Returns Integer
+//        Function_Return (libsodium_crypto_hash_sha256_final(pState, pOut))
+//    End_Function
+//
+//End_Class
+//
+//// Basic reusable SHA512 hash implementation, to be used internally only.
+//{ Visibility=Private }
+//Class cLibSodiumHash_sha512_Impl is a cLibSodiumHash_Impl_Base
+//    
+//    Procedure Construct_Object
+//        Forward Send Construct_Object
+//
+//        Set Private_puiOutlen to crypto_hash_sha512_BYTES
+//        Set Private_puiStatelen to crypto_hash_sha512_STATEBYTES
+//    End_Procedure
+//
+//    { Visibility=Private }
+//    Function Private_Impl_Init Pointer pState Returns Integer
+//        Function_Return (libsodium_crypto_hash_sha512_init(pState))
+//    End_Function
+//
+//    Function Private_Impl_Update Pointer pState Pointer pData UBigInt uiDatalen Returns Integer
+//        Integer iResult
+//        UIntegerUInteger inlen
+//
+//        Move (UnpackUBigInt(uiDatalen)) to inlen
+//        Move (libsodium_crypto_hash_sha512_update(pState, pData, inlen.ui1, inlen.ui2)) to iResult
+//
+//        Function_Return iResult
+//    End_Function
+//
+//    Function Private_Impl_Final Pointer pState Pointer pOut Returns Integer
+//        Function_Return (libsodium_crypto_hash_sha512_final(pState, pOut))
+//    End_Function
+//
+//End_Class
+
+// Basic reusable generichash implementation, to be used internally only.
+//
+// When first initialized it makes a copy of the internal state. This state can easily be restored
+// in order to reuse this hash object. The main advantage is that there is no need for storing a
+// copy of the key, but it also has a performance benefit.
+{ Visibility=Private }
+Class cLibSodiumGenericHash_Impl is a cObject
+    
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        // State structure used internally by libsodium.dll.
+        { Visibility=Private }
+        Property Pointer  Private_ppState
+        // Copy of the state structure used internally by libsodium.dll, used to reset the state
+        // upon reuse.
+        { Visibility=Private }
+        Property Pointer  Private_ppStateCopy
+        // Length of the output hash in bytes. Needed for initialization and finalization.
+        { Visibility=Private }
+        Property UInteger Private_puiOutlen
+
+        Set Delegation_Mode to No_Delegation
+    End_Procedure
+
+    Procedure Destroy_Object
+        Send FreeState
+
+        Forward Send Destroy_Object
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure FreeState
+        Pointer pState
+        Pointer pStateCopy
+
+        Get Private_ppState to pState
+        If (pState <> 0) Begin
+            Move (libsodium_sodium_free(pState)) to gVoid
+
+            Move 0 to pState
+            Set Private_ppState to pState
+        End
+
+        Get Private_ppStateCopy to pStateCopy
+        If (pStateCopy <> 0) Begin
+            Move (libsodium_sodium_free(pStateCopy)) to gVoid
+
+            Move 0 to pStateCopy
+            Set Private_ppStateCopy to pStateCopy
+        End
+    End_Procedure
+
+    { Visibility=Private }
+    Function Private_Init UInteger uiOutlen Pointer pKey UInteger uiKeyLen Returns Integer
+        Integer iResult
+        Pointer pState
+        Pointer pStateCopy
+
+        Move (libsodium_sodium_malloc(crypto_generichash_STATEBYTES)) to pState
+        Move (libsodium_crypto_generichash_init(pState, pKey, uiKeyLen, uiOutlen)) to iResult
+
+        If (iResult = 0) Begin
+            Move (libsodium_sodium_malloc(crypto_generichash_STATEBYTES)) to pStateCopy
+            Move (MemCopy(pStateCopy, pState, crypto_generichash_STATEBYTES)) to gVoid
+            Move (libsodium_sodium_mprotect_noaccess(pStateCopy)) to gVoid
+
+            Set Private_ppState to pState
+            Set Private_ppStateCopy to pStateCopy
+            Set Private_puiOutlen to uiOutlen
+        End
+        Else Begin
+            Move (libsodium_sodium_free(pState)) to gVoid
+        End
+
+        Function_Return iResult
+    End_Function
+
+    Function Init UInteger uiOutlen Returns Integer
+        Integer iResult
+
+        Get Private_Init uiOutlen 0 0 to iResult
+
+        Function_Return iResult
+    End_Function
+
+    Function InitWithKey UChar[] ByRef ucaKey UInteger uiOutlen Returns Integer
+        Integer  iResult
+        Pointer  pKey
+        UInteger uiKeyLen
+
+        Move (AddressOf(ucaKey)) to pKey
+        Move (SizeOfArray(ucaKey)) to uiKeyLen
+
+        Get Private_Init uiOutlen pKey uiKeyLen to iResult
+
+        Move (libsodium_sodium_memzero(AddressOf(ucaKey), SizeOfArray(ucaKey))) to gVoid
+
+        Function_Return iResult
+    End_Function
+
+    Procedure Reinitialize
+        Pointer pState
+        Pointer pStateCopy
+
+        Get Private_ppState to pState
+        Get Private_ppStateCopy to pStateCopy
+
+        Move (libsodium_sodium_mprotect_readonly(pStateCopy)) to gVoid
+        Move (MemCopy(pState, pStateCopy, crypto_generichash_STATEBYTES)) to gVoid
+        Move (libsodium_sodium_mprotect_noaccess(pStateCopy)) to gVoid
+    End_Procedure
+
+    Function Update UChar[] ucaData Returns Integer
+        Integer iResult
+        Pointer pState
+        UIntegerUInteger inlen
+        BigInt  biLen
+
+        Get Private_ppState to pState
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (SizeOfArray(ucaData)) to biLen
+        Move (libsodium_crypto_generichash_update(pState, AddressOf(ucaData), biLen)) to iResult
+
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(SizeOfArray(ucaData))) to inlen
+        Move (libsodium_crypto_generichash_update(pState, AddressOf(ucaData), inlen.ui1, inlen.ui2)) to iResult
+#ENDIF
+
+        Function_Return iResult
+    End_Function
+
+    Function Final Returns UChar[]
+        Integer  iResult
+        Pointer  pState
+        UChar[]  ucaHash
+        UInteger uiOutlen
+
+        Get Private_ppState to pState
+        Get Private_puiOutlen to uiOutlen
+        Move (ResizeArray(ucaHash, uiOutlen)) to ucaHash
+
+        Move (libsodium_crypto_generichash_final(pState, AddressOf(ucaHash), uiOutlen)) to iResult
+
+        Function_Return ucaHash
+    End_Function
+
+End_Class
+
+// Wrapper for the libsodium streaming API for generating generic hashes.
+// <p>
+// This function set is implemented using BLAKE2b, a simple, standardized (RFC 7693) secure hash
+// function that is as strong as SHA-3 but faster than SHA-1 and MD5. Unlike MD5, SHA-1 and SHA-256,
+// this function is safe against hash length extension attacks. BLAKE2b is not suitable for hashing
+// passwords. For this purpose, use the CryptoPwhash* methods.
+// <p>
+// Instances of this class must be children of a cLibSodium instance. This means they must be
+// created using one of the two supported methods described below.
+// <p>
+// Even though it is technically possible, a single instance of this class should not be
+// reinitialized with a different key or hash length. Doing so makes code less readable and thus
+// more susceptible for the introduction of hard to find bugs.
+//
+// <h2>Method 1 - A statically defined object</h2>
+// This is especially useful when a keyed hash is used many times within the application.
+// <p>
+// Example:
+// <pre>
+//  Object oSodium is a cLibSodium
+//      Object oMyGenericHash is a cLibSodiumGenericHash
+//          Set piOutputBytes to crypto_generichash_BYTES
+//          Send InitWithKey (SodiumHex2Bin(oSodium, "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"))
+//      End_Object
+//  End_Object
+// </pre>
+//
+// <h2>Method 2 - Dynamic objects</h2>
+// Use the functions CryptoGenericHash() or CryptoGenericHashWithKey() of the cLibSodium class.
+// Dynamic objects are only useful when the cLibSodiumGenericHash instance is used only once. The
+// returned object is already initialized, so a call to Init() or InitWithKey() is not needed.
+// <p>
+// Dynamically created objects must be destroyed manually! In the example below this is done
+// immediately after use, which is a good practice.
+// If the parent cLibSodium instance was created dynamically as well, all its child objects
+// (including the cLibSodiumGenericHash instance) will automatically be destroyed with it.
+// <p>
+// Example:
+// <pre>
+//  Handle  hoHash
+//  UChar[] ucaData ucaHash ucaKey
+//
+//  Get SodiumHex2Bin of oSodium "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f" to ucaKey
+//  Get GenericHash of oSodium to hoHash
+//  Set piOutputBytes of hoHash to crypto_generichash_BYTES
+//  Send InitWithKey of hoHash ucaKey
+//  If not Err Repeat
+//      read_block ucaData 4096
+//      if not SeqEOF Send Update of hoHash ucaData
+//  Until (SeqEOF)
+//
+//  Get Final of hoHash to ucaHash
+//  Send Destroy of hoHash
+// </pre>
+Class cLibSodiumGenericHash is a cObject
+    
+    Procedure Construct_Object
+        Forward Send Construct_Object
+
+        // Handle to the internal object doing the actual hashing.
+        { Visibility=Private }
+        Property Handle   Private_phoHashImpl
+
+        // True when Final() is called, after which Update() will reinitialize Private_phoHashImpl
+        // and set this property back to false.
+        { Visibility=Private }
+        Property Boolean  Private_pbFinalized False
+
+        // The length of the resulting hash in bytes.
+        { Visibility=Private }
+        Property UInteger Private_puiOutputBytes crypto_generichash_BYTES
+
+        Set Delegation_Mode to No_Delegation
+    End_Procedure
+
+    { MethodType=Property }
+    { InitialValue=32 }
+    Procedure Set puiOutputBytes UInteger uiValue
+        If (Private_phoHashImpl(Self) <> 0) ;
+            Error DFERR_LIBSODIUM "Cannot change puiOutputBytes after Init()."
+        If (uiValue < crypto_generichash_BYTES_MIN or uiValue > crypto_generichash_BYTES_MAX) ;
+            Error DFERR_LIBSODIUM "Illegal value for puiOutputBytes."
+
+        Set Private_puiOutputBytes to uiValue
+    End_Procedure
+
+    Function puiOutputBytes Returns UInteger
+        Function_Return (Private_puiOutputBytes(Self))
+    End_Function
+
+    { Visibility=Private }
+    Function Private_Init UChar[] ByRef ucaKey Returns Handle
+        Handle   hoHashImpl
+        Integer  iResult
+        UInteger uiOutlen
+
+        Get Private_puiOutputBytes to uiOutlen
+
+        Get Create (RefClass(cLibSodiumGenericHash_Impl)) to hoHashImpl
+        If (num_arguments > 0) Begin
+            Get InitWithKey of hoHashImpl (&ucaKey) uiOutlen to iResult
+        End
+        Else Begin
+            Get Init of hoHashImpl uiOutlen to iResult
+        End
+
+        If (iResult <> 0) Begin
+            Send Destroy of hoHashImpl
+            Move 0 to hoHashImpl
+        End
+
+        Function_Return hoHashImpl
+    End_Function
+
+    // Intialize this object for generating a generic hash without a key.
+    Procedure Init
+        Handle hoHashImpl
+
+        Get Private_phoHashImpl to hoHashImpl
+        If (hoHashImpl <> 0) Begin
+            Error DFERR_LIBSODIUM "Cannot reinitialize a generic hash"
+            Procedure_Return
+        End
+
+        Get Private_Init to hoHashImpl
+
+        If (hoHashImpl <> 0) Begin
+            Set Private_phoHashImpl to hoHashImpl
+        End
+        Else Begin
+            Error DFERR_LIBSODIUM "Unable to initialize generic hash"
+        End
+    End_Procedure
+
+    // Intialize this object for generating a generic hash with a key.
+    // <p>
+    // The recommended key size is crypto_generichash_KEYBYTES bytes. However, the key size
+    // can by any value between crypto_generichash_KEYBYTES_MIN and crypto_generichash_KEYBYTES_MAX.
+    //
+    // @param {UChar[]} ucaKey The hash key.
+    Procedure InitWithKey UChar[] ByRef ucaKey
+        Handle hoHashImpl
+
+        Get Private_phoHashImpl to hoHashImpl
+        If (hoHashImpl <> 0) Begin
+            Error DFERR_LIBSODIUM "Cannot reinitialize a generic hash"
+            Procedure_Return
+        End
+
+        If (SizeOfArray(ucaKey) < crypto_generichash_KEYBYTES_MIN or SizeOfArray(ucaKey) > crypto_generichash_KEYBYTES_MAX) Begin
+            Error DFERR_LIBSODIUM "Invalid key size."
+            Procedure_Return
+        End
+
+        Get Private_Init (&ucaKey) to hoHashImpl
+        If (hoHashImpl <> 0) Begin
+            Set Private_phoHashImpl to hoHashImpl
+        End
+        Else Begin
+            Error DFERR_LIBSODIUM "Cannot initialize generic hash with key"
+        End
+    End_Procedure
+
+    // Update the hash with more data.
+    //
+    // @param {UChar[]} ucaData The data to add to the hash.
+    Procedure Update UChar[] ucaData
+        Boolean bFinalized
+        Handle  hoHashImpl
+        Integer iResult
+
+        Get Private_phoHashImpl to hoHashImpl
+        If (hoHashImpl <> 0) Begin
+            Get Private_pbFinalized to bFinalized
+            If bFinalized Begin
+                Send Reinitialize of hoHashImpl
+                Set Private_pbFinalized to False
+            End
+
+            Get Update of hoHashImpl ucaData to iResult
+            If (iResult <> 0) Begin
+                Error DFERR_LIBSODIUM "Cannot update generic hash"
+            End
+        End
+        Else Begin
+            Error DFERR_LIBSODIUM "Cannot update an uninitialized hash"
+        End
+    End_Procedure
+
+    // Finalize the hash generation and return the hash value.
+    // <p>
+    // After calling this method the object is immediately available for reuse. Init() and
+    // InitWithKey() are not allowed, only Update() and Final().
+    //
+    // @return {UChar[]} The raw hash data.
+    Function Final Returns UChar[]
+        Boolean bFinalized
+        Handle  hoHashImpl
+        UChar[] ucaHash
+
+        Get Private_pbFinalized to bFinalized
+        If bFinalized Begin
+            Error DFERR_LIBSODIUM "Final() was already called"
+        End
+
+        Get Private_phoHashImpl to hoHashImpl
+        If (hoHashImpl <> 0) Begin
+            Get Final of hoHashImpl to ucaHash
+            Set Private_pbFinalized to True
+        End
+        Else Begin
+            Error DFERR_LIBSODIUM "Cannot finalize an uninitialized generic hash"
+        End
+
+        Function_Return ucaHash
+    End_Function
+
+End_Class
+
+//Class cLibSodiumHash is a cObject
+//    
+//    Procedure Construct_Object
+//        Forward Send Construct_Object
+//
+//Property Integer piHashImplClass (RefClass(cLibSodiumHash_sha256_Impl))
+//
+//        // Handle to the internal object doing the actual hashing.
+//        { Visibility=Private }
+//        Property Handle   Private_phoHashImpl
+//
+//        // True when Final() is called, after which Update() will reinitialize Private_phoHashImpl
+//        // and set this property back to false.
+//        { Visibility=Private }
+//        Property Boolean  Private_pbFinalized False
+//
+//        // The length of the resulting hash in bytes.
+//        { Visibility=Private }
+//        Property UInteger Private_puiOutputBytes crypto_generichash_BYTES
+//
+//        Set Delegation_Mode to No_Delegation
+//    End_Procedure
+//
+//    { MethodType=Property }
+//    { InitialValue=32 }
+//    Procedure Set puiOutputBytes UInteger uiValue
+//        If (Private_phoHashImpl(Self) <> 0) ;
+//            Error DFERR_LIBSODIUM "Cannot change puiOutputBytes after Init()."
+//        If (uiValue < crypto_generichash_BYTES_MIN or uiValue > crypto_generichash_BYTES_MAX) ;
+//            Error DFERR_LIBSODIUM "Illegal value for puiOutputBytes."
+//
+//        Set Private_puiOutputBytes to uiValue
+//    End_Procedure
+//
+//    Function puiOutputBytes Returns UInteger
+//        Function_Return (Private_puiOutputBytes(Self))
+//    End_Function
+//
+//    { Visibility=Private }
+//    Function Private_Init UChar[] ucaKey Returns Handle
+//        Handle   hoHashImpl
+//        Integer  iImplClass
+//        Integer  iResult
+//        UInteger uiOutlen
+//
+//        Get Private_puiOutputBytes to uiOutlen
+//
+//        Get piHashImplClass to iImplClass
+//        Get Create iImplClass to hoHashImpl
+//        If (num_arguments > 0) Begin
+//            Get InitWithKey of hoHashImpl ucaKey uiOutlen to iResult
+//        End
+//        Else Begin
+//            Get Init of hoHashImpl uiOutlen to iResult
+//        End
+//
+//        If (iResult <> 0) Begin
+//            Send Destroy of hoHashImpl
+//            Move 0 to hoHashImpl
+//        End
+//
+//        Function_Return hoHashImpl
+//    End_Function
+//
+//    // Intialize this object for generating a generic hash without a key.
+//    Procedure Init
+//        Handle hoHashImpl
+//
+//        Get Private_phoHashImpl to hoHashImpl
+//        If (hoHashImpl <> 0) Begin
+//            Error DFERR_LIBSODIUM "Cannot reinitialize a generic hash"
+//            Procedure_Return
+//        End
+//
+//        Get Private_Init to hoHashImpl
+//
+//        If (hoHashImpl <> 0) Begin
+//            Set Private_phoHashImpl to hoHashImpl
+//        End
+//        Else Begin
+//            Error DFERR_LIBSODIUM "Unable to initialize generic hash"
+//        End
+//    End_Procedure
+//
+//    // Intialize this object for generating a generic hash with a key.
+//    // <p>
+//    // The recommended key size is crypto_generichash_KEYBYTES bytes. However, the key size
+//    // can by any value between crypto_generichash_KEYBYTES_MIN and crypto_generichash_KEYBYTES_MAX.
+//    //
+//    // @param {UChar[]} ucaKey The hash key.
+//    Procedure InitWithKey UChar[] ucaKey
+//        Handle hoHashImpl
+//
+//        Get Private_phoHashImpl to hoHashImpl
+//        If (hoHashImpl <> 0) Begin
+//            Error DFERR_LIBSODIUM "Cannot reinitialize a generic hash"
+//            Procedure_Return
+//        End
+//
+//        If (SizeOfArray(ucaKey) < crypto_generichash_KEYBYTES_MIN or SizeOfArray(ucaKey) > crypto_generichash_KEYBYTES_MAX) Begin
+//            Error DFERR_LIBSODIUM "Invalid key size."
+//            Procedure_Return
+//        End
+//
+//        Get Private_Init ucaKey to hoHashImpl
+//        If (hoHashImpl <> 0) Begin
+//            Set Private_phoHashImpl to hoHashImpl
+//        End
+//        Else Begin
+//            Error DFERR_LIBSODIUM "Cannot initialize generic hash with key"
+//        End
+//    End_Procedure
+//
+//    // Update the hash with more data.
+//    //
+//    // @param {UChar[]} ucaData The data to add to the hash.
+//    Procedure Update UChar[] ucaData
+//        Boolean bFinalized
+//        Handle  hoHashImpl
+//        Integer iResult
+//
+//        Get Private_phoHashImpl to hoHashImpl
+//        If (hoHashImpl <> 0) Begin
+//            Get Private_pbFinalized to bFinalized
+//            If bFinalized Begin
+//                Send Reinitialize of hoHashImpl
+//                Set Private_pbFinalized to False
+//            End
+//
+//            Get Update of hoHashImpl ucaData to iResult
+//            If (iResult <> 0) Begin
+//                Error DFERR_LIBSODIUM "Cannot update generic hash"
+//            End
+//        End
+//        Else Begin
+//            Error DFERR_LIBSODIUM "Cannot update an uninitialized hash"
+//        End
+//    End_Procedure
+//
+//    // Finalize the hash generation and return the hash value.
+//    // <p>
+//    // After calling this method the object is immediately available for reuse. Init() and
+//    // InitWithKey() are not allowed, only Update() and Final().
+//    //
+//    // @return {UChar[]} The raw hash data.
+//    Function Final Returns UChar[]
+//        Boolean bFinalized
+//        Handle  hoHashImpl
+//        UChar[] ucaHash
+//
+//        Get Private_pbFinalized to bFinalized
+//        If bFinalized Begin
+//            Error DFERR_LIBSODIUM "Final() was already called"
+//        End
+//
+//        Get Private_phoHashImpl to hoHashImpl
+//        If (hoHashImpl <> 0) Begin
+//            Get Final of hoHashImpl to ucaHash
+//            Set Private_pbFinalized to True
+//        End
+//        Else Begin
+//            Error DFERR_LIBSODIUM "Cannot finalize an uninitialized generic hash"
+//        End
+//
+//        Function_Return ucaHash
+//    End_Function
+//
+//End_Class
+
+Class cLibSodiumCoreMixin is a Mixin
+
+    // Initialize libsodium.
+    //
+    // @returns 0 on success, -1 on failure, or 1 if the library had already been initialized.
+    Function SodiumInit Returns Integer
+        Function_Return (libsodium_sodium_init())
+    End_Function
+
+End_Class
+
+Class cLibSodiumGenericHashMixin is a Mixin
+
+    { Visibility=Private }
+    Function Private_CryptoGenericHash UInteger uiHashLen UChar[] ucaMessage UChar[] ByRef ucaKey Returns UChar[]
+        Integer  iResult
+        Pointer  pKey
+        UChar[]  ucaHash
+        UInteger uiKeyLen
+        UIntegerUInteger inlen
+        BigInt   biLen
+
+        Move (ResizeArray(ucaHash, uiHashLen)) to ucaHash
+
+        If (num_arguments > 2) Begin
+            Move (AddressOf(ucaKey)) to pKey
+            Move (SizeOfArray(ucaKey)) to uiKeyLen
+        End
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (SizeOfArray(ucaMessage)) to biLen
+        Move (libsodium_crypto_generichash(AddressOf(ucaHash), uiHashLen, ;
+              AddressOf(ucaMessage), biLen, pKey, uiKeyLen)) ;
+            to iResult
+
+#ELSE   // DF 19.1 and earlier
+
+        Move (UnpackUBigInt(SizeOfArray(ucaMessage))) to inlen
+        Move (libsodium_crypto_generichash( ;
+            AddressOf(ucaHash), uiHashLen, ;
+            AddressOf(ucaMessage), inlen.ui1, inlen.ui2, ;
+            pKey, uiKeyLen)) ;
+            to iResult
+#ENDIF
+
+        If (iResult <> 0) Move (ResizeArray(ucaHash, 0)) to ucaHash
+
+        Function_Return ucaHash
+    End_Function
+
+    Function CryptoGenericHash UChar[] ucaMessage UInteger uiHashLength Returns UChar[]
+        UChar[]  ucaHash
+        UInteger uiHashLen
+
+        Move (If(num_arguments > 1, uiHashLength, crypto_generichash_BYTES)) to uiHashLen
+        Get Private_CryptoGenericHash uiHashLen ucaMessage to ucaHash
+
+        Function_Return ucaHash
+    End_Function
+
+    Function CryptoGenericHashWithKey UChar[] ucaMessage UChar[] ByRef ucaKey UInteger uiHashLength Returns UChar[]
+        UChar[]  ucaHash
+        UInteger uiHashLen
+
+        Move (If(num_arguments > 2, uiHashLength, crypto_generichash_BYTES)) to uiHashLen
+        Get Private_CryptoGenericHash uiHashLen ucaMessage (&ucaKey) to ucaHash
+
+        Function_Return ucaHash
+    End_Function
+
+    Function GenericHash UInteger uiHashLength Returns Handle
+        Handle hoHash
+
+        Get CreateNamed (RefClass(cLibSodiumGenericHash)) "oLibSodiumGenericHash" to hoHash
+        If (num_arguments > 0) Set puiOutputBytes of hoHash to uiHashLength
+        Send Init of hoHash
+
+        Function_Return hoHash
+    End_Function
+
+    Function GenericHashWithKey UChar[] ByRef ucaKey UInteger uiHashLength Returns Handle
+        Handle hoHash
+
+        Get CreateNamed (RefClass(cLibSodiumGenericHash)) "oLibSodiumGenericHash" to hoHash
+        If (num_arguments > 1) Set puiOutputBytes of hoHash to uiHashLength
+        Send InitWithKey of hoHash (&ucaKey)
+
+        Function_Return hoHash
+    End_Function
+
+//    Function Hash Integer iClass UInteger uiHashLength Returns Handle
+//        Handle hoHash
+//
+//        Get CreateNamed (RefClass(cLibSodiumHash)) "oLibSodiumHash" to hoHash
+//        If (num_arguments > 0 and iClass <> 0) Set piHashImplClass of hoHash to iClass
+//        If (num_arguments > 1) Set puiOutputBytes of hoHash to uiHashLength
+//        Send Init of hoHash
+//
+//        Function_Return hoHash
+//    End_Function
+
+End_Class
+
+Class cLibSodiumPasswordHashMixin is a Mixin
+
+    Function CryptoPwhash UBigInt outLen UChar[] ucaPassword UChar[] ucaSalt UBigInt opslimit UInteger memlimit Integer alg Returns UChar[]
+        Integer iResult
+        Pointer passwd
+        Pointer salt
+        UChar[] ucaResult
+        UIntegerUInteger passwdLen
+        UIntegerUInteger uOpslimit
+        UIntegerUInteger uOutLen
+        BigInt  biPwdLen
+
+        Move (AddressOf(ucaPassword)) to passwd
+        Move (AddressOf(ucaSalt)) to salt
+
+        Move (ResizeArray(ucaResult, outLen)) to ucaResult
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (SizeOfArray(ucaPassword)) to biPwdLen
+        Move (libsodium_crypto_pwhash(AddressOf(ucaResult), outLen, passwd, biPwdLen, salt, opslimit, memlimit, alg)) to iResult
+
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(SizeOfArray(ucaPassword))) to passwdLen
+        Move (UnpackUBigInt(opslimit)) to uOpslimit
+        Move (UnpackUBigInt(outLen)) to uOutLen
+        Move (libsodium_crypto_pwhash(AddressOf(ucaResult), uOutLen.ui1, uOutLen.ui2, passwd, passwdLen.ui1, passwdLen.ui2, salt, uOpslimit.ui1, uOpslimit.ui2, memlimit, alg)) to iResult
+#ENDIF
+
+        If (iResult <> 0) Begin
+            Move (ResizeArray(ucaResult, 0)) to ucaResult
+        End
+
+        Function_Return ucaResult
+    End_Function
+
+    Function CryptoPwhashStr UChar[] ucaPassword UBigInt opslimit UInteger memlimit Returns String
+        Integer iResult
+        Pointer passwd
+        String  sResult
+        BigInt  biPwdLen
+        UIntegerUInteger passwdLen
+        UIntegerUInteger uOpslimit
+
+        Move (AddressOf(ucaPassword)) to passwd
+
+#IF (!@ > 190)
+        Move (ZeroString(crypto_pwhash_STRBYTES)) to sResult
+#ELSE
+        ZeroString crypto_pwhash_STRBYTES to sResult
+#ENDIF
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (SizeOfArray(ucaPassword)) to biPwdLen
+        Move (libsodium_crypto_pwhash_str(AddressOf(sResult), passwd, biPwdLen, opslimit, memlimit)) to iResult
+
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(SizeOfArray(ucaPassword))) to passwdLen
+        Move (UnpackUBigInt(opslimit)) to uOpslimit
+        Move (libsodium_crypto_pwhash_str(AddressOf(sResult), passwd, passwdLen.ui1, passwdLen.ui2, uOpslimit.ui1, uOpslimit.ui2, memlimit)) to iResult
+        Move (iResult <> 0) to Err
+#ENDIF
+
+        Function_Return (CString(sResult))
+    End_Function
+
+    // @returns True if the password is correct, otherwise False.
+    Function CryptoPwhashStrVerify String sStored UChar[] ucaPassword Returns Boolean
+        Integer iResult
+        Pointer passwd
+        UIntegerUInteger passwdLen
+        BigInt  biPwdLen
+
+        Move (AddressOf(ucaPassword)) to passwd
+
+        Move (sStored + Character(0)) to sStored
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (SizeOfArray(ucaPassword)) to biPwdLen
+        Move (libsodium_crypto_pwhash_str_verify(AddressOf(sStored), passwd, biPwdLen)) to iResult
+        
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(SizeOfArray(ucaPassword))) to passwdLen
+        Move (libsodium_crypto_pwhash_str_verify(AddressOf(sStored), passwd, passwdLen.ui1, passwdLen.ui2)) to iResult
+#ENDIF
+
+        Function_Return (iResult = 0)
+    End_Function
+
+End_Class
+
+Class cLibSodiumPasswordHashArgon2iMixin is a Mixin
+
+    Function CryptoPwhashArgon2iStr UChar[] ucaPassword UBigInt opslimit UInteger memlimit Returns String
+        Integer iResult
+        Pointer passwd
+        String  sResult
+        UIntegerUInteger passwdLen
+        UIntegerUInteger uOpslimit
+        BigInt  biPwdLen
+
+        Move (AddressOf(ucaPassword)) to passwd
+
+#IF (!@ > 190)
+        Move (ZeroString(crypto_pwhash_argon2i_STRBYTES)) to sResult
+#ELSE
+        ZeroString crypto_pwhash_argon2i_STRBYTES to sResult
+#ENDIF
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (SizeOfArray(ucaPassword)) to biPwdLen
+        Move (libsodium_crypto_pwhash_argon2i_str(AddressOf(sResult), passwd, biPwdLen, opslimit, memlimit)) to iResult
+        
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(SizeOfArray(ucaPassword))) to passwdLen
+        Move (UnpackUBigInt(opslimit)) to uOpslimit
+        Move (libsodium_crypto_pwhash_argon2i_str(AddressOf(sResult), passwd, passwdLen.ui1, passwdLen.ui2, uOpslimit.ui1, uOpslimit.ui2, memlimit)) to iResult
+#ENDIF
+        
+        Move (iResult <> 0) to Err
+
+        Function_Return (CString(sResult))
+    End_Function
+
+End_Class
+
+Class cLibSodiumPasswordHashArgon2idMixin is a Mixin
+
+    Function CryptoPwhashArgon2idStr UChar[] ucaPassword UBigInt opslimit UInteger memlimit Returns String
+        Integer iResult
+        Pointer passwd
+        String  sResult
+        UIntegerUInteger passwdLen
+        UIntegerUInteger uOpslimit
+        BigInt  biPwdLen
+
+        Move (AddressOf(ucaPassword)) to passwd
+
+#IF (!@ > 190)
+        Move (ZeroString(crypto_pwhash_argon2id_STRBYTES)) to sResult
+#ELSE
+        ZeroString crypto_pwhash_argon2id_STRBYTES to sResult
+#ENDIF
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (SizeOfArray(ucaPassword)) to biPwdLen
+        Move (libsodium_crypto_pwhash_argon2id_str(AddressOf(sResult), passwd, biPwdLen, opslimit, memlimit)) to iResult
+        
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(SizeOfArray(ucaPassword))) to passwdLen
+        Move (UnpackUBigInt(opslimit)) to uOpslimit
+        Move (libsodium_crypto_pwhash_argon2id_str(AddressOf(sResult), passwd, passwdLen.ui1, passwdLen.ui2, uOpslimit.ui1, uOpslimit.ui2, memlimit)) to iResult
+#ENDIF
+
+        Move (iResult <> 0) to Err
+
+        Function_Return (CString(sResult))
+    End_Function
+
+End_Class
+
+Class cLibSodiumPasswordHashSCryptMixin is a Mixin
+
+    Function CryptoPwhashSCrypt UBigInt outLen UChar[] ucaPassword UChar[] ucaSalt UBigInt opslimit UInteger memlimit Returns UChar[]
+        Integer iResult
+        Pointer passwd
+        Pointer salt
+        UChar[] ucaResult
+        UIntegerUInteger passwdLen
+        UIntegerUInteger uOpslimit
+        UIntegerUInteger uOutLen
+        BigInt  biPwdLen
+
+        Move (AddressOf(ucaPassword)) to passwd
+        Move (AddressOf(ucaSalt)) to salt
+
+        Move (ResizeArray(ucaResult, outLen)) to ucaResult
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (SizeOfArray(ucaPassword)) to biPwdLen
+        Move (libsodium_crypto_pwhash_scryptsalsa208sha256(AddressOf(ucaResult), outLen, passwd, biPwdLen, salt, opslimit, memlimit)) to iResult
+        
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(SizeOfArray(ucaPassword))) to passwdLen
+        Move (UnpackUBigInt(opslimit)) to uOpslimit
+        Move (UnpackUBigInt(outLen)) to uOutLen
+        Move (libsodium_crypto_pwhash_scryptsalsa208sha256(AddressOf(ucaResult), uOutLen.ui1, uOutLen.ui2, passwd, passwdLen.ui1, passwdLen.ui2, salt, uOpslimit.ui1, uOpslimit.ui2, memlimit)) to iResult
+#ENDIF
+
+        If (iResult <> 0) Begin
+            Move (ResizeArray(ucaResult, 0)) to ucaResult
+        End
+
+        Function_Return ucaResult
+    End_Function
+
+    Function CryptoPwhashSCryptStr UChar[] ucaPassword UBigInt opslimit UInteger memlimit Returns String
+        Integer iResult
+        Pointer passwd
+        String  sResult
+        UIntegerUInteger passwdLen
+        UIntegerUInteger uOpslimit
+        BigInt  biPwdLen
+
+        Move (AddressOf(ucaPassword)) to passwd
+
+#IF (!@ > 190)
+        Move (ZeroString(crypto_pwhash_scryptsalsa208sha256_STRBYTES)) to sResult
+#ELSE
+        ZeroString crypto_pwhash_scryptsalsa208sha256_STRBYTES to sResult
+#ENDIF
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (SizeOfArray(ucaPassword)) to biPwdLen
+        Move (libsodium_crypto_pwhash_scryptsalsa208sha256_str(AddressOf(sResult), passwd, biPwdLen, opslimit, memlimit)) to iResult
+        
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(SizeOfArray(ucaPassword))) to passwdLen
+        Move (UnpackUBigInt(opslimit)) to uOpslimit
+        Move (libsodium_crypto_pwhash_scryptsalsa208sha256_str(AddressOf(sResult), passwd, passwdLen.ui1, passwdLen.ui2, uOpslimit.ui1, uOpslimit.ui2, memlimit)) to iResult
+#ENDIF
+
+        Function_Return (CString(sResult))
+    End_Function
+
+    // @returns True if the password is correct, otherwise False.
+    Function CryptoPwhashSCryptStrVerify String sStored UChar[] ucaPassword Returns Boolean
+        Integer iResult
+        Pointer passwd
+        UIntegerUInteger passwdLen
+        BigInt  biPwdLen
+
+        Move (AddressOf(ucaPassword)) to passwd
+
+        Move (sStored + Character(0)) to sStored
+
+#IF (!@ >= 200)     // DataFlex version 20.0 and later
+        Move (SizeOfArray(ucaPassword)) to biPwdLen
+        Move (libsodium_crypto_pwhash_scryptsalsa208sha256_str_verify(AddressOf(sStored), passwd, biPwdLen)) to iResult
+
+#ELSE   // DF 19.1 and earlier
+        Move (UnpackUBigInt(SizeOfArray(ucaPassword))) to passwdLen
+        Move (libsodium_crypto_pwhash_scryptsalsa208sha256_str_verify(AddressOf(sStored), passwd, passwdLen.ui1, passwdLen.ui2)) to iResult
+#ENDIF
+
+        Function_Return (iResult = 0)
+    End_Function
+
+End_Class
+
+Class cLibSodiumRandombytesMixin is a Mixin
+
+    Function RandombytesBuf UInteger uiLen Returns UChar[]
+        UChar[] ucaResult
+
+        Move (ResizeArray(ucaResult, uiLen)) to ucaResult
+        Move (libsodium_randombytes_buf(AddressOf(ucaResult), uiLen)) to gVoid
+
+        Function_Return ucaResult
+    End_Function
+
+End_Class
+
+Class cLibSodiumUtilsMixin is a Mixin
+
+    // Adding large numbers
+    //
+    // The SodiumAdd() function accepts two pointers to unsigned numbers encoded in little-endian
+    // format, pA and pB, both of size uiLen bytes.
+    //
+    // It computes (a + b) mod 2^(8*uiLen) in constant time for a given length, and overwrites a with the result.
+    Procedure SodiumAdd Pointer pA Pointer pB UInteger uiLen
+        Move (libsodium_sodium_add(pA, pB, uiLen)) to gVoid
+    End_Procedure
+
+    // Hexadecimal encoding
+    //
+    // The SodiumBin2Hex() function converts uiLen bytes stored at pBin into a hexadecimal string.
+    //
+    // It evaluates in constant time for a given size.
+    //
+    // @returns a hexadecimal string.
+    Function SodiumBin2Hex Pointer pBin UInteger uiLen Returns String
+        Pointer pResult
+        String  sResult
+
+#IF (!@ > 190)
+        Move (ZeroString(uiLen*2 + 1)) to sResult
+#ELSE
+        ZeroString (uiLen*2 + 1) to sResult
+#ENDIF
+
+        Move (libsodium_sodium_bin2hex(AddressOf(sResult), Length(sResult), pBin, uiLen)) to pResult
+        Move (CString(sResult)) to sResult
+
+        Function_Return sResult
+    End_Function
+
+    // Compares two large numbers.
+    //
+    // The comparison is done in constant time for a given length.
+    //
+    // This function can be used with nonces, in order to prevent replay attacks.
+    //
+    // @returns -1 if the large number at pB1 is less than the large number at pB2, 0 if they are
+    //      equal, or 1 if the large number at pB1 is greater than the large number at pB2.
+    Function SodiumCompare Pointer pB1 Pointer pB2 UInteger uiLen Returns Integer
+        Integer iResult
+
+        Move (libsodium_sodium_compare(pB1, pB2, uiLen)) to iResult
+
+        Function_Return iResult
+    End_Function
+
+    Function SodiumHex2Bin String sHex Returns UChar[]
+        Integer iLen
+        Integer iResult
+        UChar[] ucaBin
+
+        Move (Length(sHex)) to iLen
+        Move (ResizeArray(ucaBin, iLen/2)) to ucaBin
+
+        Move (libsodium_sodium_hex2bin(AddressOf(ucaBin), SizeOfArray(ucaBin), AddressOf(sHex), iLen, 0, 0, 0)) to iResult
+
+        If (iResult <> 0) Move (ResizeArray(ucaBin, 0)) to ucaBin
+
+        Function_Return ucaBin
+    End_Function
+
+    // Incrementing large numbers
+    //
+    // The SodiumIncrement() function takes a pointer to an arbitrary-long unsigned number, and
+    // increments it.
+    //
+    // It runs in constant-time for a given length, and considers the number to be encoded in
+    // little-endian format.
+    //
+    // SodiumIncrement() can be used to increment nonces in constant time.
+    Procedure SodiumIncrement Pointer pN UInteger uiLen
+        Move (libsodium_sodium_increment(pN, uiLen)) to gVoid
+    End_Procedure
+
+    // Testing for all zeros.
+    //
+    // Its execution time is constant for a given length.
+    //
+    // @returns true if the uiLen bytes vector pointed by pN contains only zeros, or false otherwise.
+    Function SodiumIsZero Pointer pN UInteger uiLen Returns Boolean
+        Integer iResult
+
+        Move (libsodium_sodium_is_zero(pN, uiLen)) to iResult
+
+        Function_Return (iResult = 1)
+    End_Function
+
+    // When a comparison involves secret data (e.g. key, authentication tag), is it critical to use
+    // a constant-time comparison function in order to mitigate side-channel attacks.
+    //
+    // The SodiumMemcmp() function can be used for this purpose.
+    //
+    // Note: SodiumMemcmp() is not a lexicographic comparator and is not a generic replacement for memcmp().
+    //
+    // @returns true if the len bytes pointed to by pB1 match the len bytes pointed to by pB2.
+    // Otherwise, it returns false.
+    Function SodiumMemcmp Pointer pB1 Pointer pB2 UInteger uiLen Returns Boolean
+        Integer iResult
+
+        Move (libsodium_sodium_memcmp(pB1, pB2, uiLen)) to iResult
+
+        Function_Return (iResult = 0)
+    End_Function
+
+    // After use, sensitive data should be overwritten, but memset() and hand-written code can be
+    // silently stripped out by an optimizing compiler or by the linker.
+    //
+    // The SodiumMemzero() function tries to effectively zero len bytes starting at pPnt, even if
+    // optimizations are being applied to the code.
+    Procedure SodiumMemzero Pointer pPnt UInteger uiLen
+        Move (libsodium_sodium_memzero(pPnt, uiLen)) to gVoid
+    End_Procedure
+
+End_Class
+
+Class cLibSodiumVersionMixin is a Mixin
+
+    // Indicates whether the libsodium.dll is a minimal build (true) or a full version (false).
+    Function SodiumLibraryMinimal Returns Boolean
+        Function_Return (libsodium_sodium_library_minimal() = 1)
+    End_Function
+
+    // Returns the major version number of the libsodium library.
+    Function SodiumLibraryVersionMajor Returns Integer
+        Function_Return (libsodium_sodium_library_version_major())
+    End_Function
+
+    // Returns the minor version number of the libsodium library.
+    Function SodiumLibraryVersionMinor Returns Integer
+        Function_Return (libsodium_sodium_library_version_minor())
+    End_Function
+
+    // Returns the version of libsodium.
+    Function SodiumVersionString Returns String
+        Boolean bOk
+        Integer iLen
+        Pointer pResult
+        String  sResult
+
+        Move (libsodium_sodium_version_string()) to pResult
+        Move (CStringLength(pResult)) to iLen
+#IF (!@ > 190)
+        Move (ZeroString(iLen)) to sResult
+#ELSE
+        ZeroString iLen to sResult
+#ENDIF
+        Move (MemCopy(AddressOf(sResult), pResult, iLen)) to bOk
+
+        Function_Return sResult
+    End_Function
+
+End_Class
+
+//Register_Function LoadDLL Returns Boolean
+
+Class cLibSodium is a cDllWrapper
+    Import_Class_Protocol cLibSodiumCoreMixin
+    Import_Class_Protocol cLibSodiumGenericHashMixin
+    Import_Class_Protocol cLibSodiumPasswordHashMixin
+    Import_Class_Protocol cLibSodiumPasswordHashArgon2iMixin
+    Import_Class_Protocol cLibSodiumPasswordHashArgon2idMixin
+    Import_Class_Protocol cLibSodiumPasswordHashSCryptMixin
+    Import_Class_Protocol cLibSodiumRandombytesMixin
+    Import_Class_Protocol cLibSodiumUtilsMixin
+    Import_Class_Protocol cLibSodiumVersionMixin
+
+    Procedure Construct_Object
+        Boolean bOk
+        
+        Forward Send Construct_Object
+
+        Property Boolean pbInitialized False // Indicates if the external library was properly initialized
+
+        Set piErrorCode to DFERR_LIBSODIUM
+#IFNDEF psLibsodiumDllName
+#IFDEF IS$WIN64
+        Set psDllFileName to "libsodium64.dll"
+#ELSE
+        Set psDllFileName to "libsodium.dll"
+#ENDIF
+#ELSE
+        Set psDllFileName to psLibsodiumDllName
+#ENDIF
+    End_Procedure
+    
+    Procedure End_Construct_Object
+        Forward Send End_Construct_Object
+
+        Boolean bOk
+
+        Get LoadDLL to bOk
+
+        If (bOk) Begin
+            Get CheckDllVersion to bOk
+
+            If (bOk) Begin
+                // This causes errors when postponed to End_Construct_Object!
+                Get Private_Init to bOk
+            End
+        End
+
+        Set pbInitialized to bOk
+
+    End_Procedure
+
+    // Do not use standard DLL version metadata, but the libsodium specific methods
+    Function CheckDllVersion Returns Boolean
+        Boolean bMinimal
+        Integer iErrCode
+        Integer iLibMajor
+        Integer iLibMinor
+        String  sVersion
+
+        Get piErrorCode to iErrCode
+
+        Get SodiumLibraryMinimal to bMinimal
+        Get SodiumLibraryVersionMajor to iLibMajor
+        Get SodiumLibraryVersionMinor to iLibMinor
+        Get SodiumVersionString to sVersion
+
+        If (bMinimal) Begin
+            Error iErrCode "DataFlex library does not expect minimal build of libsodium"
+            Function_Return False
+        End
+        Else If (iLibMajor <> SODIUM_LIBRARY_VERSION_MAJOR or iLibMinor <> SODIUM_LIBRARY_VERSION_MINOR) Begin
+            Error iErrCode (SFormat("libsodium library version %1.%2 expected - not %3.%4" ;
+                ,SODIUM_LIBRARY_VERSION_MAJOR, SODIUM_LIBRARY_VERSION_MINOR, iLibMajor, iLibMinor))
+            Function_Return False
+        End
+        Else If (sVersion <> SODIUM_VERSION_STRING) Begin
+            Error iErrCode (SFormat("libsodium version %1 expected - not %2" ;
+                ,SODIUM_VERSION_STRING, sVersion))
+            Function_Return False
+        End
+
+        Function_Return True
+    End_Procedure
+
+    { Visibility=Private }
+    Function LoadDLL Returns Boolean
+        Handle hDLL
+        Integer iErrCode
+        String sDllFileName
+
+        Get psDllFileName to sDllFileName
+
+        If (sDllFileName<>"") Begin
+            Move (LoadLibrary(sDllFileName)) to hDLL
+    
+            If (hDLL=0) Begin
+                Get piErrorCode to iErrCode
+    
+                Error iErrCode ("The library could not be loaded. Check if" * sDllFileName * "is present.")
+            End
+
+            Function_Return (hDLL<>0)
+        End
+        
+        Function_Return True
+    End_Function
+    
+    { Visibility=Private }
+    Function Private_Init Returns Boolean
+        Integer iErrCode
+        Integer iInitResult
+
+        Get SodiumInit to iInitResult
+        If (iInitResult = -1) Begin
+            Get piErrorCode to iErrCode
+            Error iErrCode "libsodium could not be initialized"
+            Function_Return False
+        End
+
+        Function_Return True
+    End_Function
+
+End_Class

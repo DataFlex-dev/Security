@@ -1,0 +1,7 @@
+#REPLACE FILE2 Squeaks
+#REPLACE Squeaks.File_Number |CI2
+#REPLACE Squeaks.ID |FN2,1
+#REPLACE Squeaks.UserId |FS2,2
+#REPLACE Squeaks.Content |FS2,3
+#REPLACE Squeaks.Status |FN2,4
+#REPLACE Squeaks.Published |FM2,5

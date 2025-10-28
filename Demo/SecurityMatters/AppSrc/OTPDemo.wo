@@ -1,0 +1,127 @@
+Use AllWebAppClasses.pkg
+Use c2FAWebGroup.pkg
+Use cWebQrCode.pkg
+
+Object oOTPDemo is a cWebView
+    Set peWebViewStyle to wvsDrillDown
+    Set peViewType to vtZoom
+    Set pbShowCaption to False
+    Set Verify_Save_msg to 0
+
+    Set psCaption to "TOTP Demo"
+
+    Set piMaxWidth to 1024
+    Set piColumnCount to 12
+    Set pbServerOnShow to True
+    Set pbServerOnSubmit to True
+
+    Procedure OnShow
+        Send InitializeNewOtpSpec of oOTPGroup
+    End_Procedure
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 1
+
+        Object oOTPGroup is a c2FAWebGroup
+            Set piColumnCount to 12
+
+            { WebProperty=Server }
+            Property String psOtpSpec
+
+            Object oMyOtp is a cSecureOneTimePassword
+                Set piDigitCount to 6
+                Set piHashImplementation to C_SEC_HASH_CNG_HMAC_SHA1
+                Set psIssuer to "Security Matters"
+               End_Object
+            Set phoSecureOneTimePassword to oMyOtp
+
+            Object oNewSecretText is a cWebLabel
+                Set piColumnSpan to 0
+                // dummy data for Studio designer
+                Set psCaption to "This is your new OTP secret: 0123456789ABCDEF - Scan this QR code with your OTP app:"
+            End_Object
+
+            Object oNewSecretQrCode is a cWebQrCode
+                Set piColumnSpan to 0
+            End_Object
+
+            Object oTestText is a cWebLabel
+                Set piColumnSpan to 0
+                Set psCaption to "Enter a test code from your app to make sure it is set up correctly:"
+            End_Object
+
+            Object oOTPTestForm is a cWebForm
+                Set piColumnSpan to 3
+                Set psPlaceHolder to "Authentication code"
+                Set pbShowLabel to False
+            End_Object
+
+            Object oOTPTestButton is a cWebButton
+                Set piColumnSpan to 2
+                Set psCaption to "Test"
+
+                Procedure OnClick
+                    String[] asOTP
+
+                    WebGet psValue of oOTPTestForm to asOTP[0]
+                    Send DoVerifyOtp asOTP
+                End_Procedure
+            End_Object
+
+            Procedure InitializeNewOtpSpec
+                Handle  hoOtp
+                String  sBase32Secret sAccountName
+                String  sOtpSpec
+
+                // create new OTP (with new secret)
+                Get psLoginName of ghoWebSessionManager to sAccountName
+                Move (sAccountName + "(SecurityDemo)") to sAccountName
+                
+                Get NewOtp of oMyOtp C_SEC_OTPTYPE_TIME sAccountName to hoOtp
+                Get SecretAsBase32 of hoOtp to sBase32Secret
+                WebSet psCaption of oNewSecretText to (SFormat("This is your new OTP secret: %1"+Character(13)+"Scan this QR code with your OTP app:", sBase32Secret))
+
+                // save
+                Get PackForStorage of hoOtp to sOtpSpec
+                WebSet psOtpSpec to sOtpSpec
+                WebSet psValue of oNewSecretQrCode to sOtpSpec
+
+                // clean up
+                Send Destroy of hoOtp
+            End_Procedure
+
+            Function RegisteredOtp Returns String
+                String sSpec
+
+                WebGet psOtpSpec to sSpec
+
+                Function_Return sSpec
+            End_Function
+
+            Procedure OnOTPAuthenticationFailure
+                Error DFERR_OPERATOR "Wrong! This can be caused by an incorrect registration, or time differences between the app and the server."
+            End_Procedure
+
+            Procedure OnOTPAuthenticationSuccess
+                Send ShowInfoBox "Correct!"
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure OnViewSaved Handle hoServer Boolean bChanged
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnViewDeleted Handle hoDDO
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnSubmit
+        Boolean bRender
+
+        WebGet pbRender of oOTPGroup to bRender
+        If bRender ;
+            Send OnClick of oOTPTestButton
+    End_Procedure
+
+End_Object

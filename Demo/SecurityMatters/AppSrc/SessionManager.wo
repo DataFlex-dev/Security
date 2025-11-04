@@ -1,0 +1,197 @@
+﻿Use cWebSessionManagerStandard.pkg
+
+Use cWebAppSessionDataDictionary.dd
+Use cWebAppUserDataDictionary.dd
+
+Use cU2F.pkg
+
+Define C_$WebAppSesionValidateFailed for "Session Validation failed"
+
+// THESE VALUES ARE USED IN THE DATABASE AS WELL, for session auth state
+Enum_List
+    Define C_AUTH_INVALID for 1
+    Define C_AUTH_2FA     for 2     // ok, but second factor needed
+    Define C_AUTH_OK      for 99    // ok -> login
+End_Enum_List
+
+Object oSessionManager is a cWebSessionManagerStandard
+    Set pbSessionCookieHttpOnly to True
+    Set pbSessionCookieSecure to True
+
+    Object oU2F is a cU2F
+    End_Object
+
+    Function UserLogin String sLoginName String sPassword Returns Boolean
+        Error DFERR_PROGRAM "This SessionManager does not support the UserLogin method - use VerifyCredentials instead"
+        Function_Return False
+    End_Function
+
+    Function VerifyCredentials String sLoginName String sPasscode Returns Integer
+        Boolean bMatch
+        Handle  hoSessionDD hoUserDD
+        Integer eResult
+        Integer iErr eLoginMode
+        String  sSessionKey sUserPassword
+
+        Move C_AUTH_INVALID to eResult
+
+        Get phoSessionDD to hoSessionDD
+        Get phoUserDD to hoUserDD
+
+        // Refind session record
+        Get psSessionKey to sSessionKey
+        Send Clear of hoSessionDD
+        Move sSessionKey to WebAppSession.SessionKey
+        Send Find of hoSessionDD EQ 1
+
+        If (Found and WebAppSession.SessionKey = sSessionKey) Begin
+            Get peLoginMode to eLoginMode
+
+            //  Find the user
+            Move sLoginName to WebAppUser.LoginName
+            Send Find of hoUserDD EQ 1
+
+            // Check username and password
+            If (Found and (Lowercase(sLoginName) = Lowercase(Trim(WebAppUser.LoginName)))) Begin
+                // ToDo: replace this with security library
+                Get Field_Current_Value of hoUserDD Field WebAppUser.Password to sUserPassword
+                Get ComparePasswords (Trim(sUserPassword)) (Trim(sPasscode)) to bMatch
+
+                If (bMatch) Begin
+                    // replace plaintext pass with something much better!
+                    If (Left(sUserPassword, 1) <> '$') Begin
+                        Set Field_Changed_Value of hoUserDD Field WebAppUser.Password to sPasscode
+                        Send Request_Save of hoUserDD
+                    End
+
+                    // second factor needed?
+                    Clear WebAppUser2FA
+                    Move sLoginName to WebAppUser2FA.WebAppUser_ID
+                    Find gt WebAppUser2FA by 2
+                    If Found Move (Lowercase(Trim(WebAppUser2FA.WebAppUser_ID)) = sLoginName) to Found
+                    If Found Begin
+                        Move C_AUTH_2FA to eResult
+                    End
+                    Else Begin
+                        Move C_AUTH_OK to eResult
+                        Set Field_Changed_Value of hoUserDD Field WebAppUser.LastLogin to (CurrentDateTime())
+                    End
+
+                    Get Request_Validate of hoSessionDD to iErr
+                    If (iErr) Begin
+                        // this should not happen. If it does its a programming error
+                        Error DFERR_PROGRAM C_$WebAppSesionValidateFailed
+                        Function_Return False
+                    End
+                    Send Request_Save of hoSessionDD
+
+                    WebSet piAuthenticationState of ghoWebApp to eResult
+
+                    Send UpdateSessionProperties False
+                    If (eResult = C_AUTH_OK) Send NotifyChangeRights
+                End
+                Else Begin
+                    //  We should rely directly on this buffer elsewhere but just be sure
+                    Send Clear of hoUserDD
+                End
+            End
+        End
+
+        Function_Return eResult
+    End_Function
+
+    // Login may require two authentication factors.
+    Function IsLoggedIn Returns Boolean
+        Boolean bLoggedIn
+        Integer eAuthState
+
+        Forward Get IsLoggedIn to bLoggedIn
+        If bLoggedIn WebGet piAuthenticationState of ghoWebApp to eAuthState
+
+        Function_Return (eAuthState = C_AUTH_OK)
+    End_Function
+
+    Function ComparePasswords String sUserPassword String sEnteredPassword Returns Boolean
+        Boolean bMatch
+        UChar[] ucaPasscode
+
+        Move (StringToUCharArray(Trim(sEnteredPassword))) to ucaPasscode
+        Send SecureStringOverwrite of ghoSecurity (&sEnteredPassword)
+
+        Get VerifyPasscode of ghoSecurity ucaPasscode (Trim(sUserPassword)) to bMatch
+
+        Function_Return bMatch
+    End_Function
+
+    { Visibility=Private }
+    Procedure _____OATH_TOTP_____
+    End_Procedure
+
+    Function RegisteredOtp Returns String
+        Integer  iItem
+        String   sLoginName
+        String   sOtp
+
+        Get Field_Current_Value of (phoUserDD(Self)) Field WebAppUser.LoginName to sLoginName
+
+        Constraint_Set Self Clear
+        Constrain WebAppUser2FA.WebAppUser_ID eq sLoginName
+        Constrain WebAppUser2FA.IsOath        eq 1
+        Constrained_Find First WebAppUser2FA by 2
+        While (Found)
+            Move WebAppUser2FA.Data to sOtp
+            Constrained_Find Next
+        Loop
+        Constraint_Set Self Delete
+
+        Function_Return sOtp
+    End_Function
+
+    { Visibility=Private }
+    Procedure _____U2F_____
+    End_Procedure
+
+    Function RegisteredU2FKeys Returns tU2FKey[]
+        String    sLoginName
+        tU2FKey[] keys
+
+        Get Field_Current_Value of (phoUserDD(Self)) Field WebAppUser.LoginName to sLoginName
+
+        Constraint_Set Self Clear
+        Constrain WebAppUser2FA.WebAppUser_ID eq sLoginName
+        Constrain WebAppUser2FA.IsU2f         eq True
+        Constrained_Find First WebAppUser2FA by 2
+        While (Found)
+            Get UnpackU2FKeyFromStorage of oU2F WebAppUser2FA.Data to keys[SizeOfArray(keys)]
+
+            Constrained_Find Next
+        Loop
+        Constraint_Set Self Delete
+
+        Function_Return keys
+    End_Function
+
+    Procedure On2FAAuthenticationSuccess
+        Handle  hoSessionDD
+        Handle  hoUserDD
+        Integer iErr
+
+        Get phoSessionDD to hoSessionDD
+        Get phoUserDD to hoUserDD
+
+        Set Field_Changed_Value of hoUserDD Field WebAppUser.LastLogin to (CurrentDateTime())
+        Get Request_Validate of hoSessionDD to iErr
+        If (iErr) Begin
+            // this should not happen. If it does it's a programming error
+            Error DFERR_PROGRAM C_$WebAppSesionValidateFailed
+            Function_Return False
+        End
+        Send Request_Save of hoSessionDD
+
+        WebSet piAuthenticationState of ghoWebApp to C_AUTH_OK
+
+        Send UpdateSessionProperties False
+        Send NotifyChangeRights
+    End_Procedure
+
+End_Object

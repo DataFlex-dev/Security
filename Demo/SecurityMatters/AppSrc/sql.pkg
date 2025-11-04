@@ -1,0 +1,2414 @@
+﻿// Embedded SQL classes for use with Data Access Worldwide CLI    
+// Connectivty Kits.                                              
+Use CLI.pkg
+
+// global format
+Use GlobalFunctionsProcedures.pkg
+
+// Global storage for results
+Integer SQLResult
+
+// Embedded SQL function constants
+Define FUNC_SQLCONNECT             for 1000000
+Define FUNC_SQLFILECONNECT         for 1000001
+Define FUNC_SQLDISCONNECT          for 1000002
+Define FUNC_SQLOPEN                for 1000003
+Define FUNC_SQLCLOSE               for 1000004
+Define FUNC_SQLPREPARE             for 1000005
+Define FUNC_SQLEXECUTE             for 1000006
+Define FUNC_SQLEXECDIRECT          for 1000007
+Define FUNC_SQLFETCH               for 1000008
+Define FUNC_SQLCOLUMNINFO          for 1000009
+Define FUNC_SQLCOLUMNVALUE         for 1000010
+Define FUNC_SQLBINDFILE            for 1000011
+Define FUNC_SQLGETDATA             for 1000012
+Define FUNC_SQLCOLSTRINGATTRIBLEN  for 1000013
+Define FUNC_SQLCOLSTRINGATTRIB     for 1000014
+Define FUNC_SQLCOLINTATTRIB        for 1000015
+Define FUNC_SQLSTMTINTATTRIB       for 1000016
+Define FUNC_SQLSETPROCNAME         for 1000017
+Define FUNC_SQLSETPROCARG          for 1000018
+Define FUNC_SQLCALL                for 1000019
+Define FUNC_SQLGETPROCARGLEN       for 1000020
+Define FUNC_SQLGETPROCARG          for 1000021
+Define FUNC_SQLGETPROCRETVALLEN    for 1000022
+Define FUNC_SQLGETPROCRETVAL       for 1000023
+Define FUNC_SQLNEXTRESULTSET       for 1000024
+Define FUNC_SQLBUFFERSTATUS        for 1000025
+Define FUNC_SQLSETPROCSCHEMA       for 1000026
+Define FUNC_SQLGETMESSAGE          for 1000027
+Define FUNC_SQLSETSTMTINTATTRIB    for 1000028
+
+// Embedded SQL statement attribute constants
+Define SQLSTMTATTRIB_COLUMNCOUNT    for 1
+Define SQLSTMTATTRIB_ROWCOUNT       for 2
+Define SQLSTMTATTRIB_ROWCOUNT_TYPE  for 3
+Define SQLSTMTATTRIB_NUMMESSAGES    for 4
+Define SQLSTMTATTRIB_CURSOR_TYPE    for 5
+
+// Embedded SQL possible values for SQLSTMTATTRIB_CURSOR_TYPE
+Define SQL_CURSOR_FORWARD_ONLY      for 0
+Define SQL_CURSOR_KEYSET_DRIVEN     for 1
+Define SQL_CURSOR_DYNAMIC           for 2
+Define SQL_CURSOR_STATIC            for 3
+
+
+// Embedded SQL column attribute constants
+Define SQLCOLATTRIB_SIZE           for 1
+Define SQLCOLATTRIB_LENGTH         for 1
+Define SQLCOLATTRIB_PRECISION      for 2
+Define SQLCOLATTRIB_LABEL          for 3
+Define SQLCOLATTRIB_BASECOLUMNNAME for 4
+Define SQLCOLATTRIB_BASETABLENAME  for 5
+Define SQLCOLATTRIB_SQLTYPE        for 6
+Define SQLCOLATTRIB_NULLABLE       for 7
+Define SQLCOLATTRIB_DFTYPE         for 8
+
+
+// Types used for conversion with ConvertToXml
+Define esqlTime      for 8
+Define esqlDatetime  for 9
+
+// Global variables holding last executed embedded SQL connection and statement handles.
+Integer giLastSQLhdbc
+Integer giLastSQLhstmt
+
+Move -1 to giLastSQLhdbc
+Move -1 to giLastSQLhstmt
+
+Struct tSQLColumn
+    Integer iSQLType
+    Integer iSQLSize
+    Integer iSQLPrecision
+    Integer iVariableDataType
+End_Struct
+
+// Statement object for embedded sql                           
+//   An object is created for each statement. These will be children    
+//   of cSQLConnection objects which manage the create and destruction  
+//   of these.                                                          
+
+Class cSQLStatement is a cObject
+    
+    Procedure Construct_object
+        Forward Send Construct_object
+        
+        { Visibility=Private }
+        Property Handle  phCLIStatementHandle   0
+        { Visibility=Private }
+        Property Handle  phCLIConnectionHandle  0
+        { Visibility=Private }
+        Property String  psDriverID             ""
+        
+        { Visibility=Private }
+        Property Integer piLastColumn      0
+        Property Integer piLastArgument    0
+        Property Integer piBindFile        0
+        
+        { Visibility=Private }
+        Property Integer piColumnCount     0
+        
+        // True if there is at least 1 column with a variable length data type
+        { Visibility=Private }
+        Property Integer piHasVariableDataType  0
+        
+        // Max size of buffer for variable length data. Default 16000
+        { Visibility=Private }
+        Property Integer piMaxVariableBufferLength 16000
+        
+        // Allocated buffer for SQLGetData.
+        { Visibility=Private }
+        Property WString psVariableBuffer  ""
+        
+        // Allocated size of psVariableBuffer
+        { Visibility=Private }
+        Property Integer piVariableBufferLength 0
+        
+        // Stores column properties of a result set.
+        { Visibility=Private }
+        Property tSQLColumn[] paSQLColumns
+        
+        // piFetchResult is set by SQLFetchRowValues and SQLFetchResultSetValues
+        //   0    = Fetch returned no data.
+        //   <> 0 = Row fetched
+        Property Integer piFetchResult     0
+        
+        
+        { Visibility=Private }
+        Property String psDummyZeroDate              '0001-01-01'
+        { Visibility=Private }
+        Property String psDummyZeroDateMssqlDatetime '1753-01-01'
+        
+    End_Procedure
+    
+    // Store basic information about the statement.
+    { Visibility=Private }
+    Procedure StoreStatementInfo Handle hCLIStatementHandle String sDrvrId Handle hCLIConnectionHandle
+        
+        Set phCLIStatementHandle   to hCLIStatementHandle
+        Set phCLIConnectionHandle  to hCLIConnectionHandle
+        Set psDriverID             to sDrvrId
+        
+    End_Procedure
+    
+    
+    // Destroy the cSQLStatement object
+    { Visibility=Private }
+    Procedure DestroySQLStatement
+        Send Destroy
+    End_Procedure
+    
+    // Handle an error that has occurred while checking properties.
+    { Visibility=Private }
+    Procedure HandleError Integer ihstmt Integer ihdbc String sDrvrId String sOriginMsg
+        Integer iErrHandle
+        Integer iErrNum
+        String  sLocationInfo
+        
+        // Get the DataFlex statement identifier
+        Move Self to iErrHandle
+        
+        // Determine error number
+        If (ihstmt = 0) ;
+            Move CLIERR_SQLINVALID_CLI_STMT_HANDLE to iErrNum
+        Else If (ihdbc = 0) ;
+            Move CLIERR_SQLINVALID_CLI_CONN_HANDLE to iErrNum
+        Else If (sDrvrId = "") ;
+            Move CLIERR_SQLINVALID_DRIVER_ID to iErrNum
+        Else ;
+            Move CLIERR_SQL_ERROR to iErrNum
+        
+        // Create location ifnormation
+        Move "[" to sLocationInfo
+        If (sOriginMsg <> "") Begin
+            Move (Append(sLocationInfo, sOriginMsg)) to sLocationInfo
+            Move (Append(sLocationInfo, ", "))       to sLocationInfo
+        End
+        Move (Append(sLocationInfo, "DataFlex hstmt = ")) to sLocationInfo
+        Move (Append(sLocationInfo, iErrHandle))          to sLocationInfo
+        Move (Append(sLocationInfo, "]"))                 to sLocationInfo
+        
+        // Generate the error
+        Error iErrNum sLocationInfo
+    End_Procedure
+    
+    // Handle general error not related to the properties
+    { Visibility=Private }
+    Procedure StmtError Integer iErrNum String sErrText String sOriginMsg
+        Integer iErrHandle
+        String  sLocationInfo
+        
+        // Get the DataFlex statement identifier
+        Move Self to iErrHandle
+        
+        // Create location information
+        Move "[" to sLocationInfo
+        If (sOriginMsg <> "") Begin
+            Move (Append(sLocationInfo, sOriginMsg)) to sLocationInfo
+            Move (Append(sLocationInfo, ", "))       to sLocationInfo
+        End
+        If (sErrtext <> "") Begin
+            Move (Append(sLocationInfo, sErrtext)) to sLocationInfo
+            Move (Append(sLocationInfo, ", "))     to sLocationInfo
+        End
+        Move (Append(sLocationInfo, "DataFlex hstmt = ")) to sLocationInfo
+        Move (Append(sLocationInfo, iErrHandle))          to sLocationInfo
+        Move (Append(sLocationInfo, "]"))                 to sLocationInfo
+        
+        // Generate the error
+        Error iErrNum sLocationInfo
+    End_Procedure
+    
+    // Handle an illegal attribute error
+    { Visibility=Private }
+    Procedure SQLIllegalAttribute String sErrText String sOriginMsg
+        Integer bReport
+        
+        Get_Attribute DF_REPORT_UNSUPPORTED_ATTRIBUTES to bReport
+        If (bReport) ;
+            Send StmtError CLIERR_SQLINVALID_ATTRIBUTE sErrtext sOriginMsg
+    End_Procedure
+    
+    // Check if a column number is legal
+    { Visibility=Private }
+    Function SQLPrivateColumnIsLegal Integer ihdbc String sDrvrId Integer ihstmt Integer iCol Returns Integer
+        Integer bLegal
+        Integer iNumColumns
+        
+        Get SQLPrivateStmtAttribute SQLSTMTATTRIB_COLUMNCOUNT ihdbc sDrvrId ihstmt to iNumColumns
+        If (iCol > 0 and iCol <= iNumColumns) ;
+            Move DFTRUE to bLegal
+        Else ;
+            Move DFFALSE to bLegal
+        
+        Function_Return bLegal
+    End_Function
+    
+    
+    
+    // Close a statement and free all alllocated resources
+    Procedure SQLClose
+        Integer ihdbc
+        Integer ihstmt
+        Integer iVoid
+        String  sDrvrId
+        String  sEmpty
+        
+        // Initialize
+        Move "" to sEmpty
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Free the CLI handle
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Call the driver function to close
+            Call_Driver 0 sDrvrId Function FUNC_SQLCLOSE ;
+                Callback Self ;
+                Passing ihdbc sEmpty ihstmt ;
+                Result iVoid
+            
+            Move -1 to giLastSQLhstmt
+            // Free the DataFlex handle
+            Send DestroySQLStatement
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLClose"
+    End_Procedure
+    
+    // Prepare a statement for execution
+    Procedure SQLPrepare String sStatement
+        Integer ihdbc
+        Integer ihstmt
+        Integer iVoid
+        String  sDrvrId
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Prepare
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Call the driver function to prepare
+            Call_Driver 0 sDrvrId Function FUNC_SQLPREPARE ;
+                Callback Self ;
+                Passing ihdbc sStatement ihstmt ;
+                Result iVoid
+            Set piLastArgument to 0
+
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLPrepare"
+    End_Procedure
+    
+    { Visibility=Private }
+    Procedure SQLGetStatementAttributes
+        Integer ihdbc ihstmt iNumColumns iCol iMaxSize
+        String sMaxValue
+        tSQLColumn[] aSQLColumns
+        
+        Integer iSqlType
+        Integer iSQLSize
+        Integer iSQLprecision
+        Integer iVariableDataType
+        
+        String  sDrvrId
+        
+        Integer iHasVariableDataType
+        
+        Move 0 to iHasVariableDataType
+        
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        Get SQLPrivateStmtAttribute SQLSTMTATTRIB_COLUMNCOUNT ihdbc sDrvrId ihstmt to iNumColumns
+        
+        Set piColumnCount to iNumColumns
+        
+        // Fill columns array
+        For iCol from 1 to iNumColumns
+            Move 0 to iVariableDataType
+            
+            Get SQLPrivateColAttribute iCol SQLCOLATTRIB_SQLTYPE ihdbc sDrvrId ihstmt to iSQLType
+            Get SQLPrivateColAttribute iCol SQLCOLATTRIB_SIZE ihdbc sDrvrId ihstmt to iSQLSize
+            Get SQLPrivateColAttribute iCol SQLCOLATTRIB_PRECISION ihdbc sDrvrId ihstmt to iSQLPrecision
+            
+            If ( (iSQLType = SQL_LONGVARCHAR) or (iSQLType = SQL_WLONGVARCHAR) ) Begin
+                // text type
+                Move 1 to iVariableDataType
+            End
+            Else Begin
+                If (sDrvrId = "MSSQLDRV") Begin
+                    // SQL Server varchar(max) and nvarchar(max) types return Size = 0
+                    If ( ((iSQLType = SQL_VARCHAR) and (iSQLSize = 0) ) or ;
+                        ((iSQLType = SQL_WVARCHAR) and (iSQLSize = 0) ) ) Begin
+                        
+                        Move 1 to iVariableDataType
+                    End
+                End
+            End
+            
+            Move iSqlType           to aSQLColumns[iCol].iSQLType
+            Move iSQLSize           to aSQLColumns[iCol].iSQLSize
+            Move iSQLPrecision      to aSQLColumns[iCol].iSQLPrecision
+            Move iVariableDataType  to aSQLColumns[iCol].iVariableDataType
+            
+            If (not(iVariableDataType)) Begin
+                If (iSQLSize > iMaxSize) Begin
+                    Move iSQLSize to iMaxSize
+                End
+            End
+            Else Begin
+                Move 1 to iHasVariableDataType
+            End
+            
+        Loop
+        
+        Set paSQLColumns   to aSQLColumns
+        Set piHasVariableDataType to iHasVariableDataType
+        
+    End_Procedure
+    
+    // Execute a prepared statement
+    Procedure SQLExecute
+        Integer ihdbc
+        Integer ihstmt
+        Integer iVoid
+        String  sDrvrId
+        String  sEmpty
+        
+        // Initialize
+        Move "" to sEmpty
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Execute
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Call the driver function to execute
+            Call_Driver 0 sDrvrId Function FUNC_SQLEXECUTE ;
+                Callback Self ;
+                Passing ihdbc sEmpty ihstmt ;
+                Result iVoid
+            Send SQLGetStatementAttributes
+            Set piLastArgument to 0
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLExecute"
+    End_Procedure
+    
+    
+    
+    // Prepare and execute a statement
+    Procedure SQLExecDirect String sStatement
+        Integer ihdbc
+        Integer ihstmt
+        Integer iVoid
+        String  sDrvrId
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // ExecDirect
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Call the driver function to execdirect
+            Call_Driver 0 sDrvrId Function FUNC_SQLEXECDIRECT ;
+                Callback Self ;
+                Passing ihdbc sStatement ihstmt ;
+                Result iVoid
+            Send SQLGetStatementAttributes
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLExecDirect"
+    End_Procedure
+    
+    // Fetch the next row
+    // Returns  : 0   = No more data
+    //<>0 = Success
+    Function SQLFetch Returns Integer
+        Integer ihdbc
+        Integer ihstmt
+        Integer iResult
+        String  sDrvrId
+        String  sEmpty
+        
+        // Initialize
+        Move "" to sEmpty
+        Move 0  to iResult
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Fetch
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            Move False to Err
+            
+            // Call the driver function to fetch
+            Call_Driver 0 sDrvrId Function FUNC_SQLFETCH Callback Self Passing ihdbc sEmpty ihstmt Result iResult
+            
+            // If something went wrong, adjust the result
+            If (Err) ;
+                Move 0 to iResult
+            
+            Set piLastcolumn to 0
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLFetch"
+        
+        Function_Return iResult
+    End_Function
+    
+    // Fetch the next row and return an array with all column values
+    // Returns  : Array of strings with all column values
+    // Sets piFetchResult property
+    //   0    = No more data
+    //   <> 0 = Success
+    Function SQLFetchRowValues Returns String[]
+        
+        String[] asValues
+        
+        tSQLColumn[] aSQLColumns
+        
+        Integer ihdbc
+        Integer ihstmt
+        Integer iResult iVoid
+        Integer iColCount iCol
+        String  sDrvrId
+        String  sEmpty
+        Longptr pResultWStr
+        WString wVariableResult
+        Integer iHasVariableDataType
+        Integer iLen
+        Integer iVariableBufferLength
+        
+        // Initialize
+        Move "" to sEmpty
+        Move 0  to iResult
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        Get paSQLColumns to aSQLColumns
+        Get piColumnCount to iColCount
+        Get piHasVariableDataType to iHasVariableDataType
+        
+        If (iHasVariableDataType) Begin
+            
+            Get piVariableBufferLength      to iVariableBufferLength
+            Get piMaxVariableBufferLength   to iLen
+            
+            If (iLen > iVariableBufferLength) Begin
+                // Allocate
+                Move (Repeat(' ', iLen)) to wVariableResult
+                
+                Set piVariableBufferLength to iLen
+                Set psVariableBuffer       to wVariableResult
+                
+                Get piVariableBufferLength to iVariableBufferLength
+            End
+        End
+        
+        // Fetch
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            Move (False) to Err
+            
+            // FUNC_SQLCOLUMNINFO will tell the driver which hdbc and hstmt to use
+            // in the next FUNC_SQLCOLUMNVALUE call.
+            // If hdbc and hstmt have not changed since the last call we don't have to set it.
+            If (ihstmt <> giLastSQLhstmt or ihdbc <> giLastSQLhdbc) Begin
+                // Setup function arguments
+                Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO Callback 0 Passing ihdbc iCol ihstmt Result iVoid
+                Move ihstmt to giLastSQLhstmt
+                Move ihdbc to giLastSQLhdbc
+            End
+            
+            // Call the driver function to fetch
+            Call_Driver 0 sDrvrId Function FUNC_SQLFETCH Callback 0 Passing ihdbc sEmpty ihstmt Result iResult
+            
+            // If something went wrong, adjust the result
+            If (Err) ;
+                Move 0 to iResult
+            
+            If (iResult) Begin
+                For iCol from 1 to iColCount
+                    
+                    If (not(aSQLColumns[iCol].iVariableDataType)) Begin
+                        Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNVALUE ;
+                            Callback 0 ;
+                            Passing sEmpty sEmpty iCol ;
+                            Result pResultWStr
+                            
+                        If (pResultWStr) Begin
+                            Move (CString(PointerToWString(pResultWStr))) to asValues[iCol - 1]
+                        End
+                        Else Begin
+                            Move "" to asValues[iCol - 1]
+                        End
+                        
+                    End
+                    Else Begin
+                        Get psVariableBuffer       to wVariableResult
+                        Call_Driver 0 sDrvrId Function FUNC_SQLGETDATA ;
+                            Callback 0 ;
+                            Passing iCol iVariableBufferLength (AddressOf(wVariableResult));
+                            Result iVoid
+                        
+                        Move (CString(wVariableResult)) to asValues[iCol - 1]
+                    End
+                    
+                Loop
+            End
+        End
+        Else Begin
+            Send HandleError ihstmt ihdbc sDrvrId "SQLFetchRowValues"
+        End
+        
+        Set piFetchResult to iResult
+        
+        Function_Return asValues
+        
+    End_Function
+    
+    // Fetch a complete result set.
+    // Returns  : 2-dimensional array of strings with result set
+    // Sets piFetchResult property
+    //   0    = No more data
+    //   <> 0 = Success
+    Function SQLFetchResultsetValues Returns String[][]
+        
+        String[][] asValues
+        
+        Integer ihdbc ihstmt iResult iVoid iColCount iCol iRow
+        String sDrvrId sEmpty sMax
+        Longptr pResultWStr
+        WString wResult
+        
+        tSQLColumn[] aSQLColumns
+        WString  wVariableResult
+        Integer iHasVariableDataType
+        Integer iLen
+        Integer iVariableBufferLength
+        
+        // Initialize
+        Move "" to sEmpty
+        Move 0  to iResult
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Fetch
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            Move False to Err
+            
+            // FUNC_SQLCOLUMNINFO will tell the driver which hdbc and hstmt to use
+            // in the next FUNC_SQLCOLUMNVALUE call.
+            // If hdbc and hstmt have not changed since the last call we don't have to set it.
+            If (ihstmt <> giLastSQLhstmt or ihdbc <> giLastSQLhdbc) Begin
+                // Setup function arguments
+                Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO Callback 0 Passing ihdbc iCol ihstmt Result iVoid
+                Move ihstmt to giLastSQLhstmt
+                Move ihdbc to giLastSQLhdbc
+            End
+            
+            Get piColumnCount to iColCount
+            If (iColCount) Begin
+                Get paSQLColumns to aSQLColumns
+                Get piHasVariableDataType to iHasVariableDataType
+                If (iHasVariableDataType) Begin
+                    Get piVariableBufferLength      to iVariableBufferLength
+                    Get piMaxVariableBufferLength   to iLen
+                    If (iLen > iVariableBufferLength) Begin
+                        // Allocate
+                        Move (Repeat(' ', iLen)) to wVariableResult
+                        
+                        Set piVariableBufferLength to iLen
+                        Set psVariableBuffer       to wVariableResult
+                        
+                        Get piVariableBufferLength to iVariableBufferLength
+                    End
+                    Else Begin
+                        Set psVariableBuffer       to wVariableResult
+                    End
+                End
+                
+                // Call the driver function to fetch
+                Call_Driver 0 sDrvrId Function FUNC_SQLFETCH Callback Self Passing ihdbc sEmpty ihstmt Result iResult
+                If (Err) ;
+                    Move 0 to iResult
+                
+                While (iResult <> 0)
+                    
+                    For iCol from 1 to (iColCount)
+                        
+                        If (not(aSQLColumns[iCol].iVariableDataType)) Begin
+                            
+                            Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNVALUE ;
+                                Callback 0 ;
+                                Passing sEmpty sEmpty iCol ;
+                                Result pResultWStr
+                            
+                            If (pResultWStr) Begin
+                                Move (CString(PointerToWString(pResultWStr))) to asValues[iRow][iCol - 1]
+                            End
+                            Else Begin
+                                Move "" to asValues[iRow][iCol - 1]
+                            End
+                        End
+                        Else Begin
+                            //Variable data
+                            Move wVariableResult to wResult
+                            Call_Driver 0 sDrvrId Function FUNC_SQLGETDATA ;
+                                Callback 0 ;
+                                Passing iCol iVariableBufferLength (AddressOf(wResult)) ;
+                                Result iVoid
+                            
+                            Move (CString(wResult)) to asValues[iRow][iCol - 1]
+                        End
+                    Loop
+                    
+                    Increment iRow
+                    
+                    // Call the driver function to fetch
+                    Call_Driver 0 sDrvrId Function FUNC_SQLFETCH Callback Self Passing ihdbc sEmpty ihstmt Result iResult
+                    If (Err) ;
+                        Move 0 to iResult
+                    
+                Loop
+            End
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLFetchResultsetValues"
+        
+        Set piFetchResult to iResult
+        
+        Function_Return asValues
+    End_Function
+    
+    // Get the next column
+    Function SQLNextColumn Returns String
+        Integer iCol
+        String  sResult
+        
+        Get piLastColumn to iCol
+        Increment iCol
+        Get SQLColumnValue iCol to sResult
+        Set piLastColumn to iCol
+        
+        Function_Return sResult
+    End_Function
+    
+    
+    // Returns the native type of a column
+    Function SQLColumnType Integer iCol Returns Integer
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iSQLType
+        Integer iColumns
+        
+        tSQLColumn[] aSQLColumns
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Get the value
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            
+            Get paSQLColumns   to aSQLColumns
+            Move (SizeOfArray(aSQLColumns)) to iColumns
+            
+            If (iCol >= 1 and iCol <= iColumns) Begin
+                Move aSQLColumns[iCol].iSQLType to iSQLType
+            End
+            Else Begin
+                Send StmtError CLIERR_SQLINVALID_COLUMN ("(Column number = " + String(iCol) + ")") "SQLColumnType"
+            End
+        End
+        Else Begin
+            Send HandleError ihstmt ihdbc sDrvrId "SQLColumnType"
+        End
+        
+        Function_Return iSQLType
+    End_Function
+    
+    // Returns the size (max length) of a column
+    Function SQLColumnSize Integer iCol Returns Integer
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iSQLSize
+        Integer iColumns
+        
+        tSQLColumn[] aSQLColumns
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Get the value
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            
+            Get paSQLColumns   to aSQLColumns
+            Move (SizeOfArray(aSQLColumns)) to iColumns
+            
+            If (iCol >= 1 and iCol <= iColumns) Begin
+                Move aSQLColumns[iCol].iSQLSize to iSQLSize
+            End
+            Else Begin
+                Send StmtError CLIERR_SQLINVALID_COLUMN ("(Column number = " + String(iCol) + ")") "SQLColumnSize"
+            End
+        End
+        Else Begin
+            Send HandleError ihstmt ihdbc sDrvrId "SQLColumnSize"
+        End
+        
+        Function_Return iSQLSize
+    End_Function
+    
+    //  Returns 1 for variable length datatypes.
+    //  For example SQL Server varchar(max) or text type
+    //  The data of variable length datatype columns should be retrieved with SQLGetData
+    Function SQLColumnVariableDatatype Integer iCol Returns Integer
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iVariableDataType
+        Integer iColumns
+        
+        tSQLColumn[] aSQLColumns
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Get the value
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            
+            Get paSQLColumns   to aSQLColumns
+            Move (SizeOfArray(aSQLColumns)) to iColumns
+            
+            If (iCol >= 1 and iCol <= iColumns) Begin
+                Move aSQLColumns[iCol].iVariableDataType to iVariableDataType
+            End
+            Else Begin
+                Send StmtError CLIERR_SQLINVALID_COLUMN ("(Column number = " + String(iCol) + ")") "SQLColumnVariableDatatype"
+            End
+        End
+        Else Begin
+            Send HandleError ihstmt ihdbc sDrvrId "SQLColumnVariableDatatype"
+        End
+        
+        Function_Return iVariableDataType
+    End_Function
+    
+    
+    // Return the value of a column in a fetched row of a given
+    // statement.
+    Function SQLColumnValue Integer iCol Returns String
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId sResult
+        Longptr pResultWStr
+        
+        Integer iVoid
+        Integer iColSize
+        Integer iColPrecision
+        String  sEmpty
+        Integer bLegalColumn
+        
+        // Initialize
+        Move "" to sResult
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // FUNC_SQLCOLUMNINFO will tell the driver which hdbc and hstmt to use
+        // in the next FUNC_SQLCOLUMNVALUE call.
+        // If hdbc and hstmt have not changed since the last call we don't have to set it.
+        If (ihstmt <> giLastSQLhstmt or ihdbc <> giLastSQLhdbc) Begin
+            // Setup function arguments
+            Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO ;
+                Callback 0 ;
+                Passing ihdbc iCol ihstmt ;
+                Result iVoid
+            Move ihstmt to giLastSQLhstmt
+            Move ihdbc to giLastSQLhdbc
+        End
+        
+        If (iCol >= 1 and iCol <= piColumnCount(Self)) Begin
+            Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNVALUE ;
+                Callback 0 ;
+                Passing sResult sEmpty iCol ;
+                Result pResultWStr
+            
+            If (pResultWStr) Begin
+                Move (PointerToWString(pResultWStr)) to sResult
+            End
+            Else Begin
+                Move "" to sResult
+            End
+        End
+        Else Begin
+            Send StmtError CLIERR_SQLINVALID_COLUMN ("(Column number = " + String(iCol) + ")") "SQLColumnValue"
+        End
+        
+        Function_Return sResult
+        
+    End_Function
+    
+    // Add a file to the files used to place the statement result in.
+    Procedure SQLBindFile Integer iFileNum
+        Integer ihdbc
+        Integer ihstmt
+        Integer iVoid
+        String  sDrvrId
+        String  sFileType
+        Integer bIsOpen
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // If a file number is not passed see if we can use the statement's
+        // default file number which is usually set with SetFileConnection
+        If (iFileNum = 0) Begin
+            Get piBindFile to iFileNum
+            If (iFileNum = 0) Begin
+                // Logic error, if 0 is passed as filenumber, piBindFile should be set.
+                Send StmtError CLIERR_SQLINVALID_BIND_FILE "piBindFile should be set" "SQLBindFile"
+                
+                Move 0 to SQLResult
+                Procedure_Return
+            End
+        End
+        
+        // Bind the file
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Chek if the file is open
+            Get_Attribute DF_FILE_OPENED of iFileNum to bIsOpen
+            If (bIsOpen) Begin
+                // Check if the file has the correct type
+                Get_Attribute DF_FILE_DRIVER of iFileNum to sFileType
+                If (sFileType = sDrvrId) Begin
+                    // Call the driver function to add a file to a statement
+                    Call_Driver 0 sDrvrId Function FUNC_SQLBINDFILE ;
+                        Callback Self ;
+                        Passing ihdbc iFileNum ihstmt ;
+                        Result iVoid
+                End
+                Else ;
+                    Send StmtError CLIERR_SQLINVALID_BIND_FILE ("File" * String(iFileNum) * "type incompatible with statement ("  + sFileType + ")") "SQLBindFile"
+            End
+            Else ;
+                Send StmtError CLIERR_SQLINVALID_BIND_FILE ("File not open (number =" * String(iFileNum) + ")") "SQLBindFile"
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLBindFile"
+    End_Procedure
+    
+    
+    
+    // Get data of a column.                                  
+    Function SQLGetData Integer iCol Integer iLen Returns String
+        Integer ihdbc
+        Integer ihstmt
+        Integer iVoid
+        Integer iColSize
+        Integer iResult
+        String  sDrvrId
+        WString wResult
+        String  sEmpty
+        Integer bLegalColumn
+        
+        Integer iVariableBufferLength
+        
+        // Initialize
+        Move "" to sEmpty
+        Move 0 to iResult
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Get the data
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Check if the column exists
+            If (iCol >= 1 and iCol <= piColumnCount(Self)) Begin
+                If (iLen = 0) Begin
+                    Get SQLColumnValue iCol to wResult
+                End
+                Else Begin
+                    // Add 1 for string terminator
+                    Move (iLen + 1) to iLen
+                    
+                    Get piVariableBufferLength to iVariableBufferLength
+                    If (iLen > iVariableBufferLength) Begin
+                        // Allocate
+                        Move (Repeat(' ', iLen)) to wResult
+                        
+                        Set piVariableBufferLength to iLen
+                        Set psVariableBuffer       to wResult
+                    End
+                    Else Begin
+                        Get psVariableBuffer       to wResult
+                    End
+                    
+                    
+                    // FUNC_SQLCOLUMNINFO will tell the driver which hdbc and hstmt to use
+                    // in the next FUNC_SQLCOLUMNVALUE call.
+                    // If hdbc and hstmt have not changed since the last call we don't have to set it.
+                    If (ihstmt <> giLastSQLhstmt or ihdbc <> giLastSQLhdbc) Begin
+                        // Setup function arguments
+                        Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO ;
+                            Callback 0 ;
+                            Passing ihdbc iCol ihstmt ;
+                            Result iVoid
+                        Move ihstmt to giLastSQLhstmt
+                        Move ihdbc to giLastSQLhdbc
+                    End
+                    
+                    Move False to Err
+                    // Call the driver function to get the data
+                    Call_Driver 0 sDrvrId Function FUNC_SQLGETDATA ;
+                        Callback Self ;
+                        Passing iCol iLen (AddressOf(wResult)) ;
+                        Result iResult
+                    
+                    // If something went wrong, adjust the result
+                    If (Err) Begin
+                        Move 0 to iResult
+                    End
+                    
+                    // SQL_NO_TOTAL (-4) Not all data retrieved. Unknown how much is left. 
+                    If (iResult = -4) Begin
+                        Move (SizeOfWString(wResult)) to iResult
+                    End
+                End
+            End
+            Else Begin
+                Send StmtError CLIERR_SQLINVALID_COLUMN ("(Column number = " + String(iCol) + ")") "SQLGetData"
+            End
+        End
+        Else Begin
+            Send HandleError ihstmt ihdbc sDrvrId "SQLGetData"
+        End
+        
+        // Fill global result
+        If (iResult > 0) Begin
+            Move 1 to SQLResult // SQLResult == 1 : Something was found
+        End
+        Else Begin
+           Move 0 to SQLResult // SQLResult == 0 : no (more) data found
+        End
+        
+        Function_Return (CString(wResult))
+    End_Function
+
+    // SQLGetDataToUChar (SQLGetData returning uchar array)
+    // Use for binary data and for character data containing Unicode non-bmp characters
+    Function SQLGetDataToUChar Integer iCol Integer iLen Returns UChar[]
+        Integer ihdbc
+        Integer ihstmt
+        Integer iVoid
+        Integer iColSize
+        Integer iResult
+        String  sDrvrId
+        UChar[] uaResult
+        
+        Integer iSQLType
+        Integer iBinaryType
+        Integer iLenArray
+        Integer iResizeSize
+        
+        Move 0 to iResult
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Check if the column exists
+            If (iCol >= 1 and iCol <= piColumnCount(Self)) Begin
+                            
+                Get SQLColumnType iCol to iSQLType
+                If ( (iSQLType = SQL_BINARY) or (iSQLType = SQL_VARBINARY) or (iSQLType = SQL_LONGVARBINARY) ) Begin
+                    Move 1 to iBinaryType
+                End
+                Else Begin
+                    Move 0 to iBinaryType 
+                End
+    
+                If (iBinaryType) Begin
+                    Move (ResizeArray(uaResult,iLen)) to uaResult
+                End
+                Else Begin
+                    // Character type
+                    // returned as wstring (2 bytes per character)
+                    // Add 1 for string terminator
+                    Move (iLen + 1) to iLen
+                    Move (iLen * 2) to iLenArray // wstring 2 bytes per char
+                    Move (ResizeArray(uaResult,iLenArray)) to uaResult
+                End
+
+                // FUNC_SQLCOLUMNINFO will tell the driver which hdbc and hstmt to use
+                // in the next FUNC_SQLCOLUMNVALUE call.
+                If (ihstmt <> giLastSQLhstmt or ihdbc <> giLastSQLhdbc) Begin
+                    // Setup function arguments
+                    Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO ;
+                        Callback 0 ;
+                        Passing ihdbc iCol ihstmt ;
+                        Result iVoid
+                    Move ihstmt to giLastSQLhstmt
+                    Move ihdbc to giLastSQLhdbc
+                End
+                
+                Move False to Err
+                
+                // Call the driver function to get the data
+                // iResult will be the length of the data in bytes 
+                Call_Driver 0 sDrvrId Function FUNC_SQLGETDATA ;
+                    Callback Self ;
+                    Passing iCol iLen (AddressOf(uaResult[0])) ;
+                    Result iResult
+                
+                // If something went wrong, adjust the result
+                If (Err) Begin
+                    Move 0 to iResult
+                End
+                
+                // SQL_NO_TOTAL (-4) Not all data retrieved. Unknown how much is left. 
+                If (iResult = -4) Begin
+                    Move (SizeOfArray(uaResult)) to iResult
+                End
+                
+                If (iBinaryType) Begin
+                    If (iResult < iLen) Begin
+                        Move (ResizeArray(uaResult,iResult)) to uaResult
+                    End
+                End
+                Else Begin
+                    // Character data
+                    //   iResult has length of data in bytes (without zero terminator)
+                    //   uaResult will have data + zero terminator
+                    If (iResult < (iLenArray - 2) ) Begin
+                        // Received less than requested, strip off trailing zeroes.
+                        Move iResult to iResizeSize
+                    End
+                    Else Begin
+                        // Strip off zero terminator
+                        Move (iLenArray - 2) to iResizeSize
+                    End
+                    
+                    Move (ResizeArray(uaResult,iResizeSize)) to uaResult
+                    
+                End
+            End
+            Else Begin
+                Send StmtError CLIERR_SQLINVALID_COLUMN ("(Column number = " + String(iCol) + ")") "SQLGetData"
+            End
+        End
+        Else Begin
+            Send HandleError ihstmt ihdbc sDrvrId "SQLGetData"
+        End
+        
+        // Fill global result
+        If (iResult > 0) Begin
+            Move 1 to SQLResult // SQLResult == 1 : Something was found
+        End
+        Else Begin
+           Move 0 to SQLResult // SQLResult == 0 : no (more) data found
+        End
+        
+        Function_Return uaResult
+
+    End_Function
+    
+    
+    // Map a column name to a number, if the name id not found no
+    // error is generated the returned number will be 0 (zero) in
+    // that case
+    Function SQLColumnMap String sColname Returns Integer
+        Integer ihdbc
+        Integer ihstmt
+        Integer iNumColumns
+        Integer iColCount
+        Integer iColNum
+        String  sDrvrId
+        String  sCurColName
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Get the number by looping through the column names
+        Move 0 to iColNum
+        Get SQLPrivateStmtAttribute SQLSTMTATTRIB_COLUMNCOUNT ihdbc sDrvrId ihstmt to iNumColumns
+        For iColCount from 1 to iNumColumns
+            Get SQLPrivateColAttribute iColCount SQLCOLATTRIB_LABEL ihdbc sDrvrId ihstmt to sCurColName
+            If (Uppercase(Trim(sColName)) = Uppercase(Trim(sCurColName))) ;
+                Move iColCount to iColNum
+            
+            If (iColNum) ;
+                Break
+        Loop
+        
+        Function_Return iColNum
+    End_Function
+    
+    
+    // SQLStmtAttribute
+    // Moved to SQLGetStatementAttribute. 
+    // This function is still here for backward compatibility.
+
+    Function SQLStmtAttribute Integer iAttribId Returns String
+        String  sResult
+
+        Get SQLGetStmtAttribute iAttribId to sResult        
+        
+        Function_Return sResult
+    End_Function
+
+ 
+   Function SQLGetStmtAttribute Integer iAttribId Returns String
+        Integer ihdbc
+        Integer ihstmt
+        String  sResult
+        String  sDrvrId
+        
+        // Initialize
+        Move "" to sResult
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Get the attribute
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") ;
+            Get SQLPrivateStmtAttribute iAttribId ihdbc sDrvrId ihstmt to sResult
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLGetStmtAttribute"
+        
+        Function_Return sResult
+    End_Function
+
+    
+    Procedure SQLSetStmtAttribute Integer iAttribId String sAttribValue 
+
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        
+        Integer iLen
+        Integer bLegalAttrib
+        Integer iVoid
+        Integer iAttribValue
+
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            Case Begin
+                Case (iAttribId = SQLSTMTATTRIB_CURSOR_TYPE)
+                    Move DFTRUE to bLegalAttrib
+                    Break
+                    
+                Case Else
+                    Move DFFALSE to bLegalAttrib
+                    Send SQLIllegalAttribute ("Attribute is = " + String(iAttribId) + ")") "SQLSetStmtAttribute"
+            Case End
+
+            If (bLegalAttrib) Begin
+                If (iAttribId = SQLSTMTATTRIB_CURSOR_TYPE) Begin
+                    
+                    Move sAttribValue to iAttribValue // Check numeric?
+                    Case Begin
+                        Case (iAttribValue = SQL_CURSOR_FORWARD_ONLY)
+                        Case (iAttribValue = SQL_CURSOR_DYNAMIC)
+                        Case (iAttribValue = SQL_CURSOR_KEYSET_DRIVEN)
+                        Case (iAttribValue = SQL_CURSOR_STATIC)
+                            Break
+                            
+                        Case Else
+                            Move DFFALSE to bLegalAttrib
+                            Send StmtError CLIERR_SQLINVALID_ATTRIBUTE (SFormat("Invalid value for SQLSTMTATTRIB_CURSOR_TYPE: %1", iAttribValue)) "SQLSetStmtAttribute"
+
+                    Case End
+                End
+            End
+
+            
+            If (bLegalAttrib) Begin
+                
+                Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO ;
+                    Callback Self ;
+                    Passing ihdbc iVoid ihstmt ;
+                    Result iVoid
+                
+                Call_Driver 0 sDrvrId Function FUNC_SQLSETSTMTINTATTRIB ;
+                    Callback Self ;
+                    Passing iAttribId iAttribValue 0 ;
+                    Result iVoid
+            End
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLPrivateStmtAttribute"
+        
+        
+        
+    End_Procedure
+    
+    
+    
+    { Visibility=Private }
+    Function SQLPrivateStmtAttribute Integer iAttribId Integer ihdbc String sDrvrId Integer ihstmt Returns String
+        String  sResult
+        Integer iLen
+        Integer bLegalAttrib
+        
+        // Initialize
+        Move ""     to sResult
+        
+        // Get the attribute
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            Case Begin
+                Case (iAttribId = SQLSTMTATTRIB_COLUMNCOUNT)
+                Case (iAttribId = SQLSTMTATTRIB_ROWCOUNT)
+                Case (iAttribId = SQLSTMTATTRIB_ROWCOUNT_TYPE)
+                Case (iAttribId = SQLSTMTATTRIB_NUMMESSAGES)
+                Case (iAttribId = SQLSTMTATTRIB_CURSOR_TYPE)
+                    Move DFTRUE to bLegalAttrib
+                    Break
+                    
+                Case Else
+                    Move DFFALSE to bLegalAttrib
+                    Send SQLIllegalAttribute ("Attribute is = " + String(iAttribId) + ")") "SQLPrivateStmtAttribute"
+            Case End
+            
+            If (bLegalAttrib) Begin
+                // Setup function arguments
+                Call_Driver 0 sDrvrId Function FUNC_SQLSTMTINTATTRIB ;
+                    Callback Self ;
+                    Passing ihdbc iAttribId ihstmt ;
+                    Result sResult
+            End
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLPrivateStmtAttribute"
+        
+        Function_Return sResult
+    End_Function
+    
+    
+    
+    // Get a column's attribute
+    Function SQLColAttribute Integer iCol Integer iAttribId Returns String
+        Integer ihdbc
+        Integer ihstmt
+        String  sResult
+        String  sDrvrId
+        
+        // Initialize
+        Move "" to sResult
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Get the attribute
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") ;
+            Get SQLPrivateColAttribute iCol iAttribId ihdbc sDrvrId ihstmt to sResult
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLColAttribute"
+        
+        Function_Return sResult
+    End_Function
+    
+    { Visibility=Private }
+    Function SQLPrivateColAttribute Integer iCol Integer iAttribId Integer ihdbc String sDrvrId Integer ihstmt Returns String
+        String  sResult
+        String  sEmpty
+        Integer bIsStringAttribute
+        Integer iLen
+        Integer iVoid
+        Integer bLegalAttrib
+        Integer bLegalColumn
+        
+        // Initialize
+        Move "" to sResult
+        Move "" to sEmpty
+        Move 0  to iLen
+        
+        // Get the attribute
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            Get SQLPrivateColumnIsLegal ihdbc sDrvrId ihstmt iCol to bLegalColumn
+            If (bLegalColumn) Begin
+                // Determine the atributes type
+                Case Begin
+                    Case (iAttribId = SQLCOLATTRIB_SIZE)
+                    Case (iAttribId = SQLCOLATTRIB_LENGTH)
+                    Case (iAttribId = SQLCOLATTRIB_PRECISION)
+                    Case (iAttribId = SQLCOLATTRIB_SQLTYPE)
+                    Case (iAttribId = SQLCOLATTRIB_NULLABLE)
+                    Case (iAttribId = SQLCOLATTRIB_DFTYPE)
+                        Move DFFALSE to bIsStringAttribute
+                        Move DFTRUE to bLegalAttrib
+                        Break
+                        
+                    Case (iAttribId = SQLCOLATTRIB_LABEL)
+                    Case (iAttribId = SQLCOLATTRIB_BASECOLUMNNAME)
+                    Case (iAttribId = SQLCOLATTRIB_BASETABLENAME)
+                        Move DFTRUE to bIsStringAttribute
+                        Move DFTRUE to bLegalAttrib
+                        Break
+                        
+                    Case Else
+                        Move DFFALSE to bLegalAttrib
+                        Send SQLIllegalAttribute ("Attribute is = " + String(iAttribId) + ")") "SQLPrivateColAttribute"
+                Case End
+                
+                If (bLegalAttrib) Begin
+                    // Setup function arguments
+                    Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO ;
+                        Callback Self ;
+                        Passing ihdbc iCol ihstmt ;
+                        Result iVoid
+                    
+                    If (bIsStringAttribute) Begin
+                        // Call the driver function to get the data length
+                        Call_Driver 0 sDrvrId Function FUNC_SQLCOLSTRINGATTRIBLEN ;
+                            Callback Self ;
+                            Passing sEmpty sEmpty iAttribId ;
+                            Result iLen
+                        
+                        If (iLen) Begin
+                            // Allocate
+                            Move (Repeat(' ', iLen)) to sResult
+                            
+                            // Call the driver function to get the name
+                            Call_Driver 0 sDrvrId Function FUNC_SQLCOLSTRINGATTRIB ;
+                                Callback Self ;
+                                Passing sResult sEmpty iAttribId ;
+                                Result iVoid
+                        End
+                    End
+                    Else Begin
+                        // get the attribute
+                        Call_Driver 0 sDrvrId Function FUNC_SQLCOLINTATTRIB ;
+                            Callback Self ;
+                            Passing sEmpty sEmpty iAttribId ;
+                            Result sResult
+                    End
+                End
+            End
+            Else ;
+                Send StmtError CLIERR_SQLINVALID_COLUMN ("(Column number = " + String(iCol) + ")") "SQLPrivateColAttribute"
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLPrivateColAttribute"
+        
+        Function_Return sResult
+    End_Function
+    
+    
+    // Preapre for calling a stored procedure, pass the procedure name.
+    Procedure SQLSetProcedureName String sProcName String sSchemaArg
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iVoid
+        String  sSchema
+        String  sEmpty
+        
+        // Initialize
+        Move "" to sEmpty
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Call the procedure
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            If (Num_Arguments >= 2) ;
+                Move sSchemaArg to sSchema
+            Else ;
+                Move "" to sSchema
+            
+            If (sSchema <> "") Begin
+                Call_Driver 0 sDrvrId Function FUNC_SQLSETPROCSCHEMA ;
+                    Callback Self ;
+                    Passing ihdbc sSchema ihstmt ;
+                    Result iVoid
+            End
+            
+            // Call the procedure
+            Call_Driver 0 sDrvrId Function FUNC_SQLSETPROCNAME ;
+                Callback Self ;
+                Passing ihdbc sProcName ihstmt ;
+                Result iVoid
+            
+            Set piLastArgument to 0
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLSetProcedurename"
+    End_Procedure
+    
+    // Pass the next argument
+    Procedure SQLSetNextArgument String sArgument
+        Integer iArgnum
+        
+        Get piLastArgument to iArgnum
+        Increment iArgnum
+        Send SQLSetArgument iArgnum sArgument
+        Set piLastArgument to iArgnum
+    End_Procedure
+    
+    
+    
+    // Set the next argument
+    Procedure SQLSetArgument Integer iArgnum String sArgument
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iVoid
+        String  sEmpty
+        
+        // Initialize
+        Move "" to sEmpty
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Call the procedure
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Pass the information
+            Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO ;
+                Callback Self ;
+                Passing ihdbc iArgnum ihstmt ;
+                Result iVoid
+            
+            // Pass the argument
+            Call_Driver 0 sDrvrId Function FUNC_SQLSETPROCARG ;
+                Callback Self ;
+                Passing sArgument sEmpty 0 ;
+                Result iVoid
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLSetArgument"
+    End_Procedure
+    
+    Procedure SQLSetNextParameter String sParamValue Integer iParamType
+        Integer iParamNum 
+        Integer iType
+        
+        If (num_arguments < 2) Begin
+            Move typeString to iType
+        End
+        Else Begin
+            Move iParamType to iType
+        End
+        
+        Get piLastArgument to iParamNum
+        Increment iParamNum
+        Send SQLSetParameter iParamNum sParamValue iType
+        Set piLastArgument to iParamNum
+    End_Procedure
+
+    Procedure SQLSetParameter Integer iParamNum String sParamValue Integer iParamType
+        
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iVoid
+        String  sEmpty
+        Integer iType
+        
+        If (num_arguments < 3) Begin
+            Move typeString to iType
+        End
+        Else Begin
+            Move iParamType to iType
+        End
+        
+        Case Begin
+            Case (iType = typeDate )    
+
+                If (sParamValue <> "") Begin
+                    ConvertToXml typeDate sParamValue to sParamValue
+                End
+                
+                Break
+
+            Case (iType = typeDatetime )    
+
+                If (sParamValue <> "") Begin
+                    ConvertToXml esqlDatetime sParamValue to sParamValue
+                    Move (Replace('T',sParamValue,' ')) to sParamValue 
+                End
+
+                Break
+
+            Case (iType = typeNumber )    
+
+                If (sParamValue <> "") Begin
+                    ConvertToXml typeNumber sParamValue to sParamValue
+                End
+                
+                Break
+            
+            Case (iType = typeTime )    
+
+                If (sParamValue <> "") Begin
+                    ConvertToXml esqlTime sParamValue to sParamValue
+                End
+                
+                Break
+                
+            Case Else
+                    // sParamValue is a string type or a type that must be passed as a string
+                    Break
+                
+        Case End
+        
+        
+        // Initialize
+        Move "" to sEmpty
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Call the procedure
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Pass the information
+            Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO ;
+                Callback Self ;
+                Passing ihdbc iParamnum ihstmt ;
+                Result iVoid
+            
+            // Pass the argument
+            Call_Driver 0 sDrvrId Function FUNC_SQLSETPROCARG ;
+                Callback Self ;
+                Passing sParamValue sEmpty 0 ;
+                Result iVoid
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLSetParameter"
+    End_Procedure
+    
+    
+    // Call a stored procedure
+    Procedure SQLCall
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iVoid
+        String  sEmpty
+        
+        // Initialize
+        Move "" to sEmpty
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Call the procedure
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Call the procedure
+            Call_Driver 0 sDrvrId Function FUNC_SQLCALL ;
+                Callback Self ;
+                Passing ihdbc sEmpty ihstmt ;
+                Result iVoid
+            
+            Send SQLGetStatementAttributes
+            Set piLastArgument to 0
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLCall"
+    End_Procedure
+    
+    
+    // Get the next argument
+    Function SQLGetNextArgument Returns String
+        Integer iArgnum
+        String  sResult
+        
+        Get piLastArgument to iArgnum
+        Increment iArgnum
+        Get SQLGetArgument iArgnum to sResult
+        Set piLastArgument to iArgnum
+        
+        Function_Return sResult
+    End_Function
+    
+    
+    
+    // Get the specified argument from a procedure
+    Function SQLGetArgument Integer iArgnum Returns String
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iVoid
+        String  sEmpty
+        String  sArgument
+        Integer iLen
+        
+        // Initialize
+        Move "" to sEmpty
+        Move "" to sArgument
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Call the procedure
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Pass the information
+            Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO ;
+                Callback Self ;
+                Passing ihdbc iArgnum ihstmt ;
+                Result iVoid
+            
+            // Get the length
+            Call_Driver 0 sDrvrId Function FUNC_SQLGETPROCARGLEN ;
+                Callback Self ;
+                Passing sEmpty sEmpty 0 ;
+                Result iLen
+            
+            If (iLen) Begin
+                // Allocate
+                Move (Repeat(' ', iLen)) to sArgument
+                
+                // Pass the argument
+                Call_Driver 0 sDrvrId Function FUNC_SQLGETPROCARG ;
+                    Callback Self ;
+                    Passing sArgument sEmpty 0 ;
+                    Result iVoid
+            End
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLGetArgument"
+        
+        Function_Return sArgument
+    End_Function
+    
+    
+    // Get the return value of a stored function
+    Function SQLReturnValue Returns String
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iVoid
+        String  sEmpty
+        String  sRetval
+        Integer iLen
+        
+        // Initialize
+        Move "" to sEmpty
+        Move "" to sRetval
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Call the procedure
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Get the length
+            Call_Driver 0 sDrvrId Function FUNC_SQLGETPROCRETVALLEN ;
+                Callback Self ;
+                Passing ihdbc sEmpty ihstmt  ;
+                Result iLen
+            
+            If (iLen) Begin
+                // Allocate
+                Move (Repeat(' ', iLen)) to sRetval
+                
+                // Pass the argument
+                Call_Driver 0 sDrvrId Function FUNC_SQLGETPROCRETVAL ;
+                    Callback Self ;
+                    Passing ihdbc sRetval ihstmt ;
+                    Result iVoid
+            End
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLReturnValue"
+        
+        Function_Return sRetval
+    End_Function
+    
+    
+    // Switch to the next set
+    // Returns : 0   = No more result sets
+    //     <>0 = Switched to next set
+    Function SQLNextResultSet Returns Integer
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iResult
+        String  sEmpty
+        
+        // Initialize
+        Move "" to sEmpty
+        Move 0  to iResult
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Call the procedure
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Get the length
+            Call_Driver 0 sDrvrId Function FUNC_SQLNEXTRESULTSET ;
+                Callback Self ;
+                Passing ihdbc sEmpty ihstmt  ;
+                Result iResult
+            
+            Send SQLGetStatementAttributes
+            Set piLastArgument to 0
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLNextResultSet"
+        
+        Function_Return iResult
+    End_Function
+    
+    
+    // Setup a file that will be acivated after a succesfull
+    //fetch on the statement
+    Procedure SQLFetchActivatesBuffer Integer iFileNum Integer bState
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        Integer iResult
+        Integer bIsOpen
+        Integer iVoid
+        String  sFileType
+        
+        // Check if file is open
+        Get_Attribute DF_FILE_OPENED of iFileNum to bIsOpen
+        If (bIsOpen) Begin
+            // Get the cli handles
+            Get phCLIStatementHandle  to ihstmt
+            Get phCLIConnectionHandle to ihdbc
+            Get psDriverId            to sDrvrId
+            
+            // Call the procedure
+            If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+                // Check if the file has the correct type
+                Get_Attribute DF_FILE_DRIVER of iFileNum to sFileType
+                If (sFileType = sDrvrId) Begin
+                    // Setup the buffer
+                    Call_Driver iFileNum sDrvrId Function FUNC_SQLBUFFERSTATUS ;
+                        Callback Self ;
+                        Passing ihdbc bState ihstmt  ;
+                        Result iVoid
+                End
+                Else ;
+                    Send StmtError CLIERR_SQLINVALID_BIND_FILE ("File" * String(iFileNum) * "type incompatible with statement ("  + sFileType + ")") "SQLBindFile"
+            End
+            Else ;
+                Send HandleError ihstmt ihdbc sDrvrId "SQLFetchActivatesBuffer"
+        End
+        Else ;
+            Send StmtError CLIERR_SQLINVALID_BUFFER ("File not open (number =" * String(iFileNum) + ")") "SQLFetchActivatesBuffer"
+    End_Procedure
+    
+    
+    
+    Function SQLGetMessage Integer iMessageNum Returns String
+        Integer ihdbc
+        Integer ihstmt
+        String  sDrvrId
+        String  sMessage
+        Integer iVoid
+        
+        // Initialize
+        Move "" to sMessage
+        
+        // Get the cli handles
+        Get phCLIStatementHandle  to ihstmt
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId            to sDrvrId
+        
+        // Call the procedure
+        If (ihstmt <> 0 and ihdbc <> 0 and sDrvrId <> "") Begin
+            // Setup function arguments
+            Call_Driver 0 sDrvrId Function FUNC_SQLCOLUMNINFO ;
+                Callback Self ;
+                Passing ihdbc iMessageNum ihstmt ;
+                Result iVoid
+            
+            Move (Repeat(' ', 1024)) to sMessage
+            // Get the length
+            Call_Driver 0 sDrvrId Function FUNC_SQLGETMESSAGE ;
+                Callback Self ;
+                Passing iVoid sMessage iVoid ;
+                Result iVoid
+        End
+        Else ;
+            Send HandleError ihstmt ihdbc sDrvrId "SQLGetDiagRec"
+        
+        Function_Return sMessage
+    End_Function
+    
+    
+    
+    // Remove the component identifier from a diagnostic message
+    Function RemoveComponentIdentifier String sDiagMessage Returns String
+        While (Left(sDiagMessage, 1) = "[")
+            Move (Right(sDiagMessage, Length(sDiagMessage) - Pos("]", sDiagMessage))) to sDiagMessage
+        Loop
+        
+        Function_Return sDiagMessage
+    End_Function
+    
+    
+    
+    // Convert a DataFlex date to a SQL Date. Use dummy zero dates.
+    Function DFDateToSQLDate Date dDFDate Integer iSQLType Returns String
+        
+        Integer iType
+        String  sSQLDate
+        Integer iOrgDateFmt
+        Integer iOrgDateSep
+        
+        String sDriverId
+        String sDummyZeroDate
+        String sDummyZeroDateMssqlDatetime
+        
+        // Change date format to military, SQL dates are military dates
+        Get_Attribute DF_DATE_FORMAT to iOrgDateFmt
+        Get_Attribute DF_DATE_SEPARATOR to iOrgDateSep
+        Set_Attribute DF_DATE_FORMAT to DF_DATE_MILITARY
+        Set_Attribute DF_DATE_SEPARATOR to (Ascii('-'))
+        
+        // We only need to convert if the date is 0
+        If (Integer(dDFDate = 0)) Begin
+            
+            If (num_arguments < 2) Begin
+                Move SQL_TYPE_TIMESTAMP to iType
+            End
+            Else Begin
+                Move iSQLType to iType
+            End
+            
+            
+            Get psDriverID to sDriverId
+            Get psDummyZeroDate to sDummyZeroDate
+            
+            If ( (iType = SQL_TYPE_TIMESTAMP) and (sDriverID = 'MSSQLDRV') ) Begin
+                Get psDummyZeroDateMssqlDatetime to sDummyZeroDateMssqlDatetime
+                Move sDummyZeroDateMssqlDatetime to sSQLDate
+            End
+            Else Begin
+                Move sDummyZeroDate to sSQLDate
+            End
+            
+        End
+        Else Begin
+            Move dDFDate to sSQLDate
+        End
+        
+        // Change date format back to original
+        Set_Attribute DF_DATE_FORMAT to iOrgDateFmt
+        Set_Attribute DF_DATE_SEPARATOR to iOrgDateSep
+        
+        Function_Return sSQLDate
+    End_Function
+    
+    
+    // Convert a SQL date to a DataFlex Date. Use dummy zero dates.
+    Function SQLDateToDFDate String sSQLDate Returns Date
+        
+        Integer iType
+        Date    dDFDate
+        Integer iOrgDateFmt
+        Integer iOrgDateSep
+        
+        String  sDriverId
+        String  sDummyZeroDate
+        String  sDummyZeroDateMssqlDatetime
+        
+        Get psDriverID to sDriverId
+        
+        Get psDummyZeroDate to sDummyZeroDate
+        Get psDummyZeroDateMssqlDatetime to sDummyZeroDateMssqlDatetime
+        
+        Get_Attribute DF_DATE_FORMAT to iOrgDateFmt
+        Get_Attribute DF_DATE_SEPARATOR to iOrgDateSep
+        Set_Attribute DF_DATE_FORMAT to DF_DATE_MILITARY
+        Set_Attribute DF_DATE_SEPARATOR to (Ascii('-'))
+        
+        Move (Left(sSQLDate,10)) to sSQLDate
+        
+        If ( (sSQLDate = sDummyZeroDate) or ;
+            ( (sDriverId = 'MSSQLDRV') and (sSQLDate = sDummyZeroDateMssqlDatetime) ) )  Begin
+            Move 0 to dDFDate
+        End
+        Else Begin
+            Move sSQLDate to dDFDate
+        End
+        
+        // Change date format back to original
+        Set_Attribute DF_DATE_FORMAT to iOrgDateFmt
+        Set_Attribute DF_DATE_SEPARATOR to iOrgDateSep
+        
+        Function_Return dDFDate
+    End_Function
+    
+End_Class
+
+
+// Connection object for embedded SQL                          
+// This provides the ability to create a connection for a driver.     
+// It will contain child statement objects                            
+
+Class cSQLConnection is a cObject
+    
+    Procedure Construct_object
+        Forward Send Construct_object
+        
+        { Visibility=Private }
+        Property Integer phCLIConnectionHandle       0
+        
+        Property String  psDriverID        ""
+        Property Integer piBindFile        0
+        
+        { Visibility=Private }
+        Property String psDummyZeroDate              '0001-01-01'
+        { Visibility=Private }
+        Property String psDummyZeroDateMssqlDatetime '1753-01-01'
+        
+    End_Procedure
+    
+    
+    
+    // Store basic information about the connection
+    { Visibility=Private }
+    Procedure StoreConnectionInfo Handle hCLIConnectionHandle String sDrvrId
+        
+        String sDummyZeroDate
+        Integer iDriverIndex
+        
+        Set phCLIConnectionHandle to hCLIConnectionHandle
+        Set psDriverID            to sDrvrId
+        
+        Case Begin
+            Case (sDrvrId = "MSSQLDRV")
+                Set psDummyZeroDate to '0001-01-01'
+                Set psDummyZeroDateMssqlDatetime to '1753-01-01'
+                Break
+            Case (sDrvrId = "DB2_DRV")
+                Set psDummyZeroDate to '0001-01-01'
+                Break
+            Case (sDrvrId = "ODBC_DRV")
+                Get DriverIndex "ODBC_DRV" to iDriverIndex
+                If (iDriverIndex <> 0) Begin
+                    Get_Attribute DF_DRIVER_DUMMY_ZERO_DATE_VALUE of iDriverIndex to sDummyZeroDate
+                End
+                Else Begin
+                    Move '0001-01-01' to sDummyZeroDate
+                End
+
+                Set psDummyZeroDate to sDummyZeroDate
+                Break
+                
+        Case End
+        
+    End_Procedure
+    
+    Function DriverIndex String sDriver Returns Integer
+        
+        String  sCurrentDriver
+        Integer iNumberOfDrivers iDriver iCount
+        
+        Move 0 to iDriver
+        
+        Get_Attribute DF_NUMBER_DRIVERS to iNumberOfDrivers
+        For iCount from 1 to iNumberOfDrivers
+            
+            Get_Attribute DF_DRIVER_NAME of iCount to sCurrentDriver
+            If ( Uppercase(sCurrentDriver) = Uppercase(sDriver) ) Begin
+                Move iCount to iDriver
+            End
+        Loop
+        
+        Function_Return iDriver
+        
+    End_Function
+
+    
+    // Destroy the SQLConnection object
+    { Visibility=Private }
+    Procedure DestroySQLConnection
+        Send Destroy
+    End_Procedure
+    
+    
+    // Connect to a database server
+    // Returns : 1 Succesfully connected
+    //           0 Not connected
+    { Visibility=Private }
+    Function SQLConnect String sDrvrID String sConnect Returns Integer
+        Integer ihdbc
+        String  sEmpty
+        
+        // Initialize
+        Move "" to sEmpty
+        Move 0  to ihdbc
+        
+        Move False to Err
+        
+        // Call the driver function to connect
+        Call_Driver 0 sDrvrId Function FUNC_SQLCONNECT ;
+            Callback Self ;
+            Passing sConnect sEmpty Self ;
+            Result ihdbc
+        
+        // If there was an error, make result invalid
+        If (Err) ;
+            Move 0 to ihdbc
+        
+        // Check result and store it
+        If (ihdbc <> 0) ;
+            Send StoreConnectionInfo ihdbc sDrvrId
+        
+        // Return success status
+        Function_Return (ihdbc <> 0)
+    End_Function
+    
+    
+    // Use a connection of an already open file
+    { Visibility=Private }
+    Function SQLFileConnect Integer iFileNum Returns Integer
+        Integer ihdbc
+        Integer bIsOpen
+        String  sDrvrId
+        String  sEmpty
+        
+        // Initialize
+        Move "" to sEmpty
+        Move 0  to ihdbc
+        
+        // Check if file is open
+        Get_Attribute DF_FILE_OPENED of iFileNum to bIsOpen
+        If (bIsOpen) Begin
+            // Fill the driver id, assume longest is 255 characters
+            Move (Repeat(' ', 255)) to sDrvrId
+            Get_Attribute DF_FILE_DRIVER of iFileNum to sDrvrId
+            
+            Move False to Err
+            
+            // Call the driver function to connect
+            Call_Driver iFileNum sDrvrId Function FUNC_SQLFILECONNECT ;
+                Callback Self ;
+                Passing sEmpty sEmpty 0 ;
+                Result ihdbc
+            
+            // If there was an error, make result invalid
+            If (Err) ;
+                Move 0 to ihdbc
+            
+            // Check result and store it
+            If (ihdbc <> 0) Begin
+                // Somehow Call_driver overwrites the sDrvrId variable, restore it here
+                Get_Attribute DF_FILE_DRIVER of iFileNum to sDrvrId
+                Send StoreConnectionInfo ihdbc sDrvrId
+                
+                // Set filenum so it can be used for fetching
+                Set piBindFile to iFileNum
+            End
+        End
+        
+        // Return success status
+        Function_Return (ihdbc <> 0)
+    End_Function
+    
+    
+    // Establish an embedded SQL connection that uses an existing connection from an earlier login or open.
+    // Existing connections are identified by there connectstring. (can be obtained with DF_DRIVER_SERVER_NAME attribute)
+    // If sConnectString exist in the list of existing connections, that connection will be used for embedded SQL.
+    // The connectstring must be an exact match, but can be case insensitive
+    // The connectstring can contain a connection id. For example: "DFCONNID=MyConnectionID"
+    // If no matching connectstring is found, this function will return 0
+    // This function will only work with CLI connectivity kits 6.2 or later
+    Function SQLConnectionConnect String sDrvrID String sConnectString Returns Integer
+        Integer ihdbc
+        String  sEmpty
+        Integer iFileNum
+        
+        // Initialize
+        Move "" to sEmpty
+        Move 0  to ihdbc
+        
+        Move False to Err
+        
+        // Call the driver function
+        //   Note we call FUNC_SQLFILECONNECT with iFileNum = 0.
+        //   This will perform SQLConnectionConnect instead of SQLFileConnect
+        Move 0 to iFileNum
+        Call_Driver iFileNum sDrvrId Function FUNC_SQLFILECONNECT ;
+            Callback Self ;
+            Passing sConnectString sEmpty Self ;
+            Result ihdbc
+        
+        // If there was an error, make result invalid
+        If (Err) ;
+            Move 0 to ihdbc
+        
+        // Check result and store it
+        If (ihdbc <> 0) ;
+            Send StoreConnectionInfo ihdbc sDrvrId
+        
+        // Return success status
+        Function_Return (ihdbc <> 0)
+    End_Function
+    
+    
+    // Disconnect from an embedded SQL server and free allocated
+    // resources
+    Procedure SQLDisconnect
+        Integer ihdbc
+        Integer iVoid
+        String  sDrvrId
+        String  sEmpty
+        
+        // Initialize
+        Move "" to sEmpty
+        
+        // Get the cli handle
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId to sDrvrId
+        
+        // Free the CLI handle
+        If (ihdbc <> 0) Begin
+            // Call the driver function to disconnect
+            Call_Driver 0 sDrvrId Function FUNC_SQLDISCONNECT ;
+                Callback Self ;
+                Passing sEmpty sEmpty ihdbc ;
+                Result iVoid
+            
+            Move -1 to giLastSQLhdbc
+            
+            // Free the DataFlex handle
+            Send DestroySQLConnection
+        End
+    End_Procedure
+    
+    // Create a cSQLStatement object
+    { Visibility=Private }
+    Function CreateSQLStatement Returns Handle
+        
+        Handle hoSQLStatement
+        Get Create (RefClass(cSQLStatement)) to hoSQLStatement
+        
+        // If the connection has a default Bind File, assign it to the
+        // statement object. The default is set when you open a file with a
+        // SetFileConnection command.
+        Set piBindFile of hoSQLStatement to (piBindFile(Self))
+        
+        Function_Return hoSQLStatement
+    End_Function
+    
+    
+    // Open a statement for use
+    Function SQLOpen Returns Handle
+        Handle  hoSQLStatement
+        Integer ihdbc
+        Integer ihstmt
+        Integer iVoid
+        String  sDrvrId
+        String  sEmpty
+        String  sDummyZeroDate
+        String  sDummyZeroDateMssqlDatetime
+        
+        // Initialize
+        Move "" to sEmpty
+        
+        // Get the cli handle to the connection
+        Get phCLIConnectionHandle to ihdbc
+        Get psDriverId  to sDrvrId
+        
+        // Allocate a new handle and populate it
+        If (ihdbc <> 0) Begin
+            // Create a new cSQLStatement object
+            Get CreateSQLStatement to hoSQLStatement
+            
+            // Call the driver function to allocate a cli statement handle
+            Call_Driver 0 sDrvrId Function FUNC_SQLOPEN ;
+                Callback Self ;
+                Passing hoSQLStatement sEmpty ihdbc ;
+                Result ihstmt
+            
+            // If unsuccessful destroy hoSQLStatement
+            If (ihstmt = 0) Begin
+                Send DestroySQLStatement of hoSQLStatement
+                Move 0 to hoSQLStatement
+            End
+            Else Begin
+                Send StoreStatementInfo of hoSQLStatement ihstmt sDrvrId ihdbc
+                
+                // Store DummyZeroDate of hoSQLConnection in hoSQLStatement
+                Get psDummyZeroDate              to sDummyZeroDate
+                Get psDummyZeroDateMssqlDatetime to sDummyZeroDateMssqlDatetime
+                
+                Set psDummyZeroDate              of hoSQLStatement to sDummyZeroDate
+                Set psDummyZeroDateMssqlDatetime of hoSQLStatement to sDummyZeroDateMssqlDatetime
+                
+            End
+        End
+        
+        Function_Return hoSQLStatement
+    End_Function
+    
+End_Class
+
+// Manager for embedded SQL handles.                           
+// We want to be able to use multiple drivers and multiple            
+// connections within a driver and multiple statements within a       
+// connection. To allow this we have placed our own handle logic on   
+// top of the driver handle logic. This way we can handle the         
+// situation where two driver handles may be equal.                   
+
+Class cSQLHandleManager is a cObject
+    
+    Procedure Construct_object
+        Forward Send Construct_object
+        
+        Property String  psDefaultDriver      ""
+        Property String  psDefaultConnection  ""
+        
+    End_Procedure
+    
+    // Create a cSQLConnection object
+    { Visibility=Private }
+    Function CreateSQLConnection Returns Handle
+        Handle hoSQLConnection
+        Get Create (RefClass(cSQLConnection)) to hoSQLConnection
+        Function_Return hoSQLConnection
+    End_Function
+    
+    
+    // Store default connection information
+    Procedure SQLSetConnect String sDriver String sConnect
+        Set psDefaultDriver      to sDriver
+        Set psDefaultConnection  to sConnect
+    End_Procedure
+    
+    
+    // Make a connection to an embedded SQL server
+    // Returns : The DataFlex handle to the connection
+    Function SQLConnect String sDrvrID String sConnect Returns Integer
+        Handle hoSQLConnection
+        Integer bOK
+        
+        // Check arguments
+        If (sDrvrID = "" and sConnect = "") Begin
+            Get psDefaultDriver      to sDrvrId
+            Get psDefaultConnection  to sConnect
+        End
+        
+        // Create a cSQLConnection object
+        Get CreateSQLConnection to hoSQLConnection
+        // Connect to the database
+        Get SQLConnect of hoSQLConnection sDrvrID sConnect to bOK
+        
+        // If connection to the database failed, destroy the cSQLConnection object and return a 0 handle
+        If (not(bOK)) Begin
+            Send DestroySQLConnection of hoSQLConnection
+            Move 0 to hoSQLConnection
+        End
+        
+        Function_Return hoSQLConnection
+    End_Function
+    
+    
+    
+    // Make an existing connection available for use with Embedded SQL.
+    // The connection is identified by the number of a file
+    // that is open for that connection.
+    Function SQLFileConnect Integer iFileNum Returns Handle
+        Handle hoSQLConnection
+        Integer bOK
+        
+        // Create a cSQLConnection object
+        Get CreateSQLConnection to hoSQLConnection
+        Get SQLFileConnect of hoSQLConnection iFileNum to bOK
+        
+        // If connection to the database failed, destroy the cSQLConnection object and return a 0 handle
+        If (not(bOK)) Begin
+            Send DestroySQLConnection of hoSQLConnection
+            Move 0 to hoSQLConnection
+        End
+        
+        Function_Return hoSQLConnection
+    End_Function
+    
+    // Establish an embedded SQL connection that uses an existing connection from an earlier login or open.
+    // Existing connections are identified by there connectstring. (can be obtained with DF_DRIVER_SERVER_NAME attribute)
+    // If sConnectString exist in the list of existing connections, that connection will be used for embedded SQL.
+    // The connectstrings must be an exact match, but can be case insensitive
+    // If no matching connectstring is found, this function will return 0
+    // This function will only work with CLI connectivity kits 6.2 or later
+    Function SQLConnectionConnect String sDrvrID String sConnectString Returns Integer
+        Handle hoSQLConnection
+        Integer bOK
+        
+        // Check arguments
+        If (sDrvrID = "" and sConnectString = "") Begin
+            Get psDefaultDriver      to sDrvrId
+            Get psDefaultConnection  to sConnectString
+        End
+        
+        // Create a cSQLConnection object
+        Get CreateSQLConnection to hoSQLConnection
+        // Connect to the database
+        Get SQLConnectionConnect of hoSQLConnection sDrvrID sConnectString to bOK
+        
+        // If connection to the database failed, destroy the cSQLConnection object and return a 0 handle
+        If (not(bOK)) Begin
+            Send DestroySQLConnection of hoSQLConnection
+            Move 0 to hoSQLConnection
+        End
+        
+        Function_Return hoSQLConnection
+    End_Function
+    
+    
+End_Class

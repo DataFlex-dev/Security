@@ -1,0 +1,197 @@
+Use AllWebAppClasses.pkg
+
+Use cWebAppUserDataDictionary.dd
+Use cSqueaksDataDictionary.dd
+Use cWebForm.pkg
+
+Object oSqueakZoom is a cWebView
+    Set piColumnCount to 12
+    Set psCaption to "Squeak"
+    Set peWebViewStyle to wvsDrilldown
+    Set peViewType to vtZoom
+    Set pbShowCaption to False
+    Set Verify_Save_Msg to 0
+    Set piMaxWidth to 1024
+
+    { WebProperty=Client }
+    Property String psClientSideProperty
+    { WebProperty=Server }
+    Property String psServerSideProperty
+    { WebProperty=ServerSession }
+    Property String psServerSideSessionProperty
+
+    Object oWebAppUser_DD is a cWebAppUserDataDictionary
+        Function RestrictUser Returns Boolean
+            // admin can do everything
+            If (piUserRights(ghoWebSessionManager) = 1) Function_Return True
+            // otherwise only self
+            Function_Return (psLoginName(ghoWebSessionManager) = WebAppUser.LoginName)
+        End_Function
+
+        Procedure OnConstrain
+            Constrain WebAppUser as (RefFunc(RestrictUser))
+        End_Procedure
+    End_Object
+
+    Object oSqueaks_DD is a cSqueaksDataDictionary
+        Set DDO_Server To oWebAppUser_DD
+    End_Object
+
+    Set Main_DD To oSqueaks_DD
+    Set Server  To oSqueaks_DD
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+        WebSetResponsive piColumnCount rmMobile to 4
+
+        Object oWebAppUser_LoginName is a cWebParentCombo
+            Entry_Item WebAppUser.LoginName
+            Set piColumnSpan to 0
+            Set psLabel to "LoginName"
+            Set peLabelPosition to lpTop
+        End_Object
+
+        Object oSqueaksContent is a cWebForm
+            Entry_Item Squeaks.Content
+            Set piColumnSpan to 12
+            Set piColumnIndex to 0
+            Set pbShowLabel to False
+        End_Object
+
+        Object oPrivateButton is a cWebButton
+            Set piColumnSpan to 4
+            Set psCaption to "Save (private)"
+
+            Procedure OnClick
+                Handle hoDD
+
+                Get Server to hoDD
+                Set Field_Changed_Value of hoDD (RefTable(Squeaks.Status)) to C_SQUEAK_STATUS_PRIVATE
+                Set Field_Changed_Value of hoDD (RefTable(Squeaks.Published)) to 0
+                Send Request_Save
+            End_Procedure
+        End_Object
+
+        Object oPublishButton is a cWebButton
+            Set piColumnSpan to 4
+            Set piColumnIndex to 4
+            Set psCaption to "Save and publish"
+
+            Procedure OnClick
+                DateTime dtCurrent
+                DateTime dtZero
+                Handle   hoDD
+
+                Get Server to hoDD
+                Set Field_Changed_Value of hoDD (RefTable(Squeaks.Status)) to C_SQUEAK_STATUS_PUBLIC
+
+                Get Field_Current_Value of hoDD (RefTable(Squeaks.Published)) to dtCurrent
+                If (dtCurrent = dtZero) Set Field_Changed_Value of hoDD (RefTable(Squeaks.Published)) to (CurrentDateTime())
+                Send Request_Save
+            End_Procedure
+        End_Object
+
+        Object oDeleteButton is a cWebButton
+            Set piColumnSpan to 4
+            Set piColumnIndex to 8
+            Set psCaption to "Delete"
+
+            Procedure OnClick
+                Send Request_Delete
+            End_Procedure
+        End_Object
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+
+        Object oEditBtn is a cWebMenuItem
+            Set psCSSClass to "WebEditMenuItem"
+            Set psCaption to "Edit"
+
+            Procedure OnClick
+                Send ChangeEditMode True
+                Send SetActionButtons
+            End_Procedure
+        End_Object
+
+        Object oDeleteBtn is a cWebMenuItem
+            Set psCSSClass to "WebDeleteMenuItem"
+            Set psCaption to "Delete"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send Request_Delete
+            End_Procedure
+        End_Object
+
+        Object oCancelChangesBtn is a cWebMenuItem
+            Set psCSSClass to "WebIcon_Refresh"
+            Set psCaption to "Clear Changes"
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send RefreshRecord
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure SetActionButtons
+        tWebNavigateData NavigateData
+        Boolean bHasRecord
+        Handle hoDD
+
+        Get Server to hoDD
+        Get GetNavigateData to NavigateData
+        Get HasRecord of hoDD to bHasRecord
+
+        // let's hide all buttons and then Show the ones we want
+        WebSet pbRender of oEditBtn to False
+        WebSet pbRender of oCancelChangesBtn to False
+        WebSet pbRender of oDeleteBtn to False
+        WebSet pbRender of oPrivateButton to False
+        WebSet pbRender of oPublishButton to False
+        WebSet pbVisible of oDeleteButton to False
+
+        If (not(IsLoggedIn(ghoWebSessionManager))) Procedure_Return
+
+        If (NavigateData.bReadOnly) Begin
+            If (IsLoggedIn(ghoWebSessionManager)) WebSet pbRender of oEditBtn to True
+        End
+        Else Begin
+            WebSet pbRender of oCancelChangesBtn to True
+            WebSet pbRender of oDeleteBtn to bHasRecord
+            WebSet pbRender of oPrivateButton to True
+            WebSet pbRender of oPublishButton to True
+            WebSet pbVisible of oDeleteButton to True
+        End
+    End_Procedure
+
+    Procedure OnViewDeleted Handle hoDDO
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnViewSaved Handle hoServer Boolean bChanged
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Integer hoInvokingView Integer hoInvokingObject
+        Send SetActionButtons
+
+        WebSet psClientSideProperty to "My plaintext password ;-)"
+        WebSet psServerSideProperty to "My plaintext password ;-)"
+        WebSet psServerSideSessionProperty to "My plaintext password ;-)"
+
+        If (NavigateData.bNewRecord) Begin
+            Send Clear of oWebAppUser_DD
+            Get psLoginName of ghoWebSessionManager to WebAppUser.LoginName
+            Send Find of oWebAppUser_DD EQ 1
+
+            WebSet pbEnabled of oWebAppUser_LoginName to (piUserRights(ghoWebSessionManager) = 1)
+        End
+        Else Begin
+            WebSet pbEnabled of oWebAppUser_LoginName to False
+        End
+
+        Send Focus of oSqueaksContent
+    End_Procedure
+End_Object

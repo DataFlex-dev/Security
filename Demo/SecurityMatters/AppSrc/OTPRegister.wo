@@ -1,0 +1,385 @@
+Use AllWebAppClasses.pkg
+Use c2FAWebGroup.pkg
+Use cWebQrCode.pkg
+
+Use cWebAppUserDataDictionary.dd
+Use cWebAppUser2FADataDictionary.dd
+
+#IFNDEF C_CRLF
+Define C_CRLF for (Character(10)+Character(13))
+#ENDIF
+
+Object oOTPRegister is a cWebView
+    { WebProperty=Server }
+    Property Boolean pbOtpExists
+
+    Set peWebViewStyle to wvsDrillDown
+    Set peViewType to vtZoom
+    Set pbShowCaption to False
+    Set Verify_Save_msg to 0
+
+    Set psCaption to "Register OTP device"
+
+    Set piMaxWidth to 1024
+    Set piColumnCount to 12
+    Set pbServerOnShow to True
+    Set pbServerOnSubmit to True
+
+    Procedure OnShow
+        Boolean bExists
+        Handle  hoOtp
+        String  sBase32Secret
+        String  sOtpSpec
+
+        WebSet pbRender of oSuccessText to False
+        WebSet psOtpSpec of oOTPGroup to ""
+
+        // get existing OTP secret
+        Get RegisteredOtp of oOTPGroup to sOtpSpec
+        Move (sOtpSpec <> '') to bExists
+        WebSet pbOtpExists to bExists
+
+        If not bExists Begin
+            // new OTP registration
+            Send SetSelected of oTypeTOTP
+            Send SetSelected of oDigits6
+            Send SetSelected of oAlgSha256
+
+            Send OnOtpSpecChanged
+
+            WebSet pbRender of oAlreadyRegisteredText to False
+        End
+        Else Begin
+            // already registered
+            WebSet pbRender of oOTPGroup to False
+            WebSet pbRender of oAlreadyRegisteredText to True
+        End
+    End_Procedure
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 1
+
+        Object oOtpSettingsGroup is a cWebGroup
+            Set psCaption to "OTP type"
+            Set piColumnCount to 12
+            WebSetResponsive piColumnCount rmMobile to 3
+
+            Object oOtpTypeGroup is a cWebGroup
+                Set piColumnCount to 1
+                Set piColumnSpan to 3
+                Set pbShowBorder to False
+                Set psCaption to "Type"
+
+                Object oTypeTOTP is a cWebRadio
+                    Set piColumnSpan to 3
+                    Set psCaption to "TOTP"
+                    Set psRadioValue to C_SEC_OTPTYPE_TIME
+                    Set psGroupName to "OtpType"
+                    Set pbServerOnSelect to True
+
+                    Procedure OnSelect
+                        Send OnOtpSpecChanged
+                    End_Procedure
+                End_Object
+
+                Object oTypeHOTP is a cWebRadio
+                    Set piColumnSpan to 3
+                    Set psCaption to "HOTP"
+                    Set psRadioValue to C_SEC_OTPTYPE_HASH
+                    Set psGroupName to "OtpType"
+                    Set pbServerOnSelect to True
+
+                    Procedure OnSelect
+                        Send OnOtpSpecChanged
+                    End_Procedure
+                End_Object
+            End_Object
+
+            Object oOtpDigitsGroup is a cWebGroup
+                Set piColumnCount to 1
+                Set piColumnIndex to 3
+                Set piColumnSpan to 3
+                Set pbShowBorder to False
+                Set psCaption to "Digits"
+
+                Object oDigits6 is a cWebRadio
+                    Set piColumnSpan to 3
+                    Set psCaption to "6"
+                    Set psRadioValue to "6"
+                    Set psGroupName to "OtpDigits"
+                    Set pbServerOnSelect to True
+
+                    Procedure OnSelect
+                        Send OnOtpSpecChanged
+                    End_Procedure
+                End_Object
+
+                Object oDigits8 is a cWebRadio
+                    Set piColumnSpan to 3
+                    Set psCaption to "8"
+                    Set psRadioValue to "8"
+                    Set psGroupName to "OtpDigits"
+                    Set pbServerOnSelect to True
+
+                    Procedure OnSelect
+                        Send OnOtpSpecChanged
+                    End_Procedure
+                End_Object
+            End_Object
+
+            Object oOtpAlgorithmGroup is a cWebGroup
+                Set piColumnCount to 1
+                Set piColumnIndex to 6
+                Set piColumnSpan to 3
+                Set pbShowBorder to False
+                Set psCaption to "Algorithm"
+
+                Object oAlgSha1 is a cWebRadio
+                    Set piColumnSpan to 3
+                    Set psCaption to "SHA1"
+                    Set psRadioValue to "1"
+                    Set psGroupName to "OtpAlg"
+                    Set pbServerOnSelect to True
+
+                    Procedure OnSelect
+                        Send OnOtpSpecChanged
+                    End_Procedure
+                End_Object
+
+                Object oAlgSha256 is a cWebRadio
+                    Set piColumnSpan to 3
+                    Set psCaption to "SHA256"
+                    Set psRadioValue to "2"
+                    Set psGroupName to "OtpAlg"
+                    Set pbServerOnSelect to True
+
+                    Procedure OnSelect
+                        Send OnOtpSpecChanged
+                    End_Procedure
+                End_Object
+
+                Object oAlgSha512 is a cWebRadio
+                    Set piColumnSpan to 3
+                    Set psCaption to "SHA512"
+                    Set psRadioValue to "3"
+                    Set psGroupName to "OtpAlg"
+                    Set pbServerOnSelect to True
+
+                    Procedure OnSelect
+                        Send OnOtpSpecChanged
+                    End_Procedure
+                End_Object
+            End_Object
+        End_Object
+
+        Object oOTPGroup is a c2FAWebGroup
+            Set piColumnCount to 12
+
+            { WebProperty=Server }
+            Property String psOtpSpec
+
+            Set phoSecureOneTimePassword to oMyOtp
+
+            // Return registered OTP secrets for the user. Make sure you verify password first!
+            // For security reasons, each user should have only one OTP key.
+            Function RegisteredOtp Returns String
+                String sSpec
+
+                WebGet psOtpSpec to sSpec
+                If (sSpec = '') Begin
+                    Constraint_Set Self Clear
+                    Constrain WebAppUser2FA.WebAppUser_ID eq (psLoginName(ghoWebSessionManager))
+                    Constrain WebAppUser2FA.IsOath eq True
+                    Constrained_Find First WebAppUser2FA by 2
+                    If (Found) Move WebAppUser2FA.Data to sSpec
+                    Constraint_Set Self Delete
+                End
+
+                Function_Return sSpec
+            End_Function
+
+            Object oNewSecretText is a cWebLabel
+                Set piColumnSpan to 0
+//                Set psCaption to "This is your new OTP secret: 0123456789ABCDEF - Scan this QR code with your OTP app:"
+            End_Object
+
+            Object oNewSecretQrCode is a cWebQrCode
+                Set piColumnSpan to 0
+            End_Object
+
+            Object oTestText is a cWebLabel
+                Set piColumnSpan to 0
+                Set psCaption to "Enter a test code from your app to make sure it is set up correctly:"
+            End_Object
+
+            Object oOTPTestForm is a cWebForm
+                Set piColumnSpan to 3
+                Set psPlaceHolder to "Authentication code"
+                Set pbShowLabel to False
+            End_Object
+
+            Object oOTPTestForm2 is a cWebForm
+                Set piColumnSpan to 3
+                Set psPlaceHolder to "Authentication code #2"
+                Set pbShowLabel to False
+                Set pbRender to False
+            End_Object
+
+            Object oOTPTestForm3 is a cWebForm
+                Set piColumnSpan to 3
+                Set psPlaceHolder to "Authentication code #3"
+                Set pbShowLabel to False
+                Set pbRender to False
+            End_Object
+
+            Object oOTPTestButton is a cWebButton
+                Set piColumnSpan to 2
+                Set psCaption to "Test"
+
+                Procedure OnClick
+                    Handle   hoOtp
+                    Integer  iCodes
+                    String   sSpec
+                    String[] asOTP
+
+                    WebGet psOtpSpec of oOTPGroup to sSpec
+                    Get UnpackFromStorage of (phoSecureOneTimePassword(Self)) sSpec to hoOtp
+                    If (hoOtp = 0) Procedure_Return
+                    Get RequiredNumberOfCodes of hoOtp to iCodes
+                    Send Destroy of hoOtp
+
+                    WebGet psValue of oOTPTestForm to asOTP[0]
+                    If (iCodes > 1) WebGet psValue of oOTPTestForm2 to asOTP[1]
+                    If (iCodes > 2) WebGet psValue of oOTPTestForm3 to asOTP[2]
+
+                    Send DoVerifyOtp asOTP
+                End_Procedure
+            End_Object
+
+            // store in web property until the real save is performed in OnOTPAuthenticationSuccess()
+            Procedure OnOTPSave String sOtpSpec
+                WebSet psOtpSpec to sOtpSpec
+            End_Procedure
+
+            Procedure OnOTPAuthenticationFailure
+                Error DFERR_OPERATOR "The OTP code was not correct. This can be caused by an incorrect registration, or time differences between the app and the server."
+            End_Procedure
+
+            Procedure OnOTPAuthenticationSuccess
+                String sSpec
+
+                WebGet psOtpSpec to sSpec
+
+                Clear WebAppUser2FA
+                Get psLoginName of ghoWebSessionManager to WebAppUser2FA.WebAppUser_ID
+                Move 'OATH TOTP (Time-based One Time Passwords)' to WebAppUser2FA.Description
+                Move (CurrentDateTime()) to WebAppUser2FA.Created
+                Move sSpec to WebAppUser2FA.Data
+                Move True to WebAppUser2FA.IsOath
+                Move False to WebAppUser2FA.IsU2f
+                SaveRecord WebAppUser2FA
+
+                WebSet pbRender of oOtpSettingsGroup to False
+                WebSet pbRender of oOTPGroup to False
+                WebSet pbRender of oSuccessText to True
+
+                WebSet psOtpSpec to ""
+                WebSet psCaption of oNewSecretText to ""
+                WebSet psValue of oNewSecretQrCode to ""
+                WebSet psValue of oOTPTestForm to ""
+            End_Procedure
+        End_Object
+
+        Object oSuccessText is a cWebLabel
+            Set psCaption to "Verification complete. The OTP method has been set up."
+        End_Object
+
+        Object oAlreadyRegisteredText is a cWebLabel
+            Set psCaption to "An OTP method has already been set up."
+        End_Object
+    End_Object
+
+    // called when any of the settings changes
+    Procedure OnOtpSpecChanged
+        Handle  hoOtp
+        Integer iCodes
+        Integer iHashImpl
+        String  sAlgorithm
+        String  sBase32Secret
+        String  sDigits
+        String  sOtpSpec
+        String  sType
+
+        WebGet psValue of oTypeTOTP to sType
+        WebGet psValue of oDigits6 to sDigits
+        WebGet psValue of oAlgSha1 to sAlgorithm
+
+        Case Begin
+            Case (sAlgorithm = "1")
+                Move C_SEC_HASH_CNG_HMAC_SHA1 to iHashImpl
+                Case Break
+            Case (sAlgorithm = "2")
+                Move C_SEC_HASH_CNG_HMAC_SHA256 to iHashImpl
+                Case Break
+            Case (sAlgorithm = "3")
+                Move C_SEC_HASH_CNG_HMAC_SHA512 to iHashImpl
+                Case Break
+            Case Else
+                Error DFERR_PROGRAM "Unknown hash algorithm!"
+                Procedure_Return
+        Case End
+
+        // get new OTP object of the right type with the current (or new) secret
+        WebGet psOtpSpec of oOTPGroup to sOtpSpec
+        If (sOtpSpec <> '') Begin
+            // load current secret
+            Get UnpackFromStorage of (oMyOtp(ghoWebApp)) sOtpSpec to hoOtp
+            Get SecretAsBase32 of hoOtp to sBase32Secret
+            Send Destroy of hoOtp
+
+            // create OTP object for new settings
+            Get NewOtp of (oMyOtp(ghoWebApp)) sType to hoOtp
+            Set pucaSecret of hoOtp to (Base322Bin(ghoSecurity, sBase32Secret))
+        End
+        Else Begin
+            // create new OTP (with new secret)
+            Get NewOtp of (oMyOtp(ghoWebApp)) sType to hoOtp
+            Get SecretAsBase32 of hoOtp to sBase32Secret
+            WebSet psCaption of oNewSecretText to (SFormat("This is your new OTP secret: %1"+C_CRLF+"Scan this QR code with your OTP app:", sBase32Secret))
+        End
+
+        // apply settings
+        Set piDigitCount of hoOtp to sDigits
+        Set piHashImplementation of hoOtp to iHashImpl
+        // save
+        Get PackForStorage of hoOtp to sOtpSpec
+        WebSet psOtpSpec of oOTPGroup to sOtpSpec
+        WebSet psValue of oNewSecretQrCode to sOtpSpec
+
+        // UI
+        Get RequiredNumberOfCodes of hoOtp to iCodes
+        WebSet pbRender of oOTPTestForm2 to (iCodes > 1)
+        WebSet pbRender of oOTPTestForm3 to (iCodes > 2)
+
+        // clean up
+        Send Destroy of hoOtp
+    End_Procedure
+
+    Procedure OnViewSaved Handle hoServer Boolean bChanged
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnViewDeleted Handle hoDDO
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnSubmit
+        Boolean bRender
+
+        WebGet pbRender of oOTPGroup to bRender
+        If bRender Begin
+            Send OnClick of oOTPTestButton
+        End
+    End_Procedure
+
+End_Object

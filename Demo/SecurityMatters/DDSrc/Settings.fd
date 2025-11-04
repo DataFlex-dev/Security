@@ -1,0 +1,7 @@
+#REPLACE FILE1 Settings
+#REPLACE Settings.File_Number |CI1
+#REPLACE Settings.ID |FN1,1
+#REPLACE Settings.Group |FS1,2
+#REPLACE Settings.Name |FS1,3
+#REPLACE Settings.Value |FS1,4
+#REPLACE Settings.Description |FS1,5

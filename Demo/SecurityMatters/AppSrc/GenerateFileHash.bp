@@ -1,0 +1,98 @@
+﻿Use Batchdd.pkg
+Use cSecureHash.pkg  // use the security library
+
+Use DFSecurity_CNG.pkg
+Use cSecurePasscodeStorageMethod.pkg
+
+Object oGenerateFileHash is a BusinessProcess
+    Property Handle phoResultObject
+    Property String psFileName
+
+    Object oSecureHash1 is a cSecureHash
+        // ToDo: Set the hash implementation, and optionally other properties.
+         Set piHashImplementation to C_SEC_HASH_CNG_HMAC_SHA256
+    //    Set piOutputBytes to C_SEC_DEFAULT
+    
+        // ToDo: For keyed hashes uncomment the following.
+    //    Procedure Initialize
+    //        UChar[] ucaKey
+    //
+    //        // ToDo: load the key into ucaKey here
+    //
+    //        Forward Send Initialize (&ucaKey)
+    //    End_Procedure
+    
+        Send Initialize
+    End_Object
+
+    Object oMyKDF is a cSecurePasscodeStorageMethod
+        // ToDo: Set the hash implementation, and optionally other properties.
+        Set piPasscodeHashImplementation to C_SEC_PWHASH_CNG_PBKDF2_SHA256
+        Send Initialize
+    End_Object
+    
+   
+    Procedure OnProcess
+        Handle  hoResultObject
+        Handle hoKeyedHash
+        Integer iChannel
+        String  sFile
+        String  sHexHash
+        UChar[] ucaData
+        UChar[] ucaHash
+        UChar[] ucaKey
+        UChar[] ucaPasscode
+        UChar[] ucaSalt
+
+        Get psFileName to sFile
+        If (sFile = '') ;
+            Procedure_Return
+
+        Get Seq_New_Channel to iChannel
+        If (iChannel = DF_SEQ_CHANNEL_NOT_AVAILABLE) Begin
+            Send Stop_Box "No I/O channel available."
+            Procedure_Return
+        End
+        
+        Get Create (RefClass(cSecureHash)) to hoKeyedHash
+        
+//        Get RandomData of ghoSecurity (MinimumKeyBytes(ghoSecurity, C_SEC_HASH_CNG_HMAC_SHA256)) to ucaKey
+        Move (StringToUCharArray("password")) to ucaPasscode
+        Get DeriveKey of oMyKDF (&ucaPasscode) ucaSalt (MinimumKeyBytes(ghoSecurity, C_SEC_HASH_CNG_HMAC_SHA256)) to ucaKey
+        
+        Set piHashImplementation of hoKeyedHash to C_SEC_HASH_CNG_HMAC_SHA256
+        Send Initialize of hoKeyedHash ucaKey
+
+        // generate file hash
+//        Direct_Input channel iChannel ("binary:"+ToANSI(sFile))
+        Direct_Input channel iChannel ("binary:"+Utf8ToAnsi(sFile))
+        While (not(SeqEof))
+            Read_Block channel iChannel ucaData (32*1024)
+            If (SizeOfArray(ucaData) > 0) Begin
+
+                // ToDo: send data to the hash object
+                Send Update of oSecureHash1 ucaData
+                Send Update of hoKeyedHash ucaData
+
+            End
+        Loop
+        Close_Input channel iChannel
+
+        Get phoResultObject to hoResultObject
+        Register_Procedure AddHash String sAlg String sHash
+
+        // ToDo: retrieve the resulting hash value into ucaHash
+        Get Finalize of oSecureHash1 to ucaHash
+        // ToDo: convert ucaHash to a hexadecimal string sHexHash
+        Get Bin2Hex of ghoSecurity ucaHash to sHexHash
+        Send AddHash of hoResultObject "SHA256" sHexHash
+        
+        Get Finalize of hoKeyedHash to ucaHash
+        Get Bin2Hex of ghoSecurity ucaHash to sHexHash
+        Send AddHash of hoResultObject "HMAC SHA256" sHexHash
+
+        // cleanup
+        Send Seq_Release_Channel iChannel
+    End_Procedure
+
+End_Object

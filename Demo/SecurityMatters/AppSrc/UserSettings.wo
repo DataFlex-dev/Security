@@ -1,0 +1,286 @@
+Use AllWebAppClasses.pkg
+Use DFSecurity.pkg
+Use cCharTranslate.pkg
+
+Use UserChangePasscode.wo
+Use OTPRegister.wo
+Use U2FRegister.wo
+
+Use cWebAppUserDataDictionary.dd
+Use cWebAppUser2FADataDictionary.dd
+
+Object oMyPersonalInfoStorageMethod is a cSecureSymmetricKeyEncryptionMethod
+    Set piEncryptImplementation to C_SEC_SYMENC_CNG_AES128_CBC
+
+    Procedure Initialize
+        UChar[] ucaKey
+
+        Move 1 to ucaKey[0]
+        Move 2 to ucaKey[1]
+        Move 1 to ucaKey[2]
+        Move 2 to ucaKey[3]
+        Move 1 to ucaKey[4]
+        Move 2 to ucaKey[5]
+        Move 1 to ucaKey[6]
+        Move 2 to ucaKey[7]
+        Move 1 to ucaKey[8]
+        Move 2 to ucaKey[9]
+        Move 1 to ucaKey[10]
+        Move 2 to ucaKey[11]
+        Move 1 to ucaKey[12]
+        Move 2 to ucaKey[13]
+        Move 1 to ucaKey[14]
+        Move 2 to ucaKey[15]
+
+        Forward Send Initialize (&ucaKey)
+    End_Procedure
+
+    Send Initialize
+End_Object
+
+Object oUserSettings is a cWebView
+    Object oWebAppUser_DD is a cWebAppUserDataDictionary
+
+        Function Should_Save Returns Boolean
+            Boolean bSave
+
+            Send EncryptData
+
+            Forward Get Should_Save to bSave
+
+            Function_Return bSave
+        End_Function
+    End_Object
+
+    Object oWebAppUser2FA_DD is a cWebAppUser2FADataDictionary
+        Set Constrain_file to WebAppUser.File_number
+        Set DDO_Server to oWebAppUser_DD
+    End_Object
+
+    Set Main_DD to oWebAppUser_DD
+    Set Server to oWebAppUser_DD
+
+    Object oCharTranslate is a cCharTranslate
+    End_Object
+
+    Set peWebViewStyle to wvsDrillDown
+    Set peViewType to vtZoom
+    Set pbShowCaption to False
+    Set Verify_Save_msg to 0
+
+    Set psCaption to "User Settings"
+    Set piMaxWidth to 1024
+    Set piColumnCount to 12
+
+    Object oWebMainPanel is a cWebPanel
+        Set piColumnCount to 12
+
+        WebSetResponsive piColumnCount rmMobile to 6
+
+        Object oWebAppUser_FullName is a cWebForm
+            Entry_Item WebAppUser.FullName
+            Set piColumnSpan to 8
+            Set psLabel to "Full name"
+            Set peLabelPosition to lpTop
+            Set piMaxLength to 100
+        End_Object
+
+        Object oSecurityGroup is a cWebGroup
+            Set psCaption to "Security"
+            Set piColumnCount to 12
+            Set pbCollapsible to True
+
+            Object oChangePasscodeButton is a cWebButton
+                Set piColumnSpan to 3
+                Set psCaption to "Change passcode"
+
+                Procedure OnClick
+                    Register_Object oUserChangePasscode
+                    Send NavigateForward to oUserChangePasscode Self
+                End_Procedure
+            End_Object
+
+            Object o2FAList is a cWebList
+                Set Server to oWebAppUser2FA_DD
+                Set psLabel to "Registered 2FA:"
+                Set pbShowLabel to True
+                Set peLabelPosition to lpTop
+                Set pbShowHeader to False
+                Set pbAllowDeleteRow to True
+
+                Object o2FATypeColumn is a cWebColumn
+                    Set psCaption to "Type"
+                    Set piWidth to 50
+
+                    Procedure OnSetCalculatedValue String ByRef sValue
+                        Case Begin
+                            Case WebAppUser2FA.IsOath
+                                Move "One time password" to sValue
+                                Case Break
+                            Case WebAppUser2FA.IsU2f
+                                Move "FIDO U2F Key" to sValue
+                                Case Break
+                            Case Else
+                                Move "???" to sValue
+                        Case End
+                    End_Procedure
+                End_Object
+
+                Object oWebAppUser2FA_Description is a cWebColumn
+                    Entry_Item WebAppUser2FA.Description
+                    Set psCaption to "Description"
+                    Set piWidth to 150
+                End_Object
+
+                Object oDelete is a cWebColumnButton
+                    Set psButtonCaption to "Del"
+                    Set piWidth to 10
+
+                    Procedure OnClick String sButton String sRowId
+                        Send Request_Delete
+                    End_Procedure
+                End_Object
+            End_Object
+
+            Object oAddU2FButton is a cWebButton
+                Set piColumnSpan to 3
+                Set psCaption to "Add U2F device"
+
+                Procedure OnClick
+                    Send NavigateForward to oU2FRegister Self
+                End_Procedure
+            End_Object
+
+            Object oAddOtpButton is a cWebButton
+                Set piColumnIndex to 3
+                Set piColumnSpan to 3
+                Set psCaption to "Set up OTP"
+
+                Procedure OnClick
+                    Send NavigateForward to oOTPRegister Self
+                End_Procedure
+            End_Object
+        End_Object
+
+        Object oWebAppUser_PersonalInfo is a cWebEdit
+            Set piColumnSpan to 0
+            Set psLabel to "PersonalInfo"
+            Set peLabelPosition to lpTop
+            Set pbFillHeight to True
+        End_Object
+    End_Object
+
+    Object oActionGroup is a cWebMenuGroup
+        Set psGroupName to "MainActions"
+
+        Object oSaveBtn is a cWebMenuItem
+            Set psCaption to C_$Save
+            Set psCSSClass to "WebSaveMenuItem"
+
+            Procedure OnClick
+                Send Request_Save
+            End_Procedure
+        End_Object
+
+        Object oCancelChangesBtn is a cWebMenuItem
+            Set psCaption to C_$ToolTipClear
+            Set peActionDisplay to adMenu
+
+            Procedure OnClick
+                Send RefreshRecord
+            End_Procedure
+        End_Object
+    End_Object
+
+    Procedure SetActionButtons
+        tWebNavigateData NavigateData
+        Boolean bHasRecord
+        Handle hoDD
+
+        Get Server to hoDD
+        Get GetNavigateData to NavigateData
+
+        If (hoDD) Begin
+            Get HasRecord of hoDD to bHasRecord
+        End
+        Else Begin
+            Move False to bHasRecord
+        End
+
+        // let's hide all buttons and then show the ones we want
+        WebSet pbRender of oSaveBtn to False
+        WebSet pbRender of oCancelChangesBtn to False
+
+        If (NavigateData.bReadOnly) Begin
+        End
+        Else Begin
+            WebSet pbRender of oSaveBtn to True
+            WebSet pbRender of oCancelChangesBtn to True
+        End
+    End_Procedure
+
+    Procedure OnViewSaved Handle hoServer Boolean bChanged
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnViewDeleted Handle hoDDO
+        Send NavigateClose Self
+    End_Procedure
+
+    Procedure OnNavigateForward tWebNavigateData NavigateData Integer hoInvokingView Integer hoInvokingObject
+        Send DecryptData
+        Send SetActionButtons
+    End_Procedure
+
+    Procedure OnNavigateForwardPreFindInit tWebNavigateData NavigateData Handle hoInvokingObject
+        Send Clear of oWebAppUser_DD
+        Get psLoginName of ghoWebSessionManager to WebAppUser.LoginName
+        Send Find of oWebAppUser_DD EQ 1
+        If (not(Found)) Send Clear of oWebAppUser_DD
+    End_Procedure
+
+    Procedure DecryptData
+        Handle  hoDec
+        String  sValue
+        String[] asValues
+        UChar[] ucaIV
+        UChar[] ucaPlain
+
+        Get Field_Current_Value of oWebAppUser_DD Field WebAppUser.PersonalInfo to sValue
+        If (sValue <> '') Begin
+            Move (StrSplitToArray(sValue, '|')) to asValues
+            Get Base64DecodeUCharArray of oCharTranslate (StringToUCharArray(asValues[0])) to ucaIV
+
+            // decrypt value
+            Get NewDecryptor of oMyPersonalInfoStorageMethod ucaIV to hoDec
+            Get DecryptChunk of hoDec (Base64DecodeUCharArray(oCharTranslate, StringToUCharArray(asValues[1]))) to ucaPlain
+            Send Destroy of hoDec
+        end
+
+        WebSet psValue of oWebAppUser_PersonalInfo to (UCharArrayToString(ucaPlain))
+    End_Procedure
+
+    Procedure EncryptData
+        Handle  hoEnc
+        String  sNewValue
+        UChar[] ucaIV
+        UChar[] ucaCipher
+
+        WebGet psValue of oWebAppUser_PersonalInfo to sNewValue
+        If (sNewValue <> '') Begin
+            // encrypt value
+            Get NewEncryptor of oMyPersonalInfoStorageMethod to hoEnc
+            Get pucaIV of hoEnc to ucaIV
+            Get EncryptChunk of hoEnc (StringToUCharArray(sNewValue)) to ucaCipher
+            Send Destroy of hoEnc
+
+            Move (SFormat("%1|%2", ;
+                Base64EncodeToStr(oCharTranslate, AddressOf(ucaIV), SizeOfArray(ucaIV)), ;
+                Base64EncodeToStr(oCharTranslate, AddressOf(ucaCipher), SizeOfArray(ucaCipher)))) to sNewValue
+        End
+
+        // store it
+        Set Field_Changed_Value of oWebAppUser_DD Field WebAppUser.PersonalInfo to sNewValue
+    End_Procedure
+
+End_Object

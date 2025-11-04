@@ -1,0 +1,36 @@
+Use DataDict.pkg
+
+Open Squeaks
+Open WebAppUser
+
+Enum_List
+    Define C_SQUEAK_STATUS_PRIVATE for 0
+    Define C_SQUEAK_STATUS_PUBLIC
+End_Enum_List
+
+Object oSqueakStatusValidation is a DescriptionValidationTable
+    Procedure Fill_List
+        Forward Send Fill_List
+        Send Add_Table_Value C_SQUEAK_STATUS_PRIVATE    "Private"
+        Send Add_Table_Value C_SQUEAK_STATUS_PUBLIC     "Public"
+    End_Procedure
+End_Object
+
+Class cSqueaksDataDictionary is a DataDictionary
+    
+    Procedure Construct_Object
+        Forward Send Construct_Object
+        Set Main_File to Squeaks.File_Number
+
+        Set Add_Server_File to WebAppUser.File_Number
+
+        Set Foreign_Field_Option DD_KEYFIELD DD_NOPUT to True
+        Set Foreign_Field_Option DD_KEYFIELD DD_FINDREQ to True
+        Set Foreign_Field_Option DD_INDEXFIELD DD_NOPUT to True
+        Set Foreign_Field_Option DD_DEFAULT DD_DISPLAYONLY to True
+
+        Set Field_Value_Table Field Squeaks.Status to oSqueakStatusValidation
+
+    End_Procedure
+
+End_Class

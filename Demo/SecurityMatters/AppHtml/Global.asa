@@ -1,0 +1,25 @@
+<OBJECT RUNAT=Server SCOPE=Session ID=WebAppServerSession PROGID="WebAppServer.Session.25.0">
+</OBJECT>
+
+<SCRIPT LANGUAGE=VBScript RUNAT=Server>
+SUB Session_OnStart
+    WebAppServerSession.Initialize("SecurityMatters")
+    Session.Timeout=1
+END SUB
+</SCRIPT>
+
+<SCRIPT LANGUAGE=VBScript RUNAT=Server>
+SUB Application_OnStart
+END SUB
+</SCRIPT>
+
+<SCRIPT LANGUAGE=VBScript RUNAT=Server>
+SUB Application_OnEnd
+END SUB
+</SCRIPT>
+
+<SCRIPT LANGUAGE=VBScript RUNAT=Server>
+SUB Session_OnEnd
+END SUB
+</SCRIPT>
+

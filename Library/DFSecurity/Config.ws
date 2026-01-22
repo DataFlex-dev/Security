@@ -1,12 +1,10 @@
 [Workspace]
-Home=.\
-AppSrcPath=.\AppSrc
-AppHTMLPath=.\AppHtml
-BitmapPath=.\
-IdeSrcPath=.\IdeSrc
-DataPath=.\
-DDSrcPath=.\
-HelpPath=.\
-ProgramPath=.\Programs
-FileList=.\DummyFilelist.cfg
-Description=DataFlex Security Library
+Home=.
+AppHTMLPath=AppHtml
+AppSrcPath=AppSrc
+DataPath=
+DDSrcPath=
+IdeSrcPath=IdeSrc
+ProgramPath=
+FileList=DummyFilelist.cfg
+Description=Library with API's for encryption, hashing, two-factor authentication.

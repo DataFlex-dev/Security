@@ -1,0 +1,14 @@
+{
+    "description": "Library with API's for encryption, hashing, two-factor authentication.",
+    "df": 26.0,
+    "package": {
+        "df-max": 26.0,
+        "df-min": 26.0,
+        "icon": "Security.png",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "fileList": "DummyFilelist.cfg"
+    },
+    "workspaceName": "Security (core)"
+}

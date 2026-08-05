@@ -907,12 +907,17 @@ Class cCryptoApiNextGen_CryptographicPrimitiveFunctions_Mixin is a Mixin
     Function BCryptDuplicateHash Handle hHash Returns tHandleAndPointer
         Handle    hAlgProv
         Integer   iStatus
+        UChar[]   ucaProviderHandle
         UInteger  cbHashObject
         Void_Type void
         tHandleAndPointer NewHashObject
 
 //        Get puiObjectLength of CryptoApiNextGen to cbHashObject
-        Get BCryptNamedUIntegerPropertyValue hHash BCRYPT_PROVIDER_HANDLE to hAlgProv
+        // BCRYPT_PROVIDER_HANDLE is a native Handle (8 bytes on x64), not a UInteger (4 bytes).
+        // BCryptNamedUIntegerPropertyValue's size check silently returns 0 for it, so fetch it directly here.
+        Get BCryptNamedPropertyValue hHash BCRYPT_PROVIDER_HANDLE to ucaProviderHandle
+        Move 0 to hAlgProv
+        If (SizeOfArray(ucaProviderHandle) = SizeOfType(Handle)) Move (MemCopy(AddressOf(hAlgProv), AddressOf(ucaProviderHandle), SizeOfType(Handle))) to void
         Get BCryptNamedUIntegerPropertyValue hAlgProv BCRYPT_OBJECT_LENGTH to cbHashObject
         Move (Alloc(cbHashObject)) to NewHashObject.pPointer
 
@@ -933,11 +938,16 @@ Class cCryptoApiNextGen_CryptographicPrimitiveFunctions_Mixin is a Mixin
     Function BCryptDuplicateKey Handle hKey Returns tHandleAndPointer
         Handle    hAlgProv
         Integer   iStatus
+        UChar[]   ucaProviderHandle
         UInteger  cbKeyObject
         Void_Type void
         tHandleAndPointer NewKeyObject
 
-        Get BCryptNamedUIntegerPropertyValue hKey BCRYPT_PROVIDER_HANDLE to hAlgProv
+        // BCRYPT_PROVIDER_HANDLE is a native Handle (8 bytes on x64), not a UInteger (4 bytes).
+        // BCryptNamedUIntegerPropertyValue's size check silently returns 0 for it, so fetch it directly here.
+        Get BCryptNamedPropertyValue hKey BCRYPT_PROVIDER_HANDLE to ucaProviderHandle
+        Move 0 to hAlgProv
+        If (SizeOfArray(ucaProviderHandle) = SizeOfType(Handle)) Move (MemCopy(AddressOf(hAlgProv), AddressOf(ucaProviderHandle), SizeOfType(Handle))) to void
         Get BCryptNamedUIntegerPropertyValue hAlgProv BCRYPT_OBJECT_LENGTH to cbKeyObject
         Move (Alloc(cbKeyObject)) to NewKeyObject.pPointer
 
@@ -1116,10 +1126,6 @@ Class cCryptoApiNextGen_CryptographicPrimitiveFunctions_Mixin is a Mixin
 
         Set Private_piLastStatus to iStatus
 
-        // In 64-bit it sometimes returns 8 bytes instead of 4 bytes, with the last 4 bytes empty. Make sure to always return 4 bytes.
-        If (SizeOfArray(ucaOutput)=8) ;
-            Move (ResizeArray(ucaOutput, 4)) to ucaOutput
-            
         Function_Return ucaOutput
     End_Function
 
@@ -1745,6 +1751,8 @@ Class cCryptoApiNextGen is a cDllWrapper
         Void_Type void
 
         Get BCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+        // On 64-bit, some UInteger properties come back 8-byte-padded with the real value in the first 4 bytes.
+        If (SizeOfArray(ucaValue) = 8) Move (ResizeArray(ucaValue, 4)) to ucaValue
         If (SizeOfArray(ucaValue) = SizeOfType(UInteger)) Begin
             Move 0 to uiValue
             Move (MemCopy(AddressOf(uiValue), AddressOf(ucaValue), SizeOfType(UInteger))) to void
@@ -1812,6 +1820,8 @@ Class cCryptoApiNextGen is a cDllWrapper
         Void_Type void
 
         Get NCryptNamedPropertyValue hCngObject sPropertyName to ucaValue
+        // On 64-bit, some UInteger properties come back 8-byte-padded with the real value in the first 4 bytes.
+        If (SizeOfArray(ucaValue) = 8) Move (ResizeArray(ucaValue, 4)) to ucaValue
         If (SizeOfArray(ucaValue) = SizeOfType(UInteger)) Begin
             Move 0 to uiValue
             Move (MemCopy(AddressOf(uiValue), AddressOf(ucaValue), SizeOfType(UInteger))) to void

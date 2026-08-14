@@ -1193,22 +1193,16 @@ Class cCryptoApiNextGen_CryptographicPrimitiveFunctions_Mixin is a Mixin
     Function BCryptImportKeyPair Handle hAlgorithm Handle hImportKey String eBlobType UChar[] ucaBlob UInteger dwFlags Returns tHandleAndPointer
         Integer   iStatus
         UChar[]   ucaBlobType
-        UInteger  cbKeyObject
-        Void_Type void
         tHandleAndPointer KeyObject
 
         Get StringToUtf16UCharArray eBlobType to ucaBlobType
 
-        Get BCryptNamedUIntegerPropertyValue hAlgorithm BCRYPT_OBJECT_LENGTH to cbKeyObject
-        Move (Alloc(cbKeyObject)) to KeyObject.pPointer
-
+        // Unlike BCryptImportKey, this API takes no pbKeyObject/cbKeyObject: the provider
+        // allocates the key object itself and BCryptDestroyKey releases it. So pPointer stays
+        // 0 here, and cCngKey.Destroy_Object skips its Free accordingly.
         Move 0 to KeyObject.hHandle
+        Move 0 to KeyObject.pPointer
         Move (WinAPI_BCryptImportKeyPair(hAlgorithm, hImportKey, AddressOf(ucaBlobType), AddressOf(KeyObject.hHandle), AddressOf(ucaBlob), SizeOfArray(ucaBlob), dwFlags)) to iStatus
-
-        If (iStatus <> STATUS_SUCCESS) Begin
-            Move (Free(KeyObject.pPointer)) to void
-            Move 0 to KeyObject.pPointer
-        End
 
         Set Private_piLastStatus to iStatus
 

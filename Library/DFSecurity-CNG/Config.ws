@@ -1,12 +1,10 @@
 [Workspace]
-Home=.\
-AppSrcPath=.\AppSrc
-AppHTMLPath=.\
-BitmapPath=.\
-IdeSrcPath=.\IdeSrc
-DataPath=.\
-DDSrcPath=.\
-HelpPath=.\Help
-ProgramPath=.\
-FileList=.\DummyFilelist.cfg
-Description=Microsoft CryptoAPI Next Generation (CNG) library
+Home=.
+AppHTMLPath=
+AppSrcPath=AppSrc
+DataPath=
+DDSrcPath=
+IdeSrcPath=IdeSrc
+ProgramPath=
+FileList=DummyFilelist.cfg
+Description=Implementation of Security API's via Microsoft CNG (CryptoAPI Next Generation).

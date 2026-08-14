@@ -1203,11 +1203,11 @@ Class cCryptoApiNextGen_CryptographicPrimitiveFunctions_Mixin is a Mixin
         Move (Alloc(cbKeyObject)) to KeyObject.pPointer
 
         Move 0 to KeyObject.hHandle
-        Move (WinAPI_BCryptImportKeyPair(hAlgorithm, hImportKey, AddressOf(ucaBlobType), KeyObject.hHandle, AddressOf(ucaBlob), SizeOfArray(ucaBlob), dwFlags)) to iStatus
+        Move (WinAPI_BCryptImportKeyPair(hAlgorithm, hImportKey, AddressOf(ucaBlobType), AddressOf(KeyObject.hHandle), AddressOf(ucaBlob), SizeOfArray(ucaBlob), dwFlags)) to iStatus
 
         If (iStatus <> STATUS_SUCCESS) Begin
-            Move (Free(KeyObject.hHandle)) to void
-            Move 0 to KeyObject.hHandle
+            Move (Free(KeyObject.pPointer)) to void
+            Move 0 to KeyObject.pPointer
         End
 
         Set Private_piLastStatus to iStatus

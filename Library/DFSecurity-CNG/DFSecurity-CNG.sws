@@ -1,0 +1,17 @@
+{
+    "dependencies": [
+        "DataFlex-dev/Security (core)#1.0.0"
+    ],
+    "description": "Implementation of Security API's via Microsoft CNG (CryptoAPI Next Generation).",
+    "df": 26.0,
+    "package": {
+        "df-max": 26.0,
+        "df-min": 26.0,
+        "icon": "Security-CNG.png",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "fileList": "DummyFilelist.cfg"
+    },
+    "workspaceName": "Security (CNG)"
+}

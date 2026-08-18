@@ -5,10 +5,11 @@
         "df-max": 26.0,
         "df-min": 26.0,
         "icon": "Security.png",
+        "license": "BSD-3-Clause",
         "version": "1.0.0"
     },
     "paths": {
         "fileList": "DummyFilelist.cfg"
     },
-    "workspaceName": "Security (core)"
+    "workspaceName": "Security - Core"
 }

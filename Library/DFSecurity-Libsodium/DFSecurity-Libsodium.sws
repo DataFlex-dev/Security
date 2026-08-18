@@ -1,6 +1,6 @@
 {
     "dependencies": [
-        "DataFlex-dev/Security (core)#1.0.0"
+        "DataFlex-dev/Security - Core#~1.0.0"
     ],
     "description": "Implementation of the security API’s using Libsodium.",
     "df": 26.0,
@@ -8,6 +8,7 @@
         "df-max": 26.0,
         "df-min": 26.0,
         "icon": "Security-Libsodium.png",
+        "license": "BSD-3-Clause",
         "install": [
             "Programs/libsodium.dll",
             "Programs/libsodium64.dll"
@@ -18,5 +19,5 @@
         "configFile": "Programs/Config.ws",
         "fileList": "DummyFilelist.cfg"
     },
-    "workspaceName": "Security (Libsodium)"
+    "workspaceName": "Security - Libsodium"
 }

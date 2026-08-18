@@ -19,7 +19,9 @@
 //* to read from it - only write!
 //**************************************************************************************************
 Use cVersionInfo.pkg
-Use Dferror.pkg
+#IFNDEF Is$WebApp
+  Use Dferror.pkg
+#ENDIF
 Use Winkern.pkg
 
 #IFNDEF gVoid
